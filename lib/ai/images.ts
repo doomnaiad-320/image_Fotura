@@ -1,4 +1,3 @@
-import { TransactionStatus } from "@prisma/client";
 import { randomUUID } from "crypto";
 
 import { ensureUserHasCredits } from "@/lib/ai/guards";
@@ -74,13 +73,13 @@ export async function generateImages(params: ImageGenerateParams) {
     );
 
     await finalizeCredits(transaction.id, {
-      status: TransactionStatus.success,
+      status: "success",
       actualCost: Math.min(estimatedCost, 10),
       metadata: { mock: true }
     });
 
     await updateUsageRecord(requestId, {
-      status: TransactionStatus.success,
+      status: "success",
       cost: Math.min(estimatedCost, 10)
     });
 
@@ -107,13 +106,13 @@ export async function generateImages(params: ImageGenerateParams) {
     });
 
     await finalizeCredits(transaction.id, {
-      status: TransactionStatus.success,
+      status: "success",
       actualCost: estimatedCost,
       metadata: { size: params.size, count: n }
     });
 
     await updateUsageRecord(requestId, {
-      status: TransactionStatus.success,
+      status: "success",
       cost: estimatedCost
     });
 
@@ -121,7 +120,7 @@ export async function generateImages(params: ImageGenerateParams) {
   } catch (error) {
     await refundCredits(transaction.id, (error as Error).message);
     await updateUsageRecord(requestId, {
-      status: TransactionStatus.failed
+      status: "failed"
     });
     throw error;
   }
@@ -166,13 +165,13 @@ export async function editImage(params: ImageEditParams) {
     }));
 
     await finalizeCredits(transaction.id, {
-      status: TransactionStatus.success,
+      status: "success",
       actualCost: Math.min(estimatedCost, 12),
       metadata: { mock: true }
     });
 
     await updateUsageRecord(requestId, {
-      status: TransactionStatus.success,
+      status: "success",
       cost: Math.min(estimatedCost, 12)
     });
 
@@ -204,13 +203,13 @@ export async function editImage(params: ImageEditParams) {
     });
 
     await finalizeCredits(transaction.id, {
-      status: TransactionStatus.success,
+      status: "success",
       actualCost: estimatedCost,
       metadata: { size: params.size, count: n }
     });
 
     await updateUsageRecord(requestId, {
-      status: TransactionStatus.success,
+      status: "success",
       cost: estimatedCost
     });
 
@@ -218,7 +217,7 @@ export async function editImage(params: ImageEditParams) {
   } catch (error) {
     await refundCredits(transaction.id, (error as Error).message);
     await updateUsageRecord(requestId, {
-      status: TransactionStatus.failed
+      status: "failed"
     });
     throw error;
   }

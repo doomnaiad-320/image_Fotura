@@ -1,4 +1,3 @@
-import { TransactionStatus } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -90,13 +89,13 @@ export async function POST(request: Request) {
         .join(" / ")}`;
 
       await finalizeCredits(transaction.id, {
-        status: TransactionStatus.success,
+        status: "success",
         actualCost: Math.min(estimatedCost, 5),
         metadata: { mock: true }
       });
 
       await updateUsageRecord(requestId, {
-        status: TransactionStatus.success,
+        status: "success",
         inputTokens: estimatedTokens,
         outputTokens: estimatedTokens,
         cost: Math.min(estimatedCost, 5)
@@ -152,18 +151,18 @@ export async function POST(request: Request) {
               controller.enqueue(encoder.encode("data: [DONE]\n\n"));
               controller.close();
               await finalizeCredits(transaction.id, {
-                status: TransactionStatus.success,
+                status: "success",
                 actualCost: estimatedCost
               });
               await updateUsageRecord(requestId, {
-                status: TransactionStatus.success,
+                status: "success",
                 cost: estimatedCost
               });
             } catch (error) {
               controller.error(error);
               await refundCredits(transaction.id, (error as Error).message);
               await updateUsageRecord(requestId, {
-                status: TransactionStatus.failed
+                status: "failed"
               });
             }
           }
@@ -178,7 +177,7 @@ export async function POST(request: Request) {
       } catch (error) {
         await refundCredits(transaction.id, (error as Error).message);
         await updateUsageRecord(requestId, {
-          status: TransactionStatus.failed
+          status: "failed"
         });
         throw error;
       }
@@ -201,13 +200,13 @@ export async function POST(request: Request) {
       });
 
       await finalizeCredits(transaction.id, {
-        status: TransactionStatus.success,
+        status: "success",
         actualCost: totalCost,
         metadata: completion.usage ? completion.usage : undefined
       });
 
       await updateUsageRecord(requestId, {
-        status: TransactionStatus.success,
+        status: "success",
         inputTokens: promptTokens,
         outputTokens: completionTokens,
         cost: totalCost
@@ -217,7 +216,7 @@ export async function POST(request: Request) {
     } catch (error) {
       await refundCredits(transaction.id, (error as Error).message);
       await updateUsageRecord(requestId, {
-        status: TransactionStatus.failed
+        status: "failed"
       });
       throw error;
     }

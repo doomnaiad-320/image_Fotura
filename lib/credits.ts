@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { TransactionStatus } from "@prisma/client";
 import { randomUUID } from "crypto";
 
 export type CreditPrechargeInput = {
@@ -50,7 +49,7 @@ export async function prechargeCredits(input: CreditPrechargeInput) {
         modelSlug: input.modelSlug,
         delta: -input.amount,
         reason: input.reason,
-        status: TransactionStatus.pending
+        status: "pending"
       }
     });
 
@@ -61,7 +60,7 @@ export async function prechargeCredits(input: CreditPrechargeInput) {
 export async function finalizeCredits(
   transactionId: string,
   data: {
-    status: TransactionStatus;
+    status: "pending" | "success" | "failed" | "refunded";
     actualCost?: number;
     metadata?: Record<string, unknown>;
   }
@@ -75,7 +74,7 @@ export async function finalizeCredits(
       throw new Error("交易不存在");
     }
 
-    if (transaction.status !== TransactionStatus.pending) {
+    if (transaction.status !== "pending") {
       return transaction;
     }
 
@@ -118,7 +117,7 @@ export async function refundCredits(transactionId: string, reason?: string) {
       throw new Error("交易不存在");
     }
 
-    if (transaction.status === TransactionStatus.refunded) {
+    if (transaction.status === "refunded") {
       return transaction;
     }
 
@@ -136,8 +135,71 @@ export async function refundCredits(transactionId: string, reason?: string) {
     return tx.creditTransaction.update({
       where: { id: transactionId },
       data: {
-        status: TransactionStatus.refunded,
+        status: "refunded",
         reason: reason ?? transaction.reason
+      }
+    });
+  });
+}
+
+export async function adjustCreditsByAdmin({
+  adminId,
+  userId,
+  amount,
+  reason
+}: {
+  adminId: string;
+  userId: string;
+  amount: number;
+  reason: string;
+}) {
+  if (!amount || amount === 0) {
+    throw new Error("调整额度必须非零");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const target = await tx.user.findUnique({
+      where: { id: userId },
+      select: { credits: true }
+    });
+
+    if (!target) {
+      throw new Error("用户不存在");
+    }
+
+    if (amount < 0 && target.credits < Math.abs(amount)) {
+      throw new Error("余额不足，无法扣减");
+    }
+
+    if (amount > 0) {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          credits: { increment: amount }
+        }
+      });
+    } else {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          credits: { decrement: Math.abs(amount) }
+        }
+      });
+    }
+
+    return tx.creditTransaction.create({
+      data: {
+        id: randomUUID(),
+        userId,
+        delta: amount,
+        reason,
+        providerSlug: null,
+        modelSlug: null,
+        status: "success",
+        metadata: JSON.stringify({
+          adjustedBy: adminId,
+          reason
+        })
       }
     });
   });

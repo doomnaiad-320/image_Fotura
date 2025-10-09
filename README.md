@@ -74,11 +74,13 @@ tests/              # Vitest 单测&集成测试 + Playwright e2e
 - `BUILD_TARGET=cap npm run build:cap` 会 `next export` 仅导出该页面
 - `capacitor.config.ts` 已配置 `webDir: dist-cap`
 
-## Provider / 模型维护
+## 后台管理（/admin/ai）
 
-- 后台页面：`/admin/ai`，仅管理员可访问
-- 功能：新增/更新 Provider、同步远程模型（OpenAI/OpenRouter/Together/Ollama 等）、开关模型、查看可用模型列表
-- API：`/api/providers/*`、`/api/models/*`
+- Provider 管理：新增/编辑/删除 Provider，选择性导入远程模型（OpenAI / OpenRouter / Together / Ollama 等），支持批量启用/禁用
+- 模型库：按 Provider 列表展示，实时控制启用状态
+- 用户管理：查看用户积分余额、切换角色（user/admin）、直接增减积分并填写原因
+- 操作日志：所有关键变更（Provider/模型/积分/角色）自动写入 `AuditLog` 并在后台展示
+- 相关 API：`/api/providers/*`、`/api/providers/[slug]/remote-models`、`/api/providers/[slug]/import`、`/api/models/*`、`/api/admin/users/*`、`/api/admin/logs`
 - API Key 使用 `lib/crypto` AES-256-GCM 加密后存储
 
 远程模型同步策略：
@@ -99,6 +101,7 @@ tests/              # Vitest 单测&集成测试 + Playwright e2e
   3. 成功：`finalizeCredits` 按实际用量结算，多退少补；失败：`refundCredits`
   4. `AiUsage` 记录耗时、token、成本等指标
 - 定价模型 `lib/ai/pricing.ts` 支持文本 token / 图像 size / edit 模式
+- 管理员可通过 `/api/credits/grant` 或 `/api/admin/users/[id]` 增减积分（支持正负数），所有操作写入 `CreditTransaction` 与 `AuditLog`
 
 ## AI 请求说明
 
@@ -135,4 +138,3 @@ tests/              # Vitest 单测&集成测试 + Playwright e2e
 3. `npm run build:web` + `npm run start`
 4. 使用 `/admin/ai` 维护实际 Provider 与模型
 5. 如需移动端：执行 `npm run build:cap` + Capacitor 平台打包
-

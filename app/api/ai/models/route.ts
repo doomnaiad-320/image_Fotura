@@ -30,5 +30,11 @@ export async function GET(request: Request) {
     }
   });
 
-  return NextResponse.json({ models });
+  const payload = models.map((model) => ({
+    ...model,
+    modalities: Array.isArray(model.modalities) ? model.modalities : [],
+    tags: Array.isArray(model.tags) ? model.tags : []
+  }));
+
+  return NextResponse.json({ models: payload });
 }

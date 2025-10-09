@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { ensureAdmin } from "@/lib/ai/guards";
-import { listProviders, providerInputSchema, upsertProvider } from "@/lib/ai/providers";
+import {
+  getProviderBySlug,
+  listProviders,
+  providerInputSchema,
+  upsertProvider
+} from "@/lib/ai/providers";
 import { getCurrentUser } from "@/lib/auth";
+import { recordAuditLog } from "@/lib/audit";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -33,8 +39,40 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const payload = providerInputSchema.parse(body);
+    const existing = await getProviderBySlug(payload.slug);
     const provider = await upsertProvider(payload);
-    return NextResponse.json({ provider });
+
+    const headers = request.headers;
+    const ip =
+      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      headers.get("x-real-ip") ??
+      null;
+    const userAgent = headers.get("user-agent") ?? null;
+
+    await recordAuditLog({
+      action: existing ? "update_provider" : "create_provider",
+      description: existing
+        ? `更新 Provider ${provider.slug}`
+        : `新增 Provider ${provider.slug}`,
+      userId: user.id,
+      ip,
+      userAgent,
+      metadata: {
+        slug: provider.slug,
+        name: provider.name,
+        baseURL: provider.baseURL,
+        enabled: provider.enabled
+      }
+    });
+
+    return NextResponse.json({
+      provider: {
+        slug: provider.slug,
+        name: provider.name,
+        baseURL: provider.baseURL,
+        enabled: provider.enabled
+      }
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "保存失败";
     return NextResponse.json({ message }, { status: 400 });

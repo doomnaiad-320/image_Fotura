@@ -1,5 +1,3 @@
-import { TransactionStatus } from "@prisma/client";
-
 import { prisma } from "@/lib/prisma";
 
 export type UsageRecordInput = {
@@ -9,7 +7,7 @@ export type UsageRecordInput = {
   modelSlug?: string | null;
   providerSlug?: string | null;
   kind: "chat" | "image.generate" | "image.edit";
-  status?: TransactionStatus;
+  status?: "pending" | "success" | "failed" | "refunded";
   durationMs?: number;
   inputTokens?: number;
   outputTokens?: number;
@@ -25,7 +23,7 @@ export async function createUsageRecord(input: UsageRecordInput) {
       modelSlug: input.modelSlug ?? undefined,
       providerSlug: input.providerSlug ?? undefined,
       kind: input.kind,
-      status: input.status ?? TransactionStatus.pending,
+      status: input.status ?? "pending",
       durationMs: input.durationMs,
       inputTokens: input.inputTokens,
       outputTokens: input.outputTokens,
@@ -37,7 +35,7 @@ export async function createUsageRecord(input: UsageRecordInput) {
 export async function updateUsageRecord(
   requestId: string,
   data: Partial<Omit<UsageRecordInput, "requestId" | "kind">> & {
-    status?: TransactionStatus;
+    status?: "pending" | "success" | "failed" | "refunded";
   }
 ) {
   return prisma.aiUsage.updateMany({

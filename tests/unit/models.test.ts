@@ -23,7 +23,18 @@ vi.mock("@/lib/prisma", () => ({
       update: vi.fn(async ({ where }: any) => {
         state.disabled.push(where.id ?? where.slug);
       })
-    }
+    },
+    $transaction: vi.fn(async (operations: any) => {
+      if (Array.isArray(operations)) {
+        for (const op of operations) {
+          if (typeof op === "function") {
+            await op();
+          } else if (op && typeof op.then === "function") {
+            await op;
+          }
+        }
+      }
+    })
   }
 }));
 

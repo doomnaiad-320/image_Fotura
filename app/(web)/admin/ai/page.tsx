@@ -44,11 +44,26 @@ export default async function AdminAIPage() {
     createdAt: provider.createdAt.toISOString()
   }));
 
+  const parseModalities = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item));
+    }
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.map((item) => String(item)) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const modelView = models.map((model) => ({
     slug: model.slug,
     displayName: model.displayName,
     provider: model.provider,
-    modalities: (model.modalities as string[]) ?? [],
+    modalities: parseModalities(model.modalities),
     supportsStream: model.supportsStream,
     enabled: model.enabled,
     sort: model.sort
@@ -57,9 +72,9 @@ export default async function AdminAIPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">AI Provider 管理</h1>
+        <h1 className="text-3xl font-semibold text-white">AI 管理中心</h1>
         <p className="text-sm text-gray-400">
-          配置多模型 Provider，导入模型清单并控制启用状态，所有修改自动写入数据库。
+          统一管理 Provider、模型库、用户积分与操作日志，所有变更实时记录。
         </p>
       </header>
       <AdminAIConsole initialProviders={providerView} initialModels={modelView} />

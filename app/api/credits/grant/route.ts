@@ -1,15 +1,19 @@
-import { TransactionStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { ensureAdmin } from "@/lib/ai/guards";
+import { adjustCreditsByAdmin } from "@/lib/credits";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { recordAuditLog } from "@/lib/audit";
 
 const schema = z.object({
   userId: z.string().cuid().optional(),
   email: z.string().email().optional(),
-  amount: z.number().gt(0),
+  amount: z
+    .number()
+    .int()
+    .refine((val) => val !== 0, "调整额度必须非零"),
   reason: z.string().optional()
 });
 
@@ -45,39 +49,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "用户不存在" }, { status: 404 });
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const nextUser = await tx.user.update({
-        where: { id: user.id },
-        data: {
-          credits: {
-            increment: payload.amount
-          }
-        }
-      });
+    const transaction = await adjustCreditsByAdmin({
+      adminId: admin.id,
+      userId: user.id,
+      amount: payload.amount,
+      reason: payload.reason ?? "管理员调整"
+    });
 
-      await tx.creditTransaction.create({
-        data: {
-          userId: user.id,
-          delta: payload.amount,
-          reason: payload.reason ?? "管理员发放",
-          status: TransactionStatus.success,
-          providerSlug: null,
-          modelSlug: null,
-          metadata: {
-            grantedBy: admin.id
-          }
-        }
-      });
+    const updated = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, email: true, credits: true }
+    });
 
-      return nextUser;
+    const headers = request.headers;
+    const ip =
+      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      headers.get("x-real-ip") ??
+      null;
+    const userAgent = headers.get("user-agent") ?? null;
+
+    await recordAuditLog({
+      action: "grant_credits",
+      description: `管理员调整积分 ${user.email}`,
+      userId: admin.id,
+      ip,
+      userAgent,
+      metadata: {
+        targetUser: user.id,
+        amount: payload.amount,
+        reason: payload.reason ?? "管理员调整",
+        transactionId: transaction.id
+      }
     });
 
     return NextResponse.json({
-      user: {
-        id: updated.id,
-        email: updated.email,
-        credits: updated.credits
-      }
+      user: updated
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "发放失败";

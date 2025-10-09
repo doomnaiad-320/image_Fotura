@@ -22,15 +22,15 @@ vi.mock("@/lib/prisma", () => {
     creditTransaction: {
       create: vi.fn(async ({ data }: any) => {
         mockState.transaction = {
-          id: data.id,
+          id: data.id ?? "tx_1",
           userId: data.userId,
           delta: data.delta,
           status: data.status,
-          metadata: data.metadata ?? {}
+          metadata: data.metadata ?? "{}"
         };
         return { ...mockState.transaction };
       }),
-      findUnique: vi.fn(async () => ({ ...mockState.transaction })),
+      findUnique: vi.fn(async () => (mockState.transaction ? { ...mockState.transaction } : null)),
       update: vi.fn(async ({ data }: any) => {
         mockState.transaction = { ...mockState.transaction, ...data };
         return { ...mockState.transaction };
@@ -45,9 +45,7 @@ vi.mock("@/lib/prisma", () => {
   };
 });
 
-import { TransactionStatus } from "@prisma/client";
-
-import { finalizeCredits, prechargeCredits } from "@/lib/credits";
+import { adjustCreditsByAdmin, finalizeCredits, prechargeCredits } from "@/lib/credits";
 
 describe("credits", () => {
   beforeEach(() => {
@@ -68,7 +66,7 @@ describe("credits", () => {
     expect(precharged.delta).toBe(-300);
 
     const finalized = await finalizeCredits(precharged.id, {
-      status: TransactionStatus.success,
+      status: "success",
       actualCost: 200,
       metadata: { promptTokens: 120 }
     });
@@ -87,10 +85,28 @@ describe("credits", () => {
     });
 
     await finalizeCredits(precharged.id, {
-      status: TransactionStatus.failed,
+      status: "failed",
       actualCost: 0
     });
 
     expect(mockState.user.credits).toBe(1000);
+  });
+
+  it("adjusts credits via admin helper", async () => {
+    await adjustCreditsByAdmin({
+      adminId: "admin_1",
+      userId: "user_1",
+      amount: 200,
+      reason: "奖励"
+    });
+    expect(mockState.user.credits).toBe(1200);
+
+    await adjustCreditsByAdmin({
+      adminId: "admin_1",
+      userId: "user_1",
+      amount: -300,
+      reason: "扣减"
+    });
+    expect(mockState.user.credits).toBe(900);
   });
 });

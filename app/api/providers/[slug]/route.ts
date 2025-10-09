@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { ensureAdmin } from "@/lib/ai/guards";
 import { deleteProvider, getProviderBySlug } from "@/lib/ai/providers";
 import { getCurrentUser } from "@/lib/auth";
+import { recordAuditLog } from "@/lib/audit";
 
 export async function GET(
   _: Request,
@@ -26,7 +27,7 @@ export async function GET(
 }
 
 export async function DELETE(
-  _: Request,
+  request: Request,
   context: { params: { slug: string } }
 ) {
   const user = await getCurrentUser();
@@ -40,7 +41,27 @@ export async function DELETE(
   }
 
   try {
+    const existing = await getProviderBySlug(context.params.slug);
     await deleteProvider(context.params.slug);
+    if (existing) {
+      const headers = request.headers;
+      const ip =
+        headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        headers.get("x-real-ip") ??
+        null;
+      const userAgent = headers.get("user-agent") ?? null;
+      await recordAuditLog({
+        action: "delete_provider",
+        description: `删除 Provider ${existing.slug}`,
+        userId: user.id,
+        ip,
+        userAgent,
+        metadata: {
+          slug: existing.slug,
+          name: existing.name
+        }
+      });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "删除失败";
