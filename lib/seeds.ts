@@ -1,15 +1,14 @@
 import type {
   AiModel,
   PrismaClient,
-  TransactionStatus,
   User
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-import { encryptSecret } from "./crypto";
-import { calculateHotScore } from "./ranking";
-import { seedAssets } from "../seeds/assets";
-import { seedProviders } from "../seeds/providers";
+import { encryptSecret } from "./crypto.js";
+import { calculateHotScore } from "./ranking.js";
+import { seedAssets } from "../seeds/assets.js";
+import { seedProviders } from "../seeds/providers.js";
 
 export type SeedOptions = {
   adminPassword?: string;
@@ -85,7 +84,7 @@ export async function runSeed(
         name: provider.name,
         baseURL: provider.baseURL,
         apiKeyEncrypted: encrypted,
-        extraHeaders: provider.extraHeaders ?? {},
+        extraHeaders: JSON.stringify(provider.extraHeaders ?? {}),
         enabled: true
       }
     });
@@ -97,11 +96,11 @@ export async function runSeed(
           displayName: model.displayName,
           providerId: createdProvider.id,
           family: model.family,
-          modalities: model.modalities,
+          modalities: JSON.stringify(model.modalities),
           supportsStream: model.supportsStream,
-          pricing: model.pricing,
-          rateLimit: model.rateLimit,
-          tags: model.tags,
+          pricing: JSON.stringify(model.pricing),
+          rateLimit: JSON.stringify(model.rateLimit),
+          tags: JSON.stringify(model.tags),
           enabled: true,
           sort: model.sort
         }
@@ -127,7 +126,7 @@ export async function runSeed(
         aspectRatio: asset.aspectRatio,
         durationSec: asset.durationSec,
         modelTag: asset.modelTag,
-        tags: asset.tags,
+        tags: JSON.stringify(asset.tags),
         likes: asset.likes,
         views: asset.views,
         hotScore,
@@ -148,11 +147,11 @@ export async function runSeed(
         modelSlug: firstModel.slug,
         delta: -120,
         reason: "首单对话预扣",
-        status: TransactionStatus.success,
-        metadata: {
+        status: "success",
+        metadata: JSON.stringify({
           promptTokens: 1024,
           completionTokens: 512
-        }
+        })
       }
     });
   }

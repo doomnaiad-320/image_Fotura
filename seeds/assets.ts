@@ -1,8 +1,7 @@
-import { AssetType } from "@prisma/client";
 
 type SeedAsset = {
   title: string;
-  type: AssetType;
+  type: string;
   coverUrl: string;
   videoUrl?: string;
   aspectRatio: number;
@@ -17,7 +16,7 @@ type SeedAsset = {
 export const seedAssets: SeedAsset[] = [
   {
     title: "未来城市的清晨光影",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.5,
@@ -29,7 +28,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "山谷云海中的神秘寺庙",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 0.75,
@@ -41,7 +40,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "霓虹街头的雨夜剪影",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1500043201824-986b0e1eda5f?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 0.9,
@@ -53,7 +52,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "低角度拍摄的现代办公楼",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1505849864904-0164a1b7832d?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.3,
@@ -65,7 +64,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "日落时的火星殖民地",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1462332420958-a05d1e002413?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.6,
@@ -77,7 +76,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "水墨山水的虚拟现实版本",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1,
@@ -89,7 +88,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "失落海底城的珊瑚花园",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.2,
@@ -101,7 +100,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "复古黑白风的人像摄影",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1502164980785-f8aa41d53611?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 0.66,
@@ -113,7 +112,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "北欧极光与雪峰",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.5,
@@ -125,7 +124,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "生物机械鸟类的细节艺术",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 0.85,
@@ -137,7 +136,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "浪涌海浪的慢门拍摄",
-    type: AssetType.video,
+    type: "video",
     coverUrl:
       "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=80",
     videoUrl:
@@ -152,7 +151,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "AI 复原的古代长安城",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80&sat=-100",
     aspectRatio: 1.4,
@@ -164,7 +163,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "虚拟偶像的舞台巡演",
-    type: AssetType.video,
+    type: "video",
     coverUrl:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80",
     videoUrl:
@@ -179,7 +178,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "森林里的拟态生物",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 0.8,
@@ -191,7 +190,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "极简主义的家居空间",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.2,
@@ -203,7 +202,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "古典乐团的动感光效",
-    type: AssetType.video,
+    type: "video",
     coverUrl:
       "https://images.unsplash.com/photo-1509228627152-72ae9ae6848d?auto=format&fit=crop&w=1200&q=80",
     videoUrl:
@@ -218,7 +217,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "云端图书馆的漫游者",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.1,
@@ -230,7 +229,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "全息 UI 的工业设计草图",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.6,
@@ -242,7 +241,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "北极星空下的悬疑科幻剧照",
-    type: AssetType.video,
+    type: "video",
     coverUrl:
       "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80",
     videoUrl:
@@ -257,7 +256,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "AI 合成的当代时尚大片",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 0.75,
@@ -269,7 +268,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "未来城市的交通枢纽",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1522199992905-dc5d60e9d00f?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.3,
@@ -281,7 +280,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "水下舞者的光影舞步",
-    type: AssetType.video,
+    type: "video",
     coverUrl:
       "https://images.unsplash.com/photo-1517202383675-eb0a6e1078e8?auto=format&fit=crop&w=1200&q=80",
     videoUrl:
@@ -296,7 +295,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "自适应机器人宠物",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1,
@@ -308,7 +307,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "草原星河的延时摄影",
-    type: AssetType.video,
+    type: "video",
     coverUrl:
       "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80&sat=-100",
     videoUrl:
@@ -323,7 +322,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "AI 设计的智能家居中控台",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.45,
@@ -335,7 +334,7 @@ export const seedAssets: SeedAsset[] = [
   },
   {
     title: "次世代电竞舞台概念设计",
-    type: AssetType.image,
+    type: "image",
     coverUrl:
       "https://images.unsplash.com/photo-1529245019870-59dd2b46c023?auto=format&fit=crop&w=1200&q=80",
     aspectRatio: 1.33,

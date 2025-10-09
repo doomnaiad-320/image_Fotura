@@ -1,7 +1,6 @@
 "use client";
 
-import { AssetType } from "@prisma/client";
-import { useMemo } from "react";
+import { useMemo, type ChangeEvent } from "react";
 
 import type { AssetSort } from "@/lib/assets";
 import { cn } from "@/lib/utils";
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 
 export type AssetFilterState = {
-  type: AssetType | "all";
+  type: string | "all";
   sort: AssetSort;
 };
 
@@ -18,10 +17,10 @@ export type AssetFilterBarProps = {
   onChange: (state: AssetFilterState) => void;
 };
 
-const TYPE_OPTIONS: { value: AssetType | "all"; label: string }[] = [
+const TYPE_OPTIONS: { value: string | "all"; label: string }[] = [
   { value: "all", label: "全部" },
-  { value: AssetType.image, label: "图片" },
-  { value: AssetType.video, label: "视频" }
+  { value: "image", label: "图片" },
+  { value: "video", label: "视频" }
 ];
 
 const SORT_OPTIONS: { value: AssetSort; label: string }[] = [
@@ -54,7 +53,7 @@ export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
         <span className="hidden md:inline">排序</span>
         <Select
           value={value.sort}
-          onChange={(event) => onChange({ ...value, sort: event.target.value as AssetSort })}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange({ ...value, sort: event.target.value as AssetSort })}
           className="w-32"
         >
           {sortOptions.map((option) => (

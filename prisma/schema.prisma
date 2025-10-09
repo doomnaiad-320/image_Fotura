@@ -7,42 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  user
-  admin
-}
 
-enum AssetType {
-  image
-  video
-}
 
-enum TransactionStatus {
-  pending
-  success
-  failed
-  refunded
-}
-
-enum AuditAction {
-  signin
-  signout
-  create_provider
-  update_provider
-  delete_provider
-  create_model
-  update_model
-  sync_models
-  grant_credits
-  ai_request
-}
 
 model User {
   id              String              @id @default(cuid())
   email           String              @unique
   name            String?
   passwordHash    String
-  role            UserRole            @default(user)
+  role            String              @default("user")
   credits         Int                 @default(0)
   favorites       Favorite[]
   transactions    CreditTransaction[]
@@ -57,13 +30,13 @@ model User {
 model Asset {
   id           String      @id @default(cuid())
   title        String
-  type         AssetType
+  type         String
   coverUrl     String
   videoUrl     String?
   aspectRatio  Float       @default(1.0)
   durationSec  Int?
   modelTag     String
-  tags         Json        @default("[]")
+  tags         String        @default("[]")
   views        Int         @default(0)
   likes        Int         @default(0)
   hotScore     Float       @default(0)
@@ -90,7 +63,7 @@ model Provider {
   name             String
   baseURL          String
   apiKeyEncrypted  String
-  extraHeaders     Json      @default("{}")
+  extraHeaders     String      @default("{}")
   enabled          Boolean   @default(true)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -104,12 +77,12 @@ model AiModel {
   displayName    String
   providerId     String
   family         String
-  modalities     Json      @default("[]")
+  modalities     String      @default("[]")
   contextWindow  Int?
   supportsStream Boolean   @default(false)
-  pricing        Json      @default("{}")
-  rateLimit      Json      @default("{}")
-  tags           Json      @default("[]")
+  pricing        String      @default("{}")
+  rateLimit      String      @default("{}")
+  tags           String      @default("[]")
   enabled        Boolean   @default(true)
   sort           Int       @default(100)
   createdAt      DateTime  @default(now())
@@ -130,8 +103,8 @@ model CreditTransaction {
   requestId     String?
   delta         Int
   reason        String
-  status        TransactionStatus @default(pending)
-  metadata      Json              @default("{}")
+  status        String @default("pending")
+  metadata      String              @default("{}")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
@@ -146,11 +119,11 @@ model CreditTransaction {
 model AuditLog {
   id          String      @id @default(cuid())
   userId      String?
-  action      AuditAction
+  action      String
   description String
   ip          String?
   userAgent   String?
-  metadata    Json        @default("{}")
+  metadata    String        @default("{}")
   createdAt   DateTime    @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -168,7 +141,7 @@ model AiUsage {
   inputTokens  Int?
   outputTokens Int?
   cost         Int?
-  status       TransactionStatus @default(pending)
+  status       String @default("pending")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -185,12 +158,12 @@ model Account {
   type               String
   provider           String
   providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
+  refresh_token      String?
+  access_token       String?
   expires_at         Int?
   token_type         String?
   scope              String?
-  id_token           String?  @db.Text
+  id_token           String?
   session_state      String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
