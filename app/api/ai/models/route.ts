@@ -2,6 +2,21 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 
+function parseStringArray(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item));
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((item) => String(item)) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const providerSlug = searchParams.get("provider");
@@ -32,8 +47,8 @@ export async function GET(request: Request) {
 
   const payload = models.map((model) => ({
     ...model,
-    modalities: Array.isArray(model.modalities) ? model.modalities : [],
-    tags: Array.isArray(model.tags) ? model.tags : []
+    modalities: parseStringArray(model.modalities),
+    tags: parseStringArray(model.tags)
   }));
 
   return NextResponse.json({ models: payload });

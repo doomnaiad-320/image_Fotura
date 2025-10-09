@@ -6,6 +6,7 @@ import type {
 import bcrypt from "bcryptjs";
 
 import { encryptSecret } from "./crypto.js";
+import { serializeProviderHeaders } from "./ai/providers.js";
 import { calculateHotScore } from "./ranking.js";
 import { seedAssets } from "../seeds/assets.js";
 import { seedProviders } from "../seeds/providers.js";
@@ -84,7 +85,7 @@ export async function runSeed(
         name: provider.name,
         baseURL: provider.baseURL,
         apiKeyEncrypted: encrypted,
-        extraHeaders: JSON.stringify(provider.extraHeaders ?? {}),
+        extraHeaders: serializeProviderHeaders(provider.extraHeaders ?? {}),
         enabled: true
       }
     });

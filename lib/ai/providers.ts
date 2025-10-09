@@ -2,6 +2,22 @@ import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
+const headersSchema = z
+  .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+  .transform((value) => {
+    const entries = Object.entries(value).reduce<Record<string, string>>(
+      (accumulator, [key, raw]) => {
+        if (raw === undefined || raw === null) {
+          return accumulator;
+        }
+        accumulator[key] = String(raw);
+        return accumulator;
+      },
+      {}
+    );
+    return entries;
+  });
+
 export const providerInputSchema = z.object({
   slug: z
     .string()
@@ -11,12 +27,53 @@ export const providerInputSchema = z.object({
   name: z.string().min(2).max(120),
   baseURL: z.string().url(),
   apiKey: z.string().optional().nullable(),
-  extraHeaders: z.record(z.string(), z.string()).default({}),
+  extraHeaders: headersSchema.optional(),
   enabled: z.boolean().default(true)
 });
 
 export type ProviderInput = z.infer<typeof providerSchema>;
 const providerSchema = providerInputSchema;
+
+const EMPTY_HEADERS = "{}";
+
+export function serializeProviderHeaders(headers?: Record<string, string> | null) {
+  if (!headers || Object.keys(headers).length === 0) {
+    return EMPTY_HEADERS;
+  }
+  return JSON.stringify(headers);
+}
+
+export function parseProviderHeaders(value: unknown): Record<string, string> {
+  if (!value) {
+    return {};
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return Object.entries(parsed).reduce<Record<string, string>>((accumulator, [key, raw]) => {
+          if (raw === undefined || raw === null) {
+            return accumulator;
+          }
+          accumulator[key] = String(raw);
+          return accumulator;
+        }, {});
+      }
+    } catch {
+      return {};
+    }
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value).reduce<Record<string, string>>((accumulator, [key, raw]) => {
+      if (raw === undefined || raw === null) {
+        return accumulator;
+      }
+      accumulator[key] = String(raw);
+      return accumulator;
+    }, {});
+  }
+  return {};
+}
 
 export async function listProviders() {
   const providers = await prisma.provider.findMany({
@@ -26,7 +83,8 @@ export async function listProviders() {
   return providers.map((provider) => ({
     ...provider,
     apiKeyEncrypted: undefined,
-    hasApiKey: Boolean(provider.apiKeyEncrypted)
+    hasApiKey: Boolean(provider.apiKeyEncrypted),
+    extraHeaders: parseProviderHeaders(provider.extraHeaders)
   }));
 }
 
@@ -38,7 +96,8 @@ export async function getProviderBySlug(slug: string) {
   return {
     ...provider,
     apiKeyEncrypted: undefined,
-    hasApiKey: Boolean(provider.apiKeyEncrypted)
+    hasApiKey: Boolean(provider.apiKeyEncrypted),
+    extraHeaders: parseProviderHeaders(provider.extraHeaders)
   };
 }
 
@@ -48,6 +107,10 @@ export async function upsertProvider(input: ProviderInput) {
   const encrypted = payload.apiKey
     ? encryptSecret(payload.apiKey)
     : existing?.apiKeyEncrypted ?? "";
+  const serializedHeaders =
+    payload.extraHeaders !== undefined
+      ? serializeProviderHeaders(payload.extraHeaders)
+      : existing?.extraHeaders ?? EMPTY_HEADERS;
 
   return prisma.provider.upsert({
     where: { slug: payload.slug },
@@ -55,7 +118,7 @@ export async function upsertProvider(input: ProviderInput) {
       name: payload.name,
       baseURL: payload.baseURL,
       apiKeyEncrypted: encrypted,
-      extraHeaders: payload.extraHeaders ?? {},
+      extraHeaders: serializedHeaders,
       enabled: payload.enabled
     },
     create: {
@@ -63,7 +126,7 @@ export async function upsertProvider(input: ProviderInput) {
       name: payload.name,
       baseURL: payload.baseURL,
       apiKeyEncrypted: encrypted,
-      extraHeaders: payload.extraHeaders ?? {},
+      extraHeaders: serializeProviderHeaders(payload.extraHeaders ?? {}),
       enabled: payload.enabled
     }
   });
@@ -116,7 +179,7 @@ export async function pullModelsFromProvider(providerSlug: string) {
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  const extraHeaders = provider.extraHeaders as Record<string, string> | null;
+  const extraHeaders = parseProviderHeaders(provider.extraHeaders);
   if (extraHeaders) {
     Object.assign(headers, extraHeaders);
   }

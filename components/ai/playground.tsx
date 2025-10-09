@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { httpFetch } from "@/lib/http";
@@ -26,11 +25,6 @@ type Props = {
   isAuthenticated: boolean;
 };
 
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
 type GeneratedImage = {
   id: string;
   url: string;
@@ -40,21 +34,39 @@ type GeneratedImage = {
 const fetcher = (url: string) => httpFetch<any>(url);
 
 export function AIPlayground({ models, isAuthenticated }: Props) {
-  const [tab, setTab] = useState<"chat" | "image">("chat");
-  const [chatPrompt, setChatPrompt] = useState("");
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [selectedChatModel, setSelectedChatModel] = useState<string | null>(
-    () => models.find((model) => model.modalities.includes("text"))?.slug ?? null
+  const { data: modelResponse } = useSWR<{ models: ModelOption[] }>(
+    "/api/ai/models",
+    fetcher,
+    {
+      fallbackData: { models },
+      refreshInterval: 60_000
+    }
   );
+
+  const latestModels = useMemo(() => {
+    const list = modelResponse?.models ?? models;
+    return list.map((model) => ({
+      ...model,
+      modalities: Array.isArray(model.modalities)
+        ? model.modalities
+        : typeof model.modalities === "string"
+          ? (() => {
+              try {
+                const parsed = JSON.parse(model.modalities);
+                return Array.isArray(parsed) ? parsed.map((item) => String(item)) : [];
+              } catch {
+                return [];
+              }
+            })()
+          : []
+    }));
+  }, [modelResponse, models]);
 
   const [imagePrompt, setImagePrompt] = useState("");
   const [imageSize, setImageSize] = useState("1024x1024");
   const [imageLoading, setImageLoading] = useState(false);
   const [imageResults, setImageResults] = useState<GeneratedImage[]>([]);
-  const [selectedImageModel, setSelectedImageModel] = useState<string | null>(
-    () => models.find((model) => model.modalities.includes("image"))?.slug ?? null
-  );
+  const [selectedImageModel, setSelectedImageModel] = useState<string | null>(null);
 
   const { data: balance, mutate: refreshBalance } = useSWR(
     isAuthenticated ? "/api/credits/balance" : null,
@@ -62,15 +74,23 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
     { refreshInterval: 60_000 }
   );
 
-  const chatModels = useMemo(
-    () => models.filter((model) => model.modalities.includes("text")),
-    [models]
+  const imageModels = useMemo(
+    () => latestModels.filter((model) => model.modalities.includes("image")),
+    [latestModels]
   );
 
-  const imageModels = useMemo(
-    () => models.filter((model) => model.modalities.includes("image")),
-    [models]
-  );
+  useEffect(() => {
+    if (imageModels.length === 0) {
+      setSelectedImageModel(null);
+      return;
+    }
+    setSelectedImageModel((prev) => {
+      if (prev && imageModels.some((model) => model.slug === prev)) {
+        return prev;
+      }
+      return imageModels[0]?.slug ?? null;
+    });
+  }, [imageModels]);
 
   const ensureLogin = () => {
     if (!isAuthenticated) {
@@ -78,46 +98,6 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
       return false;
     }
     return true;
-  };
-
-  const handleChatSubmit = async () => {
-    if (!ensureLogin()) return;
-    if (!chatPrompt.trim() || !selectedChatModel) {
-      toast.error("请选择模型并输入提示词");
-      return;
-    }
-
-    const messages = [...chatHistory, { role: "user" as const, content: chatPrompt }];
-
-    try {
-      setChatLoading(true);
-      setChatHistory(messages);
-      setChatPrompt("");
-
-      const response = await httpFetch<{ choices: { message: { content: string } }[] }>(
-        "/api/ai/chat/completions",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            model: selectedChatModel,
-            messages: messages.map((message) => ({
-              role: message.role,
-              content: message.content
-            })),
-            stream: false
-          })
-        }
-      );
-
-      const content = response?.choices?.[0]?.message?.content ?? "(无响应)";
-      setChatHistory((prev) => [...prev, { role: "assistant", content }]);
-      await refreshBalance();
-    } catch (error) {
-      console.error(error);
-      toast.error(error instanceof Error ? error.message : "调用失败");
-    } finally {
-      setChatLoading(false);
-    }
   };
 
   const handleImageGenerate = async () => {
@@ -162,121 +142,97 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
     }
   };
 
+  const availableSizes = [
+    "512x512",
+    "640x640",
+    "768x768",
+    "896x1152",
+    "1024x1024",
+    "1024x1536"
+  ];
+
   return (
     <div className="space-y-10">
       <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-black/30 p-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={tab === "chat" ? "primary" : "secondary"}
-            size="sm"
-            onClick={() => setTab("chat")}
-          >
-            文本对话
-          </Button>
-          <Button
-            variant={tab === "image" ? "primary" : "secondary"}
-            size="sm"
-            onClick={() => setTab("image")}
-          >
-            图像生成
-          </Button>
+        <div>
+          <p className="text-sm font-medium text-white">图像生成</p>
+          <p className="text-xs text-gray-500">选择模型及尺寸，输入提示词即可生成图片。</p>
         </div>
         <div className="text-xs text-gray-400">
           Credits 余额：{balance?.credits ?? "--"}
         </div>
       </div>
 
-      {tab === "chat" ? (
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-white/10 bg-black/30 p-4">
+      <div className="space-y-6">
+        <div className="grid gap-4 rounded-3xl border border-white/10 bg-black/30 p-4 md:grid-cols-2">
+          <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
               模型
             </label>
             <Select
-              value={selectedChatModel ?? ""}
-              onChange={(event) => setSelectedChatModel(event.target.value)}
+              value={selectedImageModel ?? ""}
+              onChange={(event) => setSelectedImageModel(event.target.value)}
+              disabled={imageModels.length === 0}
             >
-              {chatModels.map((model) => (
-                <option key={model.slug} value={model.slug}>
-                  {model.displayName} · {model.provider.name}
+              {imageModels.length === 0 ? (
+                <option value="">暂无可用模型</option>
+              ) : (
+                imageModels.map((model) => (
+                  <option key={model.slug} value={model.slug}>
+                    {model.displayName} · {model.provider.name}
+                  </option>
+                ))
+              )}
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+              图像尺寸
+            </label>
+            <Select
+              value={imageSize}
+              onChange={(event) => setImageSize(event.target.value)}
+            >
+              {availableSizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
                 </option>
               ))}
             </Select>
           </div>
-          <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-4">
-            <Textarea
-              rows={4}
-              placeholder="输入你的问题或提示词"
-              value={chatPrompt}
-              onChange={(event) => setChatPrompt(event.target.value)}
-            />
-            <Button onClick={handleChatSubmit} loading={chatLoading}>
-              发送对话
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {chatHistory.map((message, index) => (
-              <div
-                key={index}
-                className="rounded-3xl border border-white/10 bg-black/40 p-4 text-sm"
-              >
-                <div className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                  {message.role === "user" ? "你" : "AI"}
-                </div>
-                <p className="mt-2 whitespace-pre-wrap text-gray-200">{message.content}</p>
-              </div>
-            ))}
-          </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="grid gap-4 rounded-3xl border border-white/10 bg-black/30 p-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                模型
-              </label>
-              <Select
-                value={selectedImageModel ?? ""}
-                onChange={(event) => setSelectedImageModel(event.target.value)}
-              >
-                {imageModels.map((model) => (
-                  <option key={model.slug} value={model.slug}>
-                    {model.displayName} · {model.provider.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                图像尺寸
-              </label>
-              <Input value={imageSize} onChange={(event) => setImageSize(event.target.value)} />
-            </div>
-          </div>
-          <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-4">
-            <Textarea
-              rows={4}
-              placeholder="描述你想要生成的画面"
-              value={imagePrompt}
-              onChange={(event) => setImagePrompt(event.target.value)}
-            />
-            <Button onClick={handleImageGenerate} loading={imageLoading}>
-              生成图像
-            </Button>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {imageResults.map((item) => (
-              <div
-                key={item.id}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-black/40"
-              >
-                <img src={item.url} alt={item.title} className="w-full" />
-                <div className="p-3 text-sm text-gray-400">{item.title}</div>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-4">
+          <Textarea
+            rows={4}
+            placeholder="描述你想要生成的画面"
+            value={imagePrompt}
+            onChange={(event) => setImagePrompt(event.target.value)}
+          />
+          <Button
+            onClick={handleImageGenerate}
+            loading={imageLoading}
+            disabled={!selectedImageModel}
+          >
+            生成图像
+          </Button>
         </div>
-      )}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {imageResults.map((item) => (
+            <div
+              key={item.id}
+              className="overflow-hidden rounded-3xl border border-white/10 bg-black/40"
+            >
+              <img src={item.url} alt={item.title} className="w-full" />
+              <div className="p-3 text-sm text-gray-400">{item.title}</div>
+            </div>
+          ))}
+          {!imageResults.length && (
+            <div className="rounded-3xl border border-dashed border-white/10 bg-black/20 p-6 text-center text-xs text-gray-500 md:col-span-2 lg:col-span-3">
+              输入提示词并生成后，结果将展示在这里。
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

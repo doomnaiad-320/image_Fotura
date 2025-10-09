@@ -11,11 +11,13 @@ async function login(page, email: string, password: string) {
   await page.waitForURL("/**", { waitUntil: "networkidle" });
 }
 
-test("playground allows selecting model and submitting prompt", async ({ page }) => {
+test("playground shows image generation controls", async ({ page }) => {
   await login(page, USER_EMAIL, USER_PASSWORD);
   await page.goto("/studio");
   await expect(page.getByRole("heading", { name: "创作工作台" })).toBeVisible();
-  await page.getByPlaceholder("输入你的问题或提示词").fill("写一条欢迎语");
-  await page.getByRole("button", { name: "发送对话" }).click();
-  await expect(page.getByText("AI", { exact: false })).toBeVisible();
+  await expect(page.getByText("图像生成", { exact: false })).toBeVisible();
+  await expect(page.getByText("模型", { exact: false })).toBeVisible();
+  await expect(page.getByText("图像尺寸", { exact: false })).toBeVisible();
+  await page.getByPlaceholder("描述你想要生成的画面").fill("一只在月球上的猫");
+  await expect(page.getByRole("button", { name: "生成图像" })).toBeEnabled();
 });

@@ -83,14 +83,37 @@ type Props = {
 
 const fetcher = (url: string) => httpFetch<any>(url);
 
+type ImageLogView = {
+  id: string;
+  requestId: string;
+  status: "success" | "failed";
+  createdAt: string;
+  cost: number | null;
+  providerSlug: string | null;
+  modelSlug: string | null;
+  model: {
+    id: string;
+    slug: string;
+    displayName: string;
+  } | null;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+  } | null;
+};
+
+type TabKey = "providers" | "users" | "logs" | "imageLogs";
+
 export function AdminAIConsole({ initialProviders, initialModels }: Props) {
-  const tabs: { key: "providers" | "users" | "logs"; label: string }[] = [
+  const tabs: { key: TabKey; label: string }[] = [
     { key: "providers", label: "Provider 管理" },
     { key: "users", label: "用户管理" },
-    { key: "logs", label: "操作日志" }
+    { key: "logs", label: "操作日志" },
+    { key: "imageLogs", label: "生成日志" }
   ];
 
-  const [activeTab, setActiveTab] = useState<"providers" | "users" | "logs">("providers");
+  const [activeTab, setActiveTab] = useState<TabKey>("providers");
 
   const { data: providersData, mutate: mutateProviders } = useSWR(
     "/api/providers",
@@ -110,6 +133,15 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     fallbackData: { logs: [] },
     refreshInterval: 60_000
   });
+
+  const { data: imageLogsData, mutate: mutateImageLogs } = useSWR(
+    "/api/admin/image-logs",
+    fetcher,
+    {
+      fallbackData: { logs: [] },
+      refreshInterval: 60_000
+    }
+  );
 
   const normalizeArray = (value: unknown) =>
     Array.isArray(value) ? value.map((item) => String(item)) : [];
@@ -138,6 +170,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deletingModel, setDeletingModel] = useState<string | null>(null);
 
   const [modelSelector, setModelSelector] = useState<{
     open: boolean;
@@ -155,12 +188,26 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     selected: new Set()
   });
 
-  const [creditInputs, setCreditInputs] = useState<Record<string, string>>({});
-  const [reasonInputs, setReasonInputs] = useState<Record<string, string>>({});
+  const [creditModal, setCreditModal] = useState<{
+    open: boolean;
+    user: UserView | null;
+    mode: "increase" | "decrease";
+    amount: string;
+    reason: string;
+    submitting: boolean;
+  }>({
+    open: false,
+    user: null,
+    mode: "increase",
+    amount: "",
+    reason: "",
+    submitting: false
+  });
 
   const providers: ProviderView[] = providersData?.providers ?? [];
   const users: UserView[] = usersData?.users ?? [];
   const logs: LogView[] = logsData?.logs ?? [];
+  const imageLogs: ImageLogView[] = imageLogsData?.logs ?? [];
 
   const resetForm = () => {
     form.reset({
@@ -238,6 +285,23 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
       toast.error(error instanceof Error ? error.message : "同步失败");
     } finally {
       setSyncing(null);
+    }
+  };
+
+  const handleDeleteModel = async (slug: string, name: string) => {
+    if (!window.confirm(`确认删除模型 ${name} 吗？`)) {
+      return;
+    }
+    try {
+      setDeletingModel(slug);
+      await httpFetch(`/api/models/${slug}`, { method: "DELETE" });
+      toast.success("模型已删除");
+      await mutateModels();
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "删除失败");
+    } finally {
+      setDeletingModel(null);
     }
   };
 
@@ -332,28 +396,53 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     }
   };
 
-  const handleCreditsAdjust = async (userId: string, deltaSign: 1 | -1) => {
-    const value = creditInputs[userId];
-    const amount = Number(value);
-    if (!amount || Number.isNaN(amount)) {
+  const resetCreditModal = () =>
+    setCreditModal({
+      open: false,
+      user: null,
+      mode: "increase",
+      amount: "",
+      reason: "",
+      submitting: false
+    });
+
+  const openCreditAdjustment = (user: UserView) => {
+    setCreditModal({
+      open: true,
+      user,
+      mode: "increase",
+      amount: "",
+      reason: "",
+      submitting: false
+    });
+  };
+
+  const submitCreditAdjustment = async () => {
+    if (!creditModal.user) {
+      return;
+    }
+    const amount = Number(creditModal.amount);
+    if (!amount || Number.isNaN(amount) || amount <= 0) {
       toast.error("请输入有效的积分数");
       return;
     }
-    const delta = amount * deltaSign;
+    const delta = creditModal.mode === "increase" ? amount : -amount;
     try {
-      await httpFetch(`/api/admin/users/${userId}`, {
+      setCreditModal((prev) => ({ ...prev, submitting: true }));
+      await httpFetch(`/api/admin/users/${creditModal.user.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           creditsDelta: delta,
-          reason: reasonInputs[userId] || undefined
+          reason: creditModal.reason ? creditModal.reason : undefined
         })
       });
       toast.success("积分已调整");
-      setCreditInputs((prev) => ({ ...prev, [userId]: "" }));
       await mutateUsers();
+      resetCreditModal();
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "调整失败");
+      setCreditModal((prev) => ({ ...prev, submitting: false }));
     }
   };
 
@@ -500,23 +589,12 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button
-                      variant={model.enabled ? "secondary" : "primary"}
+                      variant="secondary"
                       size="sm"
-                      onClick={async () => {
-                        try {
-                          await httpFetch(`/api/models/${model.slug}`, {
-                            method: "PATCH",
-                            body: JSON.stringify({ enabled: !model.enabled })
-                          });
-                          toast.success("状态已更新");
-                          await mutateModels();
-                        } catch (error) {
-                          console.error(error);
-                          toast.error(error instanceof Error ? error.message : "更新失败");
-                        }
-                      }}
+                      loading={deletingModel === model.slug}
+                      onClick={() => handleDeleteModel(model.slug, model.displayName)}
                     >
-                      {model.enabled ? "禁用" : "启用"}
+                      删除
                     </Button>
                   </td>
                 </tr>
@@ -580,42 +658,13 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                   {new Date(user.createdAt).toLocaleString()}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <div className="flex flex-col items-end gap-2">
-                    <Input
-                      type="number"
-                      placeholder="积分"
-                      value={creditInputs[user.id] ?? ""}
-                      onChange={(event) =>
-                        setCreditInputs((prev) => ({ ...prev, [user.id]: event.target.value }))
-                      }
-                      className="w-32"
-                    />
-                    <Textarea
-                      rows={2}
-                      placeholder="调整原因 (可选)"
-                      value={reasonInputs[user.id] ?? ""}
-                      onChange={(event) =>
-                        setReasonInputs((prev) => ({ ...prev, [user.id]: event.target.value }))
-                      }
-                      className="w-48"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleCreditsAdjust(user.id, 1)}
-                      >
-                        增加
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleCreditsAdjust(user.id, -1)}
-                      >
-                        扣除
-                      </Button>
-                    </div>
-                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => openCreditAdjustment(user)}
+                  >
+                    调整积分
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -680,6 +729,70 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     </div>
   );
 
+  const imageLogsTab = (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-white">生成日志</h2>
+        <Button variant="secondary" size="sm" onClick={() => mutateImageLogs()}>
+          刷新
+        </Button>
+      </div>
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30">
+        <table className="min-w-full text-left text-sm text-gray-300">
+          <thead className="bg-white/5 text-xs uppercase tracking-[0.3em] text-gray-500">
+            <tr>
+              <th className="px-4 py-3">时间</th>
+              <th className="px-4 py-3">用户</th>
+              <th className="px-4 py-3">模型</th>
+              <th className="px-4 py-3">Provider</th>
+              <th className="px-4 py-3">状态</th>
+              <th className="px-4 py-3">消耗</th>
+              <th className="px-4 py-3 text-right">请求 ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {imageLogs.map((log) => {
+              const statusLabel = log.status === "success" ? "成功" : "失败";
+              const statusClass =
+                log.status === "success" ? "text-emerald-400" : "text-rose-400";
+              return (
+                <tr key={log.id} className="border-t border-white/5 hover:bg-white/5">
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-white">
+                    <div>{log.user?.email ?? "未知用户"}</div>
+                    <div className="text-gray-500">{log.user?.name ?? "未设置昵称"}</div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-300">
+                    {log.model?.displayName ?? log.modelSlug ?? "-"}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-300">
+                    {log.providerSlug ?? "-"}
+                  </td>
+                  <td className={`px-4 py-3 text-xs ${statusClass}`}>{statusLabel}</td>
+                  <td className="px-4 py-3 text-xs text-white">
+                    {typeof log.cost === "number" ? log.cost : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-right text-xs text-gray-500">
+                    {log.requestId}
+                  </td>
+                </tr>
+              );
+            })}
+            {imageLogs.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-xs text-gray-500">
+                  暂无生成日志记录。
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap gap-2">
@@ -698,6 +811,81 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
       {activeTab === "providers" && providersTab}
       {activeTab === "users" && usersTab}
       {activeTab === "logs" && logsTab}
+      {activeTab === "imageLogs" && imageLogsTab}
+
+      {creditModal.open && creditModal.user && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md space-y-5 rounded-3xl border border-white/10 bg-black p-6">
+            <header className="space-y-1">
+              <h3 className="text-lg font-semibold text-white">调整积分</h3>
+              <p className="text-xs text-gray-500">
+                {creditModal.user.email} · 当前余额 {creditModal.user.credits}
+              </p>
+            </header>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                  操作
+                </label>
+                <Select
+                  value={creditModal.mode}
+                  onChange={(event) =>
+                    setCreditModal((prev) => ({
+                      ...prev,
+                      mode: event.target.value as "increase" | "decrease"
+                    }))
+                  }
+                >
+                  <option value="increase">增加积分</option>
+                  <option value="decrease">扣除积分</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                  数量
+                </label>
+                <Input
+                  type="number"
+                  placeholder="输入积分数"
+                  value={creditModal.amount}
+                  onChange={(event) =>
+                    setCreditModal((prev) => ({ ...prev, amount: event.target.value }))
+                  }
+                  min={0}
+                />
+                <p className="text-xs text-gray-500">
+                  正整数，实际操作方向以上方选择为准。
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                  原因 (可选)
+                </label>
+                <Textarea
+                  rows={3}
+                  placeholder="备注原因，便于后续追溯"
+                  value={creditModal.reason}
+                  onChange={(event) =>
+                    setCreditModal((prev) => ({ ...prev, reason: event.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={resetCreditModal} disabled={creditModal.submitting}>
+                取消
+              </Button>
+              <Button
+                onClick={submitCreditAdjustment}
+                loading={creditModal.submitting}
+                disabled={!creditModal.amount.trim()}
+              >
+                确认
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modelSelector.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">

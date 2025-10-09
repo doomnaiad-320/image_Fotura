@@ -2,6 +2,7 @@ import OpenAI from "openai";
 
 import { decryptSecret } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
+import { parseProviderHeaders } from "@/lib/ai/providers";
 
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 60_000);
 const MOCK_AI = process.env.MOCK_AI === "1";
@@ -32,7 +33,17 @@ export async function resolveModel(modelSlug: string) {
     throw new Error("Provider 未配置 API Key");
   }
 
-  return { model, provider: model.provider, apiKey };
+  const provider = {
+    ...model.provider,
+    extraHeaders: parseProviderHeaders(model.provider.extraHeaders)
+  };
+
+  const normalizedModel = {
+    ...model,
+    provider
+  };
+
+  return { model: normalizedModel, provider, apiKey };
 }
 
 export function createOpenAIClient(context: ResolvedModel) {
@@ -40,7 +51,7 @@ export function createOpenAIClient(context: ResolvedModel) {
     return null;
   }
 
-  const headers = context.provider.extraHeaders as Record<string, string> | null;
+  const headers = parseProviderHeaders(context.provider.extraHeaders);
 
   return new OpenAI({
     apiKey: context.apiKey,
@@ -51,7 +62,7 @@ export function createOpenAIClient(context: ResolvedModel) {
 }
 
 export function getProviderHeaders(context: ResolvedModel) {
-  const headers = context.provider.extraHeaders as Record<string, string> | null;
+  const headers = parseProviderHeaders(context.provider.extraHeaders);
   return headers ?? {};
 }
 

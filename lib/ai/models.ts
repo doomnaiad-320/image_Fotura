@@ -1,8 +1,32 @@
 import { prisma } from "@/lib/prisma";
+import { serializeProviderHeaders } from "@/lib/ai/providers";
 import type { SeedProvider } from "@/seeds/providers";
 import { z } from "zod";
 
 import type { RemoteModel } from "./providers";
+
+function serializeStringArray(value?: string[] | null) {
+  return JSON.stringify(value ?? []);
+}
+
+function serializeRecord(value?: Record<string, unknown> | null) {
+  return JSON.stringify(value ?? {});
+}
+
+function parseStringArrayValue(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item));
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((item) => String(item)) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 const modelSchema = z.object({
   slug: z
@@ -51,11 +75,11 @@ export async function upsertModel(input: ModelInput) {
     update: {
       displayName: payload.displayName,
       family: payload.family,
-      modalities: payload.modalities,
+      modalities: serializeStringArray(payload.modalities),
       supportsStream: payload.supportsStream,
-      pricing: payload.pricing,
-      rateLimit: payload.rateLimit,
-      tags: payload.tags,
+      pricing: serializeRecord(payload.pricing as Record<string, unknown>),
+      rateLimit: serializeRecord(payload.rateLimit as Record<string, unknown>),
+      tags: serializeStringArray(payload.tags),
       sort: payload.sort,
       enabled: payload.enabled
     },
@@ -64,11 +88,11 @@ export async function upsertModel(input: ModelInput) {
       displayName: payload.displayName,
       providerId: provider.id,
       family: payload.family,
-      modalities: payload.modalities,
+      modalities: serializeStringArray(payload.modalities),
       supportsStream: payload.supportsStream,
-      pricing: payload.pricing,
-      rateLimit: payload.rateLimit,
-      tags: payload.tags,
+      pricing: serializeRecord(payload.pricing as Record<string, unknown>),
+      rateLimit: serializeRecord(payload.rateLimit as Record<string, unknown>),
+      tags: serializeStringArray(payload.tags),
       sort: payload.sort,
       enabled: payload.enabled
     }
@@ -77,6 +101,40 @@ export async function upsertModel(input: ModelInput) {
 
 export async function toggleModel(slug: string, enabled: boolean) {
   await prisma.aiModel.update({ where: { slug }, data: { enabled } });
+}
+
+export async function deleteModel(slug: string) {
+  await prisma.aiModel.delete({ where: { slug } });
+}
+
+export async function listEnabledModelsForPlayground() {
+  const models = await prisma.aiModel.findMany({
+    where: {
+      enabled: true,
+      provider: { enabled: true }
+    },
+    orderBy: [{ sort: "asc" }, { displayName: "asc" }],
+    select: {
+      slug: true,
+      displayName: true,
+      modalities: true,
+      supportsStream: true,
+      provider: {
+        select: {
+          slug: true,
+          name: true
+        }
+      }
+    }
+  });
+
+  return models.map((model) => ({
+    slug: model.slug,
+    displayName: model.displayName,
+    provider: model.provider,
+    modalities: parseStringArrayValue(model.modalities),
+    supportsStream: model.supportsStream
+  }));
 }
 
 export async function importRemoteModels(providerSlug: string, remotes: RemoteModel[]) {
@@ -95,8 +153,8 @@ export async function importRemoteModels(providerSlug: string, remotes: RemoteMo
       where: { slug: remote.id },
       update: {
         displayName: remote.name ?? remote.id,
-        tags: remote.capabilities ?? [],
-        modalities: remote.capabilities ?? [],
+        tags: serializeStringArray(remote.capabilities ?? []),
+        modalities: serializeStringArray(remote.capabilities ?? []),
         enabled: true,
         sort: index * 10
       },
@@ -105,17 +163,17 @@ export async function importRemoteModels(providerSlug: string, remotes: RemoteMo
         displayName: remote.name ?? remote.id,
         providerId: provider.id,
         family: remote.id.split(":")[0] ?? "custom",
-        modalities: remote.capabilities ?? [],
+        modalities: serializeStringArray(remote.capabilities ?? []),
         supportsStream: false,
-        pricing: {
+        pricing: serializeRecord({
           unit: "token",
           currency: "credit",
           inputPerK: 10,
           outputPerK: 30,
           minimum: 15
-        },
-        rateLimit: { rpm: 60 },
-        tags: remote.capabilities ?? [],
+        }),
+        rateLimit: serializeRecord({ rpm: 60 }),
+        tags: serializeStringArray(remote.capabilities ?? []),
         sort: index * 10,
         enabled: true
       }
@@ -153,7 +211,7 @@ export async function loadSeedsFromConfig(seeds: SeedProvider[]) {
         name: provider.name,
         baseURL: provider.baseURL,
         apiKeyEncrypted: "",
-        extraHeaders: provider.extraHeaders ?? {},
+        extraHeaders: serializeProviderHeaders(provider.extraHeaders ?? {}),
         enabled: true
       }
     });
@@ -164,11 +222,11 @@ export async function loadSeedsFromConfig(seeds: SeedProvider[]) {
         update: {
           displayName: model.displayName,
           family: model.family,
-          modalities: model.modalities,
+          modalities: serializeStringArray(model.modalities),
           supportsStream: model.supportsStream,
-          pricing: model.pricing,
-          rateLimit: model.rateLimit,
-          tags: model.tags,
+          pricing: serializeRecord(model.pricing),
+          rateLimit: serializeRecord(model.rateLimit),
+          tags: serializeStringArray(model.tags),
           enabled: true,
           sort: model.sort
         },
@@ -177,11 +235,11 @@ export async function loadSeedsFromConfig(seeds: SeedProvider[]) {
           displayName: model.displayName,
           providerId: createdProvider.id,
           family: model.family,
-          modalities: model.modalities,
+          modalities: serializeStringArray(model.modalities),
           supportsStream: model.supportsStream,
-          pricing: model.pricing,
-          rateLimit: model.rateLimit,
-          tags: model.tags,
+          pricing: serializeRecord(model.pricing),
+          rateLimit: serializeRecord(model.rateLimit),
+          tags: serializeStringArray(model.tags),
           enabled: true,
           sort: model.sort
         }
