@@ -118,6 +118,7 @@ export async function listEnabledModelsForPlayground() {
       slug: true,
       displayName: true,
       modalities: true,
+      tags: true,
       supportsStream: true,
       provider: {
         select: {
@@ -133,6 +134,7 @@ export async function listEnabledModelsForPlayground() {
     displayName: model.displayName,
     provider: model.provider,
     modalities: parseStringArrayValue(model.modalities),
+    tags: parseStringArrayValue(model.tags),
     supportsStream: model.supportsStream
   }));
 }

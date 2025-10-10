@@ -17,6 +17,24 @@ function parseStringArray(value: unknown) {
   return [];
 }
 
+function normalizePricing(value: unknown) {
+  if (!value) {
+    return null;
+  }
+  let raw: any = value;
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  return raw;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const providerSlug = searchParams.get("provider");
@@ -48,7 +66,8 @@ export async function GET(request: Request) {
   const payload = models.map((model) => ({
     ...model,
     modalities: parseStringArray(model.modalities),
-    tags: parseStringArray(model.tags)
+    tags: parseStringArray(model.tags),
+    pricing: normalizePricing(model.pricing)
   }));
 
   return NextResponse.json({ models: payload });

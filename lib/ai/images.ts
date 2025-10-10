@@ -28,6 +28,21 @@ export type ImageEditParams = {
   mask?: File;
 };
 
+function normalizePricingValue(value: unknown) {
+  if (!value) {
+    return {};
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed ?? {};
+    } catch {
+      return {};
+    }
+  }
+  return value;
+}
+
 export async function generateImages(params: ImageGenerateParams) {
   const context = await resolveModel(params.modelSlug);
   await ensureUserHasCredits(params.userId, 1);
@@ -36,7 +51,7 @@ export async function generateImages(params: ImageGenerateParams) {
   const responseFormat = params.responseFormat ?? "url";
 
   const estimatedCost = calculateImageCost({
-    pricing: context.model.pricing,
+    pricing: normalizePricingValue(context.model.pricing),
     size: params.size,
     quantity: n,
     mode: "generate"
@@ -132,7 +147,7 @@ export async function editImage(params: ImageEditParams) {
 
   const n = params.quantity ?? 1;
   const estimatedCost = calculateImageCost({
-    pricing: context.model.pricing,
+    pricing: normalizePricingValue(context.model.pricing),
     size: params.size,
     quantity: n,
     mode: "edit"

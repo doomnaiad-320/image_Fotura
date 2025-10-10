@@ -31,6 +31,24 @@ export type ProviderView = {
   createdAt: string;
 };
 
+type ImagePricingView = {
+  unit: "image";
+  currency: string;
+  base: number;
+  editBase?: number;
+  sizeMultipliers?: Record<string, number>;
+};
+
+type TokenPricingView = {
+  unit: "token";
+  currency: string;
+  inputPerK: number;
+  outputPerK: number;
+  minimum: number;
+};
+
+type ModelPricingView = ImagePricingView | TokenPricingView | null;
+
 export type ModelView = {
   slug: string;
   displayName: string;
@@ -39,9 +57,11 @@ export type ModelView = {
     name: string;
   };
   modalities: string[];
+  tags: string[];
   supportsStream: boolean;
   enabled: boolean;
   sort: number;
+  pricing: ModelPricingView;
 };
 
 type RemoteModelView = {
@@ -82,6 +102,8 @@ type Props = {
 };
 
 const fetcher = (url: string) => httpFetch<any>(url);
+
+const DEFAULT_IMAGE_SIZE_KEYS = ["512x512", "768x768", "1024x1024", "1024x1536"];
 
 type ImageLogView = {
   id: string;
@@ -143,14 +165,74 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     }
   );
 
-  const normalizeArray = (value: unknown) =>
-    Array.isArray(value) ? value.map((item) => String(item)) : [];
+  const normalizeArray = (value: unknown) => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item));
+    }
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.map((item) => String(item)) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const normalizePricing = (value: unknown): ModelPricingView => {
+    if (!value) {
+      return null;
+    }
+    let raw: any = value;
+    if (typeof raw === "string") {
+      try {
+        raw = JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+    if (!raw || typeof raw !== "object") {
+      return null;
+    }
+    if (raw.unit === "image") {
+      const sizeMultipliers = raw.sizeMultipliers && typeof raw.sizeMultipliers === "object"
+        ? Object.fromEntries(
+            Object.entries(raw.sizeMultipliers as Record<string, unknown>).map(([key, val]) => [
+              key,
+              Number(val ?? 1)
+            ])
+          )
+        : undefined;
+      const pricing: ImagePricingView = {
+        unit: "image",
+        currency: typeof raw.currency === "string" ? raw.currency : "credit",
+        base: Number(raw.base ?? 0),
+        editBase: raw.editBase != null ? Number(raw.editBase) : undefined,
+        sizeMultipliers
+      };
+      return pricing;
+    }
+    if (raw.unit === "token") {
+      const pricing: TokenPricingView = {
+        unit: "token",
+        currency: typeof raw.currency === "string" ? raw.currency : "credit",
+        inputPerK: Number(raw.inputPerK ?? 10),
+        outputPerK: Number(raw.outputPerK ?? 30),
+        minimum: Number(raw.minimum ?? 15)
+      };
+      return pricing;
+    }
+    return null;
+  };
 
   const modelsList = useMemo(() => {
     const list = (modelsData?.models ?? initialModels) as any[];
     return list.map((model) => ({
       ...model,
-      modalities: normalizeArray(model.modalities)
+      modalities: normalizeArray(model.modalities),
+      tags: normalizeArray(model.tags),
+      pricing: normalizePricing(model.pricing)
     }));
   }, [modelsData, initialModels]);
 
@@ -201,6 +283,25 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     mode: "increase",
     amount: "",
     reason: "",
+    submitting: false
+  });
+
+  const [pricingModal, setPricingModal] = useState<{
+    open: boolean;
+    model: ModelView | null;
+    base: string;
+    editBase: string;
+    multipliers: Record<string, string>;
+    submitting: boolean;
+  }>({
+    open: false,
+    model: null,
+    base: "",
+    editBase: "",
+    multipliers: DEFAULT_IMAGE_SIZE_KEYS.reduce<Record<string, string>>((acc, key) => {
+      acc[key] = "1";
+      return acc;
+    }, {}),
     submitting: false
   });
 
@@ -446,6 +547,110 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     }
   };
 
+  const resetPricingModal = () =>
+    setPricingModal({
+      open: false,
+      model: null,
+      base: "",
+      editBase: "",
+      multipliers: DEFAULT_IMAGE_SIZE_KEYS.reduce<Record<string, string>>((acc, key) => {
+        acc[key] = "1";
+        return acc;
+      }, {}),
+      submitting: false
+    });
+
+  const openPricingModalForModel = (model: ModelView) => {
+    const imagePricing = model.pricing && model.pricing.unit === "image" ? model.pricing : null;
+    const keys = Array.from(
+      new Set([
+        ...DEFAULT_IMAGE_SIZE_KEYS,
+        ...(imagePricing?.sizeMultipliers ? Object.keys(imagePricing.sizeMultipliers) : [])
+      ])
+    );
+    const multipliers = keys.reduce<Record<string, string>>((acc, key) => {
+      const value = imagePricing?.sizeMultipliers?.[key];
+      acc[key] = value != null ? String(value) : "1";
+      return acc;
+    }, {});
+
+    setPricingModal({
+      open: true,
+      model,
+      base: imagePricing?.base ? String(imagePricing.base) : "",
+      editBase:
+        imagePricing?.editBase != null && !Number.isNaN(imagePricing.editBase)
+          ? String(imagePricing.editBase)
+          : "",
+      multipliers,
+      submitting: false
+    });
+  };
+
+  const updatePricingMultiplier = (key: string, value: string) => {
+    setPricingModal((prev) => ({
+      ...prev,
+      multipliers: {
+        ...prev.multipliers,
+        [key]: value
+      }
+    }));
+  };
+
+  const submitPricing = async () => {
+    if (!pricingModal.model) {
+      return;
+    }
+
+    const baseValue = Number(pricingModal.base);
+    if (!Number.isFinite(baseValue) || baseValue <= 0) {
+      toast.error("请输入有效的基础价格");
+      return;
+    }
+
+    let editBaseValue: number | undefined;
+    if (pricingModal.editBase.trim()) {
+      const parsed = Number(pricingModal.editBase);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        toast.error("请输入有效的重绘价格");
+        return;
+      }
+      editBaseValue = parsed;
+    }
+
+    const multipliersEntries = Object.entries(pricingModal.multipliers);
+    const sizeMultipliers: Record<string, number> = {};
+    for (const [key, raw] of multipliersEntries) {
+      const value = Number(raw);
+      if (Number.isFinite(value) && value > 0) {
+        sizeMultipliers[key] = Number(value.toFixed(2));
+      }
+    }
+
+    const payload: ImagePricingView = {
+      unit: "image",
+      currency: "credit",
+      base: Math.round(baseValue),
+      ...(editBaseValue ? { editBase: Math.round(editBaseValue) } : {}),
+      ...(Object.keys(sizeMultipliers).length > 0 ? { sizeMultipliers } : {})
+    };
+
+    try {
+      setPricingModal((prev) => ({ ...prev, submitting: true }));
+      await httpFetch(`/api/models/${pricingModal.model.slug}`, {
+        method: "PUT",
+        body: JSON.stringify({ pricing: payload })
+      });
+      toast.success("价格已更新");
+      await mutateModels();
+      resetPricingModal();
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "保存失败");
+      setPricingModal((prev) => ({ ...prev, submitting: false }));
+    }
+  };
+
   const providersTab = (
     <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
@@ -577,26 +782,40 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             <tbody>
               {modelsList.map((model) => (
                 <tr key={model.slug} className="border-t border-white/5 hover:bg-white/5">
-                  <td className="px-4 py-3 text-white">
-                    <div className="font-semibold">{model.displayName}</div>
-                    <div className="text-xs text-gray-500">{model.slug}</div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-400">
-                    {model.provider.name}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-400">
-                    {model.modalities.length > 0 ? model.modalities.join(" · ") : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      loading={deletingModel === model.slug}
-                      onClick={() => handleDeleteModel(model.slug, model.displayName)}
-                    >
-                      删除
-                    </Button>
-                  </td>
+                    <td className="px-4 py-3 text-white">
+                      <div className="font-semibold">{model.displayName}</div>
+                      <div className="text-xs text-gray-500">{model.slug}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400">
+                      {model.provider.name}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400">
+                      {model.modalities.length > 0 ? model.modalities.join(" · ") : "-"}
+                      {model.pricing && model.pricing.unit === "image" && (
+                        <span className="ml-2 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
+                          ¥{model.pricing.base}/图
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openPricingModalForModel(model)}
+                        >
+                          设置价格
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          loading={deletingModel === model.slug}
+                          onClick={() => handleDeleteModel(model.slug, model.displayName)}
+                        >
+                          删除
+                        </Button>
+                      </div>
+                    </td>
                 </tr>
               ))}
               {modelsList.length === 0 && (
@@ -881,6 +1100,85 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                 disabled={!creditModal.amount.trim()}
               >
                 确认
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pricingModal.open && pricingModal.model && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-white/10 bg-black p-6">
+            <header className="space-y-1">
+              <h3 className="text-lg font-semibold text-white">设置价格</h3>
+              <p className="text-xs text-gray-500">
+                {pricingModal.model.displayName} · {pricingModal.model.slug}
+              </p>
+            </header>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                  基础价格 (文生图)
+                </label>
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  min={1}
+                  placeholder="例如 60"
+                  value={pricingModal.base}
+                  onChange={(event) =>
+                    setPricingModal((prev) => ({ ...prev, base: event.target.value.replace(/[^0-9]/g, "") }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                  重绘价格 (可选)
+                </label>
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  min={1}
+                  placeholder="默认同基础价"
+                  value={pricingModal.editBase}
+                  onChange={(event) =>
+                    setPricingModal((prev) => ({ ...prev, editBase: event.target.value.replace(/[^0-9]/g, "") }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                  尺寸倍率
+                </span>
+                <span className="text-xs text-gray-500">根据尺寸调整 Credits 消耗</span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {Object.keys(pricingModal.multipliers).map((key) => (
+                  <div key={key} className="space-y-2">
+                    <label className="text-xs text-gray-500">{key}</label>
+                    <Input
+                      inputMode="decimal"
+                      pattern="[0-9]*([.,][0-9]+)?"
+                      min={0.1}
+                      step={0.1}
+                      value={pricingModal.multipliers[key]}
+                      onChange={(event) => updatePricingMultiplier(key, event.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={resetPricingModal} disabled={pricingModal.submitting}>
+                取消
+              </Button>
+              <Button onClick={submitPricing} loading={pricingModal.submitting}>
+                保存
               </Button>
             </div>
           </div>

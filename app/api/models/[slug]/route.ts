@@ -19,6 +19,24 @@ const updateSchema = z.object({
   enabled: z.boolean().optional()
 });
 
+function parseJsonObject(value: unknown): Record<string, unknown> | null {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === "object") {
+    return value as Record<string, unknown>;
+  }
+  return null;
+}
+
 export async function PUT(
   request: Request,
   context: { params: { slug: string } }
@@ -50,6 +68,9 @@ export async function PUT(
       return NextResponse.json({ message: "关联 Provider 不存在" }, { status: 400 });
     }
 
+    const existingPricing = parseJsonObject(existing.pricing);
+    const nextPricing = parseJsonObject(payload.pricing) ?? existingPricing ?? {};
+
     const model = await upsertModel({
       slug: context.params.slug,
       displayName: payload.displayName ?? existing.displayName,
@@ -57,7 +78,7 @@ export async function PUT(
       family: payload.family ?? existing.family,
       modalities: payload.modalities ?? ((existing.modalities as string[]) ?? []),
       supportsStream: payload.supportsStream ?? existing.supportsStream,
-      pricing: payload.pricing ?? (existing.pricing as Record<string, unknown>),
+      pricing: nextPricing,
       rateLimit: payload.rateLimit ?? (existing.rateLimit as Record<string, unknown>),
       tags: payload.tags ?? ((existing.tags as string[]) ?? []),
       sort: payload.sort ?? existing.sort,

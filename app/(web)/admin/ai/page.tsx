@@ -59,14 +59,34 @@ export default async function AdminAIPage() {
     return [];
   };
 
+  const parsePricing = (value: unknown): Record<string, unknown> | null => {
+    if (!value) {
+      return null;
+    }
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+      } catch {
+        return null;
+      }
+    }
+    if (typeof value === "object") {
+      return value as Record<string, unknown>;
+    }
+    return null;
+  };
+
   const modelView = models.map((model) => ({
     slug: model.slug,
     displayName: model.displayName,
     provider: model.provider,
     modalities: parseModalities(model.modalities),
+    tags: parseModalities(model.tags),
     supportsStream: model.supportsStream,
     enabled: model.enabled,
-    sort: model.sort
+    sort: model.sort,
+    pricing: parsePricing(model.pricing)
   }));
 
   return (

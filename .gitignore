@@ -36,3 +36,4 @@ pnpm-debug.log*
 
 # Mac/Linux generated files
 .vscode
+WARP.md
