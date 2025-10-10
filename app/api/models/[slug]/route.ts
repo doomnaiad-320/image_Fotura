@@ -37,6 +37,21 @@ function parseJsonObject(value: unknown): Record<string, unknown> | null {
   return null;
 }
 
+function parseJsonArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export async function PUT(
   request: Request,
   context: { params: { slug: string } }
@@ -71,16 +86,20 @@ export async function PUT(
     const existingPricing = parseJsonObject(existing.pricing);
     const nextPricing = parseJsonObject(payload.pricing) ?? existingPricing ?? {};
 
+    const existingModalities = parseJsonArray(existing.modalities);
+    const existingRateLimit = parseJsonObject(existing.rateLimit) ?? {};
+    const existingTags = parseJsonArray(existing.tags);
+
     const model = await upsertModel({
       slug: context.params.slug,
       displayName: payload.displayName ?? existing.displayName,
       providerSlug: provider.slug,
       family: payload.family ?? existing.family,
-      modalities: payload.modalities ?? ((existing.modalities as string[]) ?? []),
+      modalities: payload.modalities ?? existingModalities,
       supportsStream: payload.supportsStream ?? existing.supportsStream,
       pricing: nextPricing,
-      rateLimit: payload.rateLimit ?? (existing.rateLimit as Record<string, unknown>),
-      tags: payload.tags ?? ((existing.tags as string[]) ?? []),
+      rateLimit: payload.rateLimit ?? existingRateLimit,
+      tags: payload.tags ?? existingTags,
       sort: payload.sort ?? existing.sort,
       enabled: payload.enabled ?? existing.enabled
     });

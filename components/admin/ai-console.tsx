@@ -524,7 +524,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     }
     const amount = Number(creditModal.amount);
     if (!amount || Number.isNaN(amount) || amount <= 0) {
-      toast.error("请输入有效的积分数");
+      toast.error("请输入有效的豆数");
       return;
     }
     const delta = creditModal.mode === "increase" ? amount : -amount;
@@ -537,7 +537,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
           reason: creditModal.reason ? creditModal.reason : undefined
         })
       });
-      toast.success("积分已调整");
+      toast.success("豆已调整");
       await mutateUsers();
       resetCreditModal();
     } catch (error) {
@@ -793,7 +793,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                       {model.modalities.length > 0 ? model.modalities.join(" · ") : "-"}
                       {model.pricing && model.pricing.unit === "image" && (
                         <span className="ml-2 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
-                          ¥{model.pricing.base}/图
+                          {model.pricing.base}豆/图
                         </span>
                       )}
                     </td>
@@ -846,7 +846,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             <tr>
               <th className="px-4 py-3">用户</th>
               <th className="px-4 py-3">角色</th>
-              <th className="px-4 py-3">积分余额</th>
+              <th className="px-4 py-3">豆余额</th>
               <th className="px-4 py-3">创建时间</th>
               <th className="px-4 py-3 text-right">操作</th>
             </tr>
@@ -882,7 +882,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                     size="sm"
                     onClick={() => openCreditAdjustment(user)}
                   >
-                    调整积分
+                    调整豆
                   </Button>
                 </td>
               </tr>
@@ -1036,9 +1036,9 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-md space-y-5 rounded-3xl border border-white/10 bg-black p-6">
             <header className="space-y-1">
-              <h3 className="text-lg font-semibold text-white">调整积分</h3>
+              <h3 className="text-lg font-semibold text-white">调整豆</h3>
               <p className="text-xs text-gray-500">
-                {creditModal.user.email} · 当前余额 {creditModal.user.credits}
+                {creditModal.user.email} · 当前余额 {creditModal.user.credits} 豆
               </p>
             </header>
             <div className="space-y-4">
@@ -1055,8 +1055,8 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                     }))
                   }
                 >
-                  <option value="increase">增加积分</option>
-                  <option value="decrease">扣除积分</option>
+                  <option value="increase">增加豆</option>
+                  <option value="decrease">扣除豆</option>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -1065,7 +1065,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                 </label>
                 <Input
                   type="number"
-                  placeholder="输入积分数"
+                  placeholder="输入豆数"
                   value={creditModal.amount}
                   onChange={(event) =>
                     setCreditModal((prev) => ({ ...prev, amount: event.target.value }))

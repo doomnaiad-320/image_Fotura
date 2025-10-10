@@ -65,15 +65,6 @@ const toStringArray = (value: unknown): string[] => {
   return [];
 };
 
-const supportsImageModel = (model: ModelOption) => {
-  const modalities = model.modalities ?? [];
-  const tags = model.tags ?? [];
-  const combined = [...modalities, ...tags].map((value) => value.toLowerCase());
-  if (combined.some((value) => value.includes("image") || value.includes("img"))) {
-    return true;
-  }
-  return modalities.length === 0 && tags.length === 0;
-};
 
 export function AIPlayground({ models, isAuthenticated }: Props) {
   const { data: modelResponse } = useSWR<{ models: ModelOption[] }>(
@@ -113,10 +104,8 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
     { refreshInterval: 60_000 }
   );
 
-  const imageModels = useMemo(
-    () => latestModels.filter((model) => supportsImageModel(model)),
-    [latestModels]
-  );
+  // 显示所有启用的模型，用户手动选择用于生图
+  const imageModels = useMemo(() => latestModels, [latestModels]);
 
   const ratioOptions = useMemo(() => Object.keys(ASPECT_RATIO_OPTIONS), []);
   const sizeOptions = useMemo(
@@ -310,7 +299,7 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
             </div>
           </div>
           <p className="text-xs text-gray-400">
-            Credits 余额：{balance?.credits ?? "--"}
+            豆余额：{balance?.credits ?? "--"}
           </p>
         </div>
 
@@ -335,7 +324,7 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
                   return (
                     <option key={model.slug} value={model.slug}>
                       {model.displayName}
-                      {basePrice ? ` · ¥${basePrice}` : ""}
+                      {basePrice ? ` · ${basePrice}豆/图` : ""}
                     </option>
                   );
                 })
@@ -382,7 +371,7 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
           </div>
           {imageModels.length === 0 && (
             <p className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-3 text-xs text-gray-500">
-              暂无可用的图像模型，请联系管理员在后台同步 Provider。
+              暂无可用模型，请联系管理员在后台同步 Provider。
             </p>
           )}
         </div>

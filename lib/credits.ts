@@ -29,7 +29,7 @@ export async function prechargeCredits(input: CreditPrechargeInput) {
     }
 
     if (user.credits < input.amount) {
-      throw new Error("余额不足");
+      throw new Error("豆不足");
     }
 
     await tx.user.update({
@@ -104,7 +104,7 @@ export async function finalizeCredits(
       data: {
         status: data.status,
         delta,
-        metadata: data.metadata ?? transaction.metadata
+        metadata: data.metadata ? JSON.stringify(data.metadata) : transaction.metadata
       }
     });
   });
@@ -168,7 +168,7 @@ export async function adjustCreditsByAdmin({
     }
 
     if (amount < 0 && target.credits < Math.abs(amount)) {
-      throw new Error("余额不足，无法扣减");
+      throw new Error("豆不足，无法扣减");
     }
 
     if (amount > 0) {

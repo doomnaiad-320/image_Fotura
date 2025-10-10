@@ -17,7 +17,7 @@ export async function ensureUserHasCredits(userId: string, cost: number) {
     throw new GuardError("用户不存在", 401);
   }
   if (user.credits < cost) {
-    throw new GuardError("余额不足，请先充值或申请额度", 402);
+    throw new GuardError("豆不足，请先充值或申请额度", 402);
   }
 }
 

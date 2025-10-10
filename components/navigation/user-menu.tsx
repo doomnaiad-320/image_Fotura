@@ -15,7 +15,7 @@ export function UserMenu({ user }: Props) {
   return (
     <div className="flex items-center gap-3">
       <Badge className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white">
-        Credits {user.credits}
+        {user.credits} 豆
       </Badge>
       {user.role === "admin" && (
         <Link

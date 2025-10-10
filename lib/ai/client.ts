@@ -53,9 +53,13 @@ export function createOpenAIClient(context: ResolvedModel) {
 
   const headers = parseProviderHeaders(context.provider.extraHeaders);
 
+  // Ensure baseURL targets the OpenAI-compatible /v1 root
+  const base = context.provider.baseURL.replace(/\/$/, "");
+  const baseWithV1 = /\/v1(\/|$)/.test(base) ? base : `${base}/v1`;
+
   return new OpenAI({
     apiKey: context.apiKey,
-    baseURL: context.provider.baseURL.replace(/\/$/, ""),
+    baseURL: baseWithV1,
     defaultHeaders: headers ?? undefined,
     timeout: AI_TIMEOUT_MS
   });
