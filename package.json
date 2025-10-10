@@ -13,6 +13,7 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
+    "seed:reset": "cross-env FORCE_RESET=1 tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",

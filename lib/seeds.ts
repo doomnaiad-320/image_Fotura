@@ -15,6 +15,7 @@ export type SeedOptions = {
   adminPassword?: string;
   userPassword?: string;
   enforceEncryptionKey?: string;
+  forceReset?: boolean; // 强制重置数据库（默认 false）
 };
 
 export type SeedResult = {
@@ -36,6 +37,32 @@ export async function runSeed(
   if (!process.env.ENCRYPTION_KEY) {
     process.env.ENCRYPTION_KEY =
       options.enforceEncryptionKey ?? FALLBACK_ENCRYPTION_KEY;
+  }
+
+  // 检查数据库是否已经有数据
+  const existingUserCount = await prisma.user.count();
+  const forceReset = options.forceReset ?? false;
+
+  if (existingUserCount > 0 && !forceReset) {
+    console.log("[seed] ⚠️  数据库已有数据，跳过初始化");
+    console.log("[seed] 💡 如需重置数据库，请运行: npm run seed:reset");
+    
+    // 返回现有的管理员和用户
+    const admin = await prisma.user.findFirst({ where: { role: "admin" } });
+    const user = await prisma.user.findFirst({ where: { role: "user" } });
+    const models = await prisma.aiModel.findMany();
+    
+    return {
+      admin: admin || ({} as User),
+      user: user || ({} as User),
+      models
+    };
+  }
+
+  if (forceReset) {
+    console.log("[seed] 🔄 强制重置模式：清空所有数据...");
+  } else {
+    console.log("[seed] 🆕 数据库为空，开始初始化...");
   }
 
   await prisma.$transaction([
