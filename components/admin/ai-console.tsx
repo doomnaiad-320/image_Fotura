@@ -14,9 +14,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { httpFetch } from "@/lib/http";
 
 const providerSchema = z.object({
-  slug: z.string().min(2),
-  name: z.string().min(2),
-  baseURL: z.string().url(),
+  slug: z
+    .string()
+    .min(2, "至少 2 个字符")
+    .max(40, "最多 40 个字符")
+    .regex(
+      /^[a-z0-9-]+$/,
+      "只允许小写字母、数字和连字符，例如: openai, gpt-4, claude-3"
+    ),
+  name: z.string().min(2, "至少 2 个字符"),
+  baseURL: z.string().url("请输入有效的 URL"),
   apiKey: z.string().optional().nullable(),
   enabled: z.boolean()
 });
@@ -661,18 +668,37 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.3em] text-gray-500">Slug</label>
             <Input
-              placeholder="openrouter"
+              placeholder="openai"
               disabled={Boolean(editingSlug)}
               {...form.register("slug")}
             />
+            {form.formState.errors.slug ? (
+              <p className="text-xs text-red-400">
+                {form.formState.errors.slug.message}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                只允许小写字母、数字和连字符，例如: openai, gpt-4-turbo
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.3em] text-gray-500">名称</label>
             <Input placeholder="OpenRouter" {...form.register("name")} />
+            {form.formState.errors.name && (
+              <p className="text-xs text-red-400">
+                {form.formState.errors.name.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.3em] text-gray-500">Base URL</label>
             <Input placeholder="https://openrouter.ai/api" {...form.register("baseURL")} />
+            {form.formState.errors.baseURL && (
+              <p className="text-xs text-red-400">
+                {form.formState.errors.baseURL.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.3em] text-gray-500">API Key</label>
