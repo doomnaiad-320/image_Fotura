@@ -11,6 +11,7 @@ import { httpFetch } from "@/lib/http";
 import ImageEditorCanvas from "./image-editor-canvas";
 import ResultDisplay from "./result-display";
 import HistoryPanel, { GeneratedImage } from "./history-panel";
+import { useLocalHistory } from "@/lib/hooks/useLocalHistory";
 
 export type ModelOption = {
   slug: string;
@@ -109,7 +110,13 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
   const [isMaskToolActive, setIsMaskToolActive] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
-  const [history, setHistory] = useState<GeneratedImage[]>([]);
+  // 使用本地存储 Hook 替代内存状态
+  const {
+    history,
+    loading: historyLoading,
+    addHistory: addLocalHistory,
+    supported: storageSupported
+  } = useLocalHistory();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
@@ -176,29 +183,54 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
   }, []);
 
   const handleUseImageAsInput = useCallback((imageUrl: string) => {
-    // Convert the image URL to a File object for seamless integration
-    fetch(imageUrl)
-      .then(res => res.blob())
-      .then(blob => {
-        const file = new File([blob], `input-${Date.now()}.png`, { type: 'image/png' });
+    // 通过本地代理拉取，避免跨域/304问题
+    const isHttp = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
+    const proxyUrl = isHttp ? `/api/proxy/image?url=${encodeURIComponent(imageUrl)}` : imageUrl;
+
+    fetch(proxyUrl, { cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const type = blob.type || "image/png";
+        const file = new File([blob], `input-${Date.now()}.png`, { type });
         handleImageSelect(file, imageUrl);
         setMode("img2img");
         toast.success("图片已设为输入");
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err);
         toast.error("设置输入图片失败");
       });
   }, [handleImageSelect]);
 
-  const addToHistory = useCallback((imageUrl: string, title: string) => {
-    const newImage: GeneratedImage = {
-      id: `generated-${Date.now()}-${Math.random()}`,
-      url: imageUrl,
-      title,
-      timestamp: Date.now()
-    };
-    setHistory(prev => [newImage, ...prev]);
-  }, []);
+  const addToHistory = useCallback(async (imageUrl: string, prompt: string, modelSlug?: string, genMode?: GenerationMode, size?: string) => {
+    // 获取模型显示名称
+    const model = imageModels.find(m => m.slug === modelSlug);
+    const modelName = model?.displayName;
+    
+    try {
+      if (storageSupported) {
+        // 使用本地存储
+        await addLocalHistory(imageUrl, prompt, {
+          model: modelSlug,
+          modelName: modelName,
+          mode: genMode,
+          size: size,
+          parameters: {
+            aspectRatio: aspectRatio
+          }
+        });
+      } else {
+        // 降级：使用内存存储（刷新会丢失）
+        console.warn('浏览器不支持 IndexedDB，使用内存存储');
+      }
+    } catch (error) {
+      console.error('保存历史记录失败:', error);
+      // 不阻塞用户操作
+    }
+  }, [imageModels, addLocalHistory, storageSupported, aspectRatio]);
 
   const ensureLogin = () => {
     if (!isAuthenticated) {
@@ -286,7 +318,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
       }
 
       setGeneratedImageUrl(imageUrl);
-      addToHistory(imageUrl, imagePrompt);
+      addToHistory(imageUrl, imagePrompt, selectedImageModel, mode, imageSize);
       await refreshBalance();
       toast.success("生成成功！");
 

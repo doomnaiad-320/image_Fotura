@@ -37,3 +37,5 @@ pnpm-debug.log*
 # Mac/Linux generated files
 .vscode
 WARP.md
+LOCAL_STORAGE_PLAN.md
+HISTORY_PANEL_DESIGN.md
