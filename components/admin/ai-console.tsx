@@ -974,6 +974,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     </div>
   );
 
+
   const imageLogsTab = (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

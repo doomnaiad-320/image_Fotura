@@ -28,9 +28,10 @@ export interface UseLocalHistoryReturn {
     mode?: 'txt2img' | 'img2img';
     size?: string;
     parameters?: any;
-  }) => Promise<void>;
+  }) => Promise<{ localUrl: string; historyId: string }>;
   removeHistory: (id: string) => Promise<void>;
   clearHistory: () => Promise<void>;
+  clearOldDays: (days: number) => Promise<number>;
   toggleFavorite: (id: string) => Promise<void>;
   refreshHistory: () => Promise<void>;
   
@@ -50,10 +51,9 @@ async function historyStoreToGeneratedImage(
 ): Promise<GeneratedImage> {
   const db = await getDB();
   
-  // 尝试从缓存获取URL
+  // 尝试从缓存获取URL（缩略图优先）
   let blobUrl = blobManager.getCachedURL(historyStore.imageId);
   
-  // 如果没有缓存，从IndexedDB读取并创建URL
   if (!blobUrl) {
     const blob = await db.getThumbnail(historyStore.imageId);
     if (blob) {
@@ -70,7 +70,8 @@ async function historyStoreToGeneratedImage(
     modelName: historyStore.modelName,
     timestamp: historyStore.timestamp,
     mode: historyStore.mode,
-    size: historyStore.size
+    size: historyStore.size,
+    favorite: historyStore.favorite
   };
 }
 
@@ -154,7 +155,7 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       size?: string;
       parameters?: any;
     }
-  ) => {
+  ): Promise<{ localUrl: string; historyId: string }> => {
     if (!supported) {
       throw new Error('浏览器不支持 IndexedDB');
     }
@@ -169,10 +170,13 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       
       const db = await getDB();
       
-      // 保存图片到 IndexedDB
-      const imageId = await db.saveImage(blob);
+      // 生成缩略图 100x100
+      const thumb = await createThumbnail(blob, 100, 100);
       
-      // 创建本地 blob URL
+      // 保存图片到 IndexedDB（含缩略图）
+      const imageId = await db.saveImage(blob, thumb ?? undefined);
+      
+      // 创建本地 blob URL（展示使用缩略图更节省资源，这里仍用原图 URL 以便立即编辑）
       const localUrl = blobManagerRef.current.createObjectURL(blob, imageId);
       
       // 保存历史记录元数据
@@ -203,7 +207,8 @@ export function useLocalHistory(): UseLocalHistoryReturn {
         modelName: metadata.modelName,
         timestamp: Date.now(),
         mode: metadata.mode,
-        size: metadata.size
+        size: metadata.size,
+        favorite: false
       };
       
       setHistory(prev => [newImage, ...prev]);
@@ -211,6 +216,7 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       // 更新统计
       await loadStats();
       
+      return { localUrl, historyId };
     } catch (err) {
       console.error('添加历史记录失败:', err);
       throw err;
@@ -270,6 +276,17 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       throw err;
     }
   }, [supported]);
+
+  /** 清理指定天数之前的非收藏记录 */
+  const clearOldDays = useCallback(async (days: number) => {
+    if (!supported) return 0;
+    const db = await getDB();
+    const before = Date.now() - days * 24 * 60 * 60 * 1000;
+    const removed = await db.clearOldHistory(before);
+    await loadHistory();
+    await loadStats();
+    return removed;
+  }, [supported, loadHistory, loadStats]);
 
   /**
    * 切换收藏状态
@@ -416,6 +433,39 @@ export function useLocalHistory(): UseLocalHistoryReturn {
     searchHistory,
     filterByModel,
     showFavorites,
-    showAll
+    showAll,
+    clearOldDays
   };
+}
+
+/** 生成缩略图 (canvas) */
+async function createThumbnail(srcBlob: Blob, width: number, height: number): Promise<Blob | null> {
+  try {
+    const img = await blobToImage(srcBlob);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    canvas.width = width;
+    canvas.height = height;
+    // cover 裁剪填充
+    const ratio = Math.max(width / img.width, height / img.height);
+    const newW = img.width * ratio;
+    const newH = img.height * ratio;
+    const dx = (width - newW) / 2;
+    const dy = (height - newH) / 2;
+    ctx.drawImage(img, dx, dy, newW, newH);
+    return await new Promise<Blob | null>((resolve) => canvas.toBlob((b)=>resolve(b), 'image/png', 0.85));
+  } catch {
+    return null;
+  }
+}
+
+function blobToImage(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
 }

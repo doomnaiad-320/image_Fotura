@@ -12,6 +12,7 @@ export interface GeneratedImage {
   timestamp: number;
   mode?: 'txt2img' | 'img2img'; // 生成模式
   size?: string; // 图片尺寸
+  favorite?: boolean; // 是否收藏
 }
 
 interface HistoryPanelProps {
@@ -20,6 +21,12 @@ interface HistoryPanelProps {
   history: GeneratedImage[];
   onUseImage: (imageUrl: string) => void;
   onDownload: (url: string) => void;
+  // 新增：筛选与收藏/搜索回调
+  onSearch?: (keyword: string) => void;
+  onFilterModel?: (model: string) => void;
+  onShowFavorites?: () => void;
+  onShowAll?: () => void;
+  onToggleFavorite?: (id: string) => void;
 }
 
 const downloadImage = (url: string, filename: string) => {
@@ -143,17 +150,26 @@ const HistoryItem: React.FC<{
           </div>
           
           {/* 模型信息 */}
-          {item.modelName && (
-            <div className="flex items-center gap-2 text-xs">
-              <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-              </svg>
-              <span className="text-gray-400">{item.modelName}</span>
-              {item.size && (
-                <span className="text-gray-500">· {item.size}</span>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-xs">
+            {item.modelName && (
+              <>
+                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+                <span className="text-gray-400">{item.modelName}</span>
+              </>
+            )}
+            {item.size && (
+              <span className="text-gray-500">· {item.size}</span>
+            )}
+            <button
+              onClick={() => onToggleFavorite?.(item.id)}
+              className={`ml-auto text-xs ${item.favorite ? 'text-yellow-400' : 'text-gray-500'} hover:text-yellow-300`}
+              title={item.favorite ? '取消收藏' : '收藏'}
+            >
+              {item.favorite ? '★' : '☆'}
+            </button>
+          </div>
           
           {/* 操作按钮 */}
           <div className="flex gap-2 mt-auto">
@@ -185,7 +201,7 @@ const HistoryItem: React.FC<{
   );
 };
 
-const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, onUseImage, onDownload }) => {
+const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, onUseImage, onDownload, onSearch, onFilterModel, onShowFavorites, onShowAll, onToggleFavorite }) => {
   const handleDownload = (url: string) => {
     const filename = `generated-image-${Date.now()}.png`;
     downloadImage(url, filename);
@@ -196,8 +212,17 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
       <div className={`absolute top-0 right-0 h-full w-full max-w-md bg-gray-900 border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="p-4 border-b border-white/10 flex justify-between items-center flex-shrink-0">
+        <div className="p-4 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
           <h2 className="text-xl font-semibold text-orange-500">生成历史</h2>
+          <div className="ml-auto flex items-center gap-2">
+            <input
+              className="rounded-md bg-black/40 px-2 py-1 text-sm text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              placeholder="搜索提示词..."
+              onChange={(e) => onSearch?.(e.target.value)}
+            />
+            <button className="text-xs text-gray-400 hover:text-white" onClick={() => onShowAll?.()}>全部</button>
+            <button className="text-xs text-gray-400 hover:text-white" onClick={() => onShowFavorites?.()}>收藏</button>
+          </div>
           <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />

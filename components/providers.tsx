@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { useState, type ReactNode } from "react";
+import { ThemeBackgroundProvider, BackgroundLayer } from "@/components/theme/background-provider";
 
 type Props = {
   children: ReactNode;
@@ -24,7 +25,12 @@ export function Providers({ children }: Props) {
 
   return (
     <SessionProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeBackgroundProvider>
+          <BackgroundLayer />
+          {children}
+        </ThemeBackgroundProvider>
+      </QueryClientProvider>
     </SessionProvider>
   );
 }

@@ -17,6 +17,12 @@ export function UserMenu({ user }: Props) {
       <Badge className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white">
         {user.credits} 豆
       </Badge>
+      <Link
+        href="/settings"
+        className="rounded-full border border-white/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-gray-300 transition hover:border-white/40"
+      >
+        控制台
+      </Link>
       {user.role === "admin" && (
         <Link
           href="/admin/ai"

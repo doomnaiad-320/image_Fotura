@@ -115,7 +115,12 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
     history,
     loading: historyLoading,
     addHistory: addLocalHistory,
-    supported: storageSupported
+    supported: storageSupported,
+    searchHistory,
+    showAll,
+    filterByModel,
+    showFavorites,
+    toggleFavorite
   } = useLocalHistory();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -212,8 +217,8 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
     
     try {
       if (storageSupported) {
-        // 使用本地存储
-        await addLocalHistory(imageUrl, prompt, {
+        // 使用本地存储，并拿到本地URL
+        const { localUrl } = await addLocalHistory(imageUrl, prompt, {
           model: modelSlug,
           modelName: modelName,
           mode: genMode,
@@ -222,6 +227,8 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
             aspectRatio: aspectRatio
           }
         });
+        // 用本地URL更新结果展示，保证“作为输入”直接读取本地
+        setGeneratedImageUrl(localUrl);
       } else {
         // 降级：使用内存存储（刷新会丢失）
         console.warn('浏览器不支持 IndexedDB，使用内存存储');
@@ -507,6 +514,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         >
           {mode === "img2img" ? "重绘图像" : "生成图像"}
         </Button>
+
       </aside>
 
       {/* Right Panel - Results */}
@@ -535,6 +543,11 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         history={history}
         onUseImage={handleUseImageAsInput}
         onDownload={() => {}}
+        onSearch={(kw) => kw ? searchHistory(kw) : showAll()}
+        onFilterModel={(m) => m ? filterByModel(m) : showAll()}
+        onShowFavorites={() => showFavorites()}
+        onShowAll={() => showAll()}
+        onToggleFavorite={(id) => toggleFavorite(id)}
       />
 
       {/* Image Preview Modal */}
