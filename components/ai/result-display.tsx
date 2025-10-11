@@ -154,8 +154,8 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
 
   if (!imageUrl) {
     return (
-      <div className="w-full h-full flex items-center justify-center rounded-lg border border-dashed border-white/20 bg-black/10">
-        <p className="text-gray-400 text-sm">生成结果将在这里展示</p>
+<div className="w-full h-full flex items-center justify-center rounded-lg border border-dashed border-default bg-surface">
+        <p className="text-muted-foreground text-sm">生成结果将在这里展示</p>
       </div>
     );
   }

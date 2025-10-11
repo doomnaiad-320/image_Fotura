@@ -204,17 +204,17 @@ const ImageEditorCanvas: React.FC<ImageEditorCanvasProps> = ({
             onDrop={handleDrop} 
             onDragOver={handleDragOver} 
             onDragLeave={handleDragLeave}
-            className={`relative w-full aspect-square bg-black/20 rounded-lg flex items-center justify-center transition-colors duration-200 select-none ${
+className={`relative w-full aspect-square bg-surface rounded-lg flex items-center justify-center transition-colors duration-200 select-none ${
             isDragging ? 'outline-dashed outline-2 outline-orange-500 bg-orange-500/10' : ''
-            } ${initialImageUrl ? 'p-0' : 'p-4 border-2 border-dashed border-white/20'}`}
+            } ${initialImageUrl ? 'p-0' : 'p-4 border-2 border-dashed border-default'}`}
         >
             {!initialImageUrl ? (
-                <label htmlFor="file-upload" className="flex flex-col items-center justify-center text-gray-400 cursor-pointer w-full h-full">
+<label htmlFor="file-upload" className="flex flex-col items-center justify-center text-muted-foreground cursor-pointer w-full h-full">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.158 0h.008v.008h-.008V8.25z" />
                     </svg>
                     <p className="mb-2 text-sm">
-                      <span className="font-semibold text-gray-300">点击上传</span> 或拖拽图片到此处
+<span className="font-semibold text-foreground">点击上传</span> 或拖拽图片到此处
                     </p>
                     <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                 </label>
