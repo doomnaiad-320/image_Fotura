@@ -15,10 +15,10 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClassName: Record<ButtonVariant, string> = {
   primary:
-    "bg-white text-black hover:bg-gray-200 disabled:bg-white/60 disabled:text-black/60",
+    "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60",
   secondary:
-    "border border-white/20 text-white hover:border-white/40 disabled:border-white/10 disabled:text-white/40",
-  ghost: "text-gray-300 hover:text-white disabled:text-gray-600"
+    "border border-default text-foreground hover:bg-surface-2 disabled:opacity-60",
+  ghost: "text-muted-foreground hover:text-foreground disabled:opacity-50"
 };
 
 const sizeClassName: Record<ButtonSize, string> = {
@@ -36,7 +36,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+"inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
           variantClassName[variant],
           sizeClassName[size],
           loading && "pointer-events-none opacity-80",
@@ -45,8 +45,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...props}
       >
-        {loading && (
-          <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/60" />
+{loading && (
+          <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-[color:rgba(0,0,0,0.2)] border-t-[color:rgba(0,0,0,0.6)] dark:border-[color:rgba(255,255,255,0.3)] dark:border-t-[color:rgba(255,255,255,0.7)]" />
         )}
         {children}
       </button>

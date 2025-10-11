@@ -29,7 +29,7 @@ export function UserSettings() {
     <div className="space-y-6">
       {/* 页面标题 */}
       <div className="border-b pb-4">
-        <h1 className="text-2xl font-semibold">个人设置</h1>
+<h1 className="text-2xl font-semibold text-foreground">个人设置</h1>
         <p className="text-sm text-muted-foreground mt-1">管理你的个人数据、消费记录和存储空间</p>
       </div>
 

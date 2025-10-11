@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 // 可选背景主题
-export type BgTheme = "default" | "openai" | "claude";
+export type BgTheme = "dark" | "light";
 
 const THEME_STORAGE_KEY = "ui:bg-theme";
 
@@ -15,23 +15,26 @@ type ThemeCtx = {
 const Ctx = createContext<ThemeCtx | null>(null);
 
 export function ThemeBackgroundProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<BgTheme>("default");
+  const [theme, setTheme] = useState<BgTheme>("dark");
 
   // 初始化从 localStorage 读取
   useEffect(() => {
     try {
       const saved = localStorage.getItem(THEME_STORAGE_KEY) as BgTheme | null;
-      if (saved === "default" || saved === "openai" || saved === "claude") {
+      if (saved === "dark" || saved === "light") {
         setTheme(saved);
       }
     } catch {}
   }, []);
 
-  // 持久化
+  // 持久化 + 写入 html data-theme
   useEffect(() => {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {}
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
   }, [theme]);
 
   const value = useMemo(() => ({ theme, setTheme }), [theme]);
@@ -49,24 +52,34 @@ export function useBgTheme() {
 export function BackgroundLayer() {
   const { theme } = useBgTheme();
 
-  const className = useMemo(() => {
+  const style = useMemo<React.CSSProperties>(() => {
+    // 使用内联样式，避免 Tailwind JIT 对任意值类名的裁剪问题
     switch (theme) {
-      case "openai":
-        // 近似 ChatGPT 深灰蓝渐变
-        return "bg-[radial-gradient(1200px_600px_at_50%_-100px,#3a3d4a_0%,#202123_60%,#0b0b0c_100%)]";
-      case "claude":
-        // 温和的米黄色渐变，透明叠加，保持暗色内容可读
-        return "bg-[radial-gradient(1000px_500px_at_50%_-100px,rgba(247,242,231,0.12)_0%,rgba(235,226,207,0.08)_60%,transparent_100%)]";
+case "light":
+        return {
+          backgroundColor: "oklch(0.9818 0.0054 95.0986)",
+          backgroundImage:
+            "radial-gradient(1200px 600px at 50% -120px, oklch(0.9818 0.0054 95.0986 / 0.35) 0%, oklch(0.9818 0.0054 95.0986 / 0.18) 55%, oklch(0.9818 0.0054 95.0986 / 0.12) 100%)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover"
+        };
+      case "dark":
       default:
-        // 默认低对比度暗渐变
-        return "bg-[radial-gradient(1200px_600px_at_50%_-120px,#1a1a1a_0%,#0e0e0e_60%,#000_100%)]";
+        return {
+          backgroundColor: "#0D0D0D",
+          backgroundImage:
+            "radial-gradient(1200px 600px at 50% -120px, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.02) 55%, transparent 100%)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover"
+        };
     }
   }, [theme]);
 
   return (
     <div
       aria-hidden
-      className={`pointer-events-none fixed inset-0 -z-10 ${className}`}
+      className="pointer-events-none fixed inset-0 -z-10"
+      style={style}
     />
   );
 }

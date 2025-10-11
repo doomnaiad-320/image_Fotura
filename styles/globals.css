@@ -6,15 +6,58 @@
   color-scheme: dark;
 }
 
+/* Theme tokens */
+html[data-theme='dark'] {
+  /* 纯黑白配色，无彩色 */
+  --color-bg: #0D0D0D;                 /* 页面主背景（黑）*/
+  --color-surface: #161616;            /* 卡片、导航栏背景（深灰）*/
+  --color-surface-2: #1F1F1F;          /* 次级表面 */
+  --color-border: rgba(255,255,255,0.12);
+  --color-foreground: #FFFFFF;         /* 主要文字（白）*/
+  --color-muted-foreground: #B3B3B3;   /* 次要文字（灰）*/
+  --color-primary: #FFFFFF;            /* 主按钮/强调（白）*/
+  --color-primary-foreground: #0D0D0D; /* 按钮文字（黑）*/
+  --color-link: #FFFFFF;               /* 链接（白）*/
+  --color-nav-bg: rgba(22,22,22,0.80); /* 顶部导航半透明背景（灰黑）*/
+}
+
+html[data-theme='light'] {
+  /* Light 主题：使用指定的品牌与文字/卡片配色 */
+  --color-bg: oklch(0.9818 0.0054 95.0986);             /* 页面背景 */
+  /* 卡片/组件背景与页面同色相、同色度，只降低亮度制造微弱层次 */
+  --color-surface: oklch(0.968 0.0054 95.0986);         /* 卡片/组件背景（略深于页面） */
+  --color-surface-2: oklch(0.956 0.0054 95.0986);       /* 次级表面（再深一档） */
+  --color-border: rgba(61,57,41,0.16);                  /* 边框 */
+  --color-foreground: #46453a;                          /* 主文字 */
+  --color-muted-foreground: #897d6f;                    /* 副文字/提示 */
+  --color-primary: #cb6444;                              /* 主按钮背景/链接 */
+  --color-primary-foreground: #ffffff;                   /* 按钮文字 */
+  --color-link: #cb6444;                                 /* 链接 */
+  --color-nav-bg: color-mix(in oklch, oklch(0.9818 0.0054 95.0986) 80%, transparent); /* 顶部导航 */
+}
+
 body {
-  @apply bg-black text-white antialiased;
+  @apply antialiased;
   font-family: "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-foreground);
+}
+
+@layer utilities {
+  .bg-hero { background-image: linear-gradient(135deg, var(--color-hero-from), var(--color-hero-to)); }
+  .bg-app { background-color: var(--color-bg); }
+  .bg-surface { background-color: var(--color-surface); }
+  .bg-surface-2 { background-color: var(--color-surface-2); }
+  .text-foreground { color: var(--color-foreground); }
+  .text-muted-foreground { color: var(--color-muted-foreground); }
+  .border-default { border-color: var(--color-border); }
 }
 
 a {
-  @apply text-white hover:text-gray-300;
+  color: var(--color-link);
 }
+a:hover { opacity: 0.9; }
 
 button {
   @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black;

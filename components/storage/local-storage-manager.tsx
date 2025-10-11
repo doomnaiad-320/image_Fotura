@@ -6,8 +6,9 @@ import { getStorageStats, clearOldHistory, clearAllHistory, exportAllData, impor
 
 interface StorageStats {
   totalImages: number;
-  totalHistories: number;
-  estimatedSizeMB: number;
+  totalHistory: number;
+  estimatedSize: number;
+  usagePercentage: number;
 }
 
 export function LocalStorageManager() {
@@ -143,13 +144,13 @@ export function LocalStorageManager() {
         <div className="border rounded-lg p-4">
           <div className="text-sm text-muted-foreground">历史记录</div>
           <div className="text-2xl font-bold mt-1">
-            {stats ? stats.totalHistories : '...'} 条
+            {stats ? stats.totalHistory : '...'} 条
           </div>
         </div>
         <div className="border rounded-lg p-4">
           <div className="text-sm text-muted-foreground">估计占用</div>
           <div className="text-2xl font-bold mt-1">
-            {stats ? stats.estimatedSizeMB.toFixed(2) : '...'} MB
+            {stats ? (stats.estimatedSize / 1024 / 1024).toFixed(2) : '...'} MB
           </div>
         </div>
       </div>

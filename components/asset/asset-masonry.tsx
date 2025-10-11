@@ -13,7 +13,7 @@ export type AssetMasonryProps = {
 export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated }: AssetMasonryProps) {
   if (assets.length === 0) {
     return (
-      <div className="grid min-h-[320px] place-items-center rounded-3xl border border-dashed border-white/10 py-24 text-gray-500">
+<div className="grid min-h-[320px] place-items-center rounded-3xl border border-dashed border-default py-24 text-muted-foreground">
         暂无作品，换个筛选条件试试。
       </div>
     );

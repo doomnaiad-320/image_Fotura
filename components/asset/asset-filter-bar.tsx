@@ -32,7 +32,7 @@ export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
   const sortOptions = useMemo(() => SORT_OPTIONS, []);
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-black/40 px-4 py-3 md:flex-row md:items-center md:justify-between">
+<div className="flex flex-col gap-4 rounded-3xl border border-default bg-surface px-4 py-3 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-2">
         {TYPE_OPTIONS.map((option) => {
           const isActive = value.type === option.value;
@@ -49,7 +49,7 @@ export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
           );
         })}
       </div>
-      <div className="flex items-center gap-3 text-sm text-gray-400">
+<div className="flex items-center gap-3 text-sm text-muted-foreground">
         <span className="hidden md:inline">排序</span>
         <Select
           value={value.sort}

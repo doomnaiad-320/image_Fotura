@@ -13,8 +13,8 @@ const navLinks = [
 export async function MainNavigation() {
   const user = await getCurrentUser();
 
-  return (
-    <header className="sticky top-0 z-40 border-b border-white/10 backdrop-blur supports-[backdrop-filter]:bg-black/70">
+return (
+    <header className="sticky top-0 z-40 border-b border-default backdrop-blur supports-[backdrop-filter]:bg-[var(--color-nav-bg)]">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="text-lg font-semibold tracking-tight">
@@ -25,7 +25,7 @@ export async function MainNavigation() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="transition hover:text-gray-300"
+className="text-foreground transition hover:text-muted-foreground"
               >
                 {link.label}
               </Link>
@@ -37,7 +37,7 @@ export async function MainNavigation() {
             <Link
               key={link.href}
               href={link.href}
-              className="transition hover:text-gray-300"
+className="text-foreground transition hover:text-muted-foreground"
             >
               {link.label}
             </Link>
@@ -50,13 +50,13 @@ export async function MainNavigation() {
             <>
               <Link
                 href="/auth/signin"
-                className="rounded-full border border-white/20 px-4 py-1 transition hover:border-white/40"
+className="rounded-full border border-default px-4 py-1 text-foreground transition hover:bg-surface-2"
               >
                 登录
               </Link>
               <Link
                 href="/auth/signup"
-                className="rounded-full bg-white px-4 py-1 text-black transition hover:bg-gray-200"
+className="rounded-full bg-[var(--color-primary)] px-4 py-1 text-[var(--color-primary-foreground)] transition hover:opacity-90"
               >
                 注册
               </Link>

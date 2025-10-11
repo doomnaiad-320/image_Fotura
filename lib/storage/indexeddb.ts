@@ -539,3 +539,48 @@ export async function getDB(): Promise<LocalDatabase> {
 export function isIndexedDBSupported(): boolean {
   return typeof window !== 'undefined' && !!window.indexedDB;
 }
+
+// ==================== 导出包装函数 ====================
+
+/**
+ * 获取存储统计信息（包装函数）
+ */
+export async function getStorageStats(): Promise<StorageStats> {
+  const db = await getDB();
+  return db.getStorageStats();
+}
+
+/**
+ * 清理旧的历史记录（包装函数）
+ * @param days 天数
+ */
+export async function clearOldHistory(days: number): Promise<number> {
+  const db = await getDB();
+  const beforeTimestamp = Date.now() - days * 24 * 60 * 60 * 1000;
+  return db.clearOldHistory(beforeTimestamp);
+}
+
+/**
+ * 清空所有历史记录（包装函数）
+ */
+export async function clearAllHistory(): Promise<void> {
+  const db = await getDB();
+  return db.clearAll();
+}
+
+/**
+ * 导出所有数据（包装函数）
+ */
+export async function exportAllData(): Promise<Blob> {
+  // 这里需要从 export.ts 导入
+  const { exportAllToZip } = await import('./export');
+  return exportAllToZip();
+}
+
+/**
+ * 导入数据（包装函数）
+ */
+export async function importAllData(file: File): Promise<void> {
+  const { importFromZip } = await import('./export');
+  await importFromZip(file);
+}

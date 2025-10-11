@@ -35,10 +35,10 @@ export default async function HomePage({
   return (
     <div className="space-y-10">
       <section className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+<h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
           灵感瀑布
         </h1>
-        <p className="max-w-2xl text-sm text-gray-400 md:text-base">
+<p className="max-w-2xl text-sm text-muted-foreground md:text-base">
           瀑布流布局实时汇聚社区最热门、最新的 AIGC 作品。支持类型筛选与排序，快速收藏并复用灵感模版。
         </p>
       </section>

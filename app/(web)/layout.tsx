@@ -9,7 +9,7 @@ type Props = {
 
 export default function WebLayout({ children }: Props) {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen">
       <MainNavigation />
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-6">{children}</main>
       <Toaster />

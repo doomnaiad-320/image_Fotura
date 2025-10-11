@@ -167,7 +167,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
       <div className="w-full flex-grow relative">
         {viewMode === 'result' && (
           <div 
-            className="w-full h-full relative bg-black/20 rounded-lg overflow-hidden cursor-pointer group border border-white/10 flex items-center justify-center"
+            className="w-full h-full relative bg-surface rounded-lg overflow-hidden cursor-pointer group border border-default flex items-center justify-center"
             onClick={() => onImageClick(imageUrl)}
           >
             <img src={imageUrl} alt="Generated result" className="max-w-full max-h-full object-contain" />
@@ -181,11 +181,11 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
 
         {viewMode === 'side-by-side' && originalImageUrl && (
           <div className="w-full h-full grid grid-cols-2 gap-2">
-            <div className="relative rounded-lg overflow-hidden border border-white/10 bg-black/20 flex items-center justify-center">
+            <div className="relative rounded-lg overflow-hidden border border-default bg-surface flex items-center justify-center">
                 <img src={originalImageUrl} alt="Original" className="max-w-full max-h-full object-contain"/>
                 <div className="absolute bottom-1 right-1 text-xs bg-black/50 text-white px-2 py-1 rounded">原图</div>
             </div>
-            <div className="relative rounded-lg overflow-hidden border border-white/10 bg-black/20 flex items-center justify-center">
+            <div className="relative rounded-lg overflow-hidden border border-default bg-surface flex items-center justify-center">
                 <img src={imageUrl} alt="Generated" className="max-w-full max-h-full object-contain"/>
                 <div className="absolute bottom-1 right-1 text-xs bg-black/50 text-white px-2 py-1 rounded">生成结果</div>
             </div>
@@ -193,7 +193,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
         )}
 
         {viewMode === 'slider' && originalImageUrl && (
-          <div ref={sliderContainerRef} onMouseDown={handleMouseDown} className="relative w-full h-full overflow-hidden rounded-lg cursor-ew-resize border border-white/10 select-none bg-black/20">
+          <div ref={sliderContainerRef} onMouseDown={handleMouseDown} className="relative w-full h-full overflow-hidden rounded-lg cursor-ew-resize border border-default select-none bg-surface">
             <div className="absolute inset-0 flex items-center justify-center">
                 <img src={originalImageUrl} alt="Original" className="max-w-full max-h-full object-contain" />
             </div>
@@ -211,7 +211,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
         )}
       </div>
 
-      <div className="w-full flex flex-col md:flex-row gap-3 mt-2">
+      <div className="w-full flex flex-col md:flex-row gap-3 mt-2 text-foreground">
         {viewMode === 'side-by-side' && originalImageUrl && (
             <ActionButton onClick={handleDownloadComparison}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

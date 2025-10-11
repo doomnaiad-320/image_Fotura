@@ -39,8 +39,8 @@ export default async function ExplorePage() {
   return (
     <div className="space-y-10">
       <header className="space-y-4">
-        <h1 className="text-3xl font-semibold text-white md:text-4xl">探索更多维度</h1>
-        <p className="max-w-3xl text-sm text-gray-400 md:text-base">
+<h1 className="text-3xl font-semibold text-foreground md:text-4xl">探索更多维度</h1>
+<p className="max-w-3xl text-sm text-muted-foreground md:text-base">
           筛选面板暂为占位，后续将和后端参数解耦对接，实现多模型、多标签、多尺寸等组合筛选。当前列表展示最新作品快照。
         </p>
       </header>
@@ -49,11 +49,11 @@ export default async function ExplorePage() {
         {PLACEHOLDER_FILTERS.map((filter) => (
           <div
             key={filter.title}
-            className="space-y-3 rounded-3xl border border-white/10 bg-black/30 p-5"
+className="space-y-3 rounded-3xl border border-default bg-surface p-5"
           >
             <div>
-              <h2 className="text-sm font-semibold text-white">{filter.title}</h2>
-              <p className="mt-1 text-xs text-gray-500">{filter.description}</p>
+<h2 className="text-sm font-semibold text-foreground">{filter.title}</h2>
+<p className="mt-1 text-xs text-muted-foreground">{filter.description}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {filter.options.map((option) => (
@@ -68,7 +68,7 @@ export default async function ExplorePage() {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">最新作品快照</h2>
+<h2 className="text-lg font-semibold text-foreground">最新作品快照</h2>
           <Button variant="ghost" size="sm" disabled>
             即将支持更多筛选
           </Button>

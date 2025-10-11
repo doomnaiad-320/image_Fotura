@@ -49,7 +49,7 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated }: AssetCar
   };
 
   return (
-    <article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-white/10 bg-black/60 shadow shadow-black/20 transition hover:-translate-y-1 hover:border-white/20">
+<article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-default bg-surface shadow transition hover:-translate-y-1">
       <div className="relative w-full overflow-hidden">
         {asset.type === "video" ? (
           <video
@@ -70,31 +70,31 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated }: AssetCar
           />
         )}
         <div className="absolute left-3 top-3 flex items-center gap-2 text-xs font-medium">
-          <Badge className="border-white/40 bg-black/50 text-white">
+<Badge className="border-default bg-surface-2 text-foreground">
             {asset.type === "video" ? "视频" : "图片"}
           </Badge>
-          <span className="rounded-full bg-black/70 px-3 py-1 text-[11px] tracking-wide text-gray-200">
+<span className="rounded-full bg-surface-2 px-3 py-1 text-[11px] tracking-wide text-foreground border border-default">
             {asset.modelTag}
           </span>
         </div>
       </div>
       <div className="space-y-4 px-5 py-5">
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold leading-tight text-white">{asset.title}</h3>
-          <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+<h3 className="text-lg font-semibold leading-tight text-foreground">{asset.title}</h3>
+<div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
             {asset.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em]"
+className="rounded-full border border-default px-3 py-1 text-[11px] uppercase tracking-[0.2em]"
               >
                 {tag}
               </span>
             ))}
           </div>
         </div>
-        <div className="flex items-center justify-between text-xs text-gray-500">
+<div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            热度 <strong className="text-white">{asset.hotScore.toFixed(1)}</strong>
+热度 <strong className="text-foreground">{asset.hotScore.toFixed(1)}</strong>
           </span>
           <span>
             👍 {asset.likes} · 👁️ {asset.views}

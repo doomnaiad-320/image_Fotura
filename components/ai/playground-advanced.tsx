@@ -355,9 +355,9 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
       {/* Left Panel - Controls */}
       <aside className="space-y-6">
         {/* Mode Selection */}
-        <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-5">
+<div className="space-y-4 rounded-3xl border border-default bg-surface p-5">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">生成模式</p>
+<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">生成模式</p>
             <div className="flex flex-wrap gap-2">
               {GENERATION_MODES.map((item) => (
                 <Button
@@ -372,7 +372,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-400">
+<p className="text-xs text-muted-foreground">
               豆余额：{balance?.credits ?? "--"}
             </p>
             <Button
@@ -389,9 +389,9 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         </div>
 
         {/* Model Selection */}
-        <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-5">
+<div className="space-y-4 rounded-3xl border border-default bg-surface p-5">
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+<label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
               模型
             </label>
             <Select
@@ -422,7 +422,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+<label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 图片比例
               </label>
               <Select
@@ -437,7 +437,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+<label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 图像尺寸
               </label>
               <Select
@@ -461,9 +461,9 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
 
         {/* Image Editor Canvas */}
         {mode === "img2img" && (
-          <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-5">
+<div className="space-y-4 rounded-3xl border border-default bg-surface p-5">
             <div className="flex items-center justify-between">
-              <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+<label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 输入图片
               </label>
               {currentImageUrl && (
@@ -490,8 +490,8 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         )}
 
         {/* Prompt Input */}
-        <div className="space-y-3 rounded-3xl border border-white/10 bg-black/30 p-5">
-          <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+<div className="space-y-3 rounded-3xl border border-default bg-surface p-5">
+<label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             提示词
           </label>
           <Textarea
@@ -500,7 +500,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
             value={imagePrompt}
             onChange={(event) => setImagePrompt(event.target.value)}
           />
-          <p className="text-xs text-gray-500">
+<p className="text-xs text-muted-foreground">
             提示词越具体，越能帮助模型生成符合预期的内容。
           </p>
         </div>
@@ -520,7 +520,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
       {/* Right Panel - Results */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">生成结果</h3>
+<h3 className="text-lg font-semibold text-foreground">生成结果</h3>
           <span className="text-xs text-gray-500">
             {generatedImageUrl ? "生成完成" : "结果将展示在此处"}
           </span>
