@@ -49,20 +49,29 @@ async function historyStoreToGeneratedImage(
   historyStore: HistoryStore,
   blobManager: ReturnType<typeof getBlobManager>
 ): Promise<GeneratedImage> {
+  console.log('[historyStoreToGeneratedImage] 转换开始, imageId:', historyStore.imageId);
+  
   const db = await getDB();
   
   // 尝试从缓存获取URL（缩略图优先）
   let blobUrl = blobManager.getCachedURL(historyStore.imageId);
+  console.log('[historyStoreToGeneratedImage] 缓存查找结果:', blobUrl ? '命中' : '未命中');
   
   // 如果缓存中没有(页面刷新后),重新从 IndexedDB 加载
   if (!blobUrl) {
+    console.log('[historyStoreToGeneratedImage] 从 IndexedDB 重新加载缩略图');
     const blob = await db.getThumbnail(historyStore.imageId);
+    console.log('[historyStoreToGeneratedImage] 缩略图加载结果:', blob ? `成功 (${blob.size} bytes)` : '失败/不存在');
+    
     if (blob) {
       blobUrl = blobManager.createObjectURL(blob, historyStore.imageId);
+      console.log('[historyStoreToGeneratedImage] 新 Blob URL 创建成功:', blobUrl.slice(0, 50));
+    } else {
+      console.warn('[historyStoreToGeneratedImage] 缩略图不存在, URL 将为空');
     }
   }
   
-  return {
+  const result = {
     id: historyStore.id,
     url: blobUrl || '',
     title: historyStore.prompt.slice(0, 50),
@@ -74,6 +83,9 @@ async function historyStoreToGeneratedImage(
     size: historyStore.size,
     favorite: historyStore.favorite
   };
+  
+  console.log('[historyStoreToGeneratedImage] 转换完成, 最终URL:', result.url.slice(0, 50) || '(空)');
+  return result;
 }
 
 /**
@@ -93,34 +105,71 @@ export function useLocalHistory(): UseLocalHistoryReturn {
    * 加载历史记录
    */
   const loadHistory = useCallback(async () => {
+    console.log('[useLocalHistory] loadHistory 调用时, isMountedRef.current:', isMountedRef.current);
+    console.log('[useLocalHistory] loadHistory 开始执行, supported:', supported);
+    
     if (!supported) {
+      console.error('[useLocalHistory] IndexedDB 不支持, 终止加载');
       setError(new Error('浏览器不支持 IndexedDB'));
       setLoading(false);
       return;
     }
 
     try {
+      console.log('[useLocalHistory] 设置 loading 状态为 true');
       setLoading(true);
       setError(null);
       
+      console.log('[useLocalHistory] 准备获取 IndexedDB 实例');
       const db = await getDB();
+      console.log('[useLocalHistory] IndexedDB 实例获取成功');
+      
+      console.log('[useLocalHistory] 开始从数据库读取历史记录(最多100条)');
       const historyList = await db.getHistory(100); // 加载最近100条
+      console.log('[useLocalHistory] 从数据库读取到', historyList.length, '条历史记录');
+      
+      if (historyList.length > 0) {
+        console.log('[useLocalHistory] 第一条记录示例:', {
+          id: historyList[0].id,
+          imageId: historyList[0].imageId,
+          prompt: historyList[0].prompt?.slice(0, 30),
+          timestamp: historyList[0].timestamp
+        });
+      }
       
       // 转换为 GeneratedImage 格式
+      console.log('[useLocalHistory] 开始转换历史记录为 GeneratedImage 格式');
       const images = await Promise.all(
         historyList.map(h => historyStoreToGeneratedImage(h, blobManagerRef.current))
       );
+      console.log('[useLocalHistory] 转换完成, 生成了', images.length, '个图像对象');
+      
+      if (images.length > 0) {
+        console.log('[useLocalHistory] 第一个图像对象示例:', {
+          id: images[0].id,
+          url: images[0].url?.slice(0, 50),
+          title: images[0].title,
+          timestamp: images[0].timestamp
+        });
+      }
       
       if (isMountedRef.current) {
+        console.log('[useLocalHistory] 组件仍然挂载, 更新 history state');
         setHistory(images);
+        console.log('[useLocalHistory] history state 更新完成');
+      } else {
+        console.warn('[useLocalHistory] 组件已卸载, 跳过 state 更新');
       }
     } catch (err) {
-      console.error('加载历史记录失败:', err);
+      console.error('[useLocalHistory] 加载历史记录失败:', err);
+      console.error('[useLocalHistory] 错误详情:', err instanceof Error ? err.message : String(err));
+      console.error('[useLocalHistory] 错误堆栈:', err instanceof Error ? err.stack : 'N/A');
       if (isMountedRef.current) {
         setError(err as Error);
       }
     } finally {
       if (isMountedRef.current) {
+        console.log('[useLocalHistory] 设置 loading 状态为 false');
         setLoading(false);
       }
     }
@@ -157,7 +206,15 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       parameters?: any;
     }
   ): Promise<{ localUrl: string; historyId: string }> => {
+    console.log('[useLocalHistory] addHistory 被调用:', { 
+      imageUrl: imageUrl.slice(0, 50), 
+      prompt: prompt.slice(0, 30), 
+      supported, 
+      metadata 
+    });
+    
     if (!supported) {
+      console.error('[useLocalHistory] IndexedDB 不支持!');
       throw new Error('浏览器不支持 IndexedDB');
     }
 
@@ -165,20 +222,31 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       // 下载图片为 Blob（通过本地代理避免跨域/缓存问题）
       const isHttp = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
       const proxyUrl = isHttp ? `/api/proxy/image?url=${encodeURIComponent(imageUrl)}` : imageUrl;
+      console.log('[useLocalHistory] 开始 fetch 图片:', proxyUrl.slice(0, 80));
+      
       const response = await fetch(proxyUrl, { cache: "no-store" });
-      if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
+      if (!response.ok) {
+        console.error('[useLocalHistory] fetch 失败:', response.status, response.statusText);
+        throw new Error(`fetch failed: ${response.status}`);
+      }
+      
       const blob = await response.blob();
+      console.log('[useLocalHistory] 图片下载成功, 大小:', blob.size, 'bytes');
       
       const db = await getDB();
+      console.log('[useLocalHistory] 获取 IndexedDB 实例成功');
       
       // 生成缩略图 100x100
       const thumb = await createThumbnail(blob, 100, 100);
+      console.log('[useLocalHistory] 缩略图生成:', thumb ? `${thumb.size} bytes` : 'null');
       
       // 保存图片到 IndexedDB（含缩略图）
       const imageId = await db.saveImage(blob, thumb ?? undefined);
+      console.log('[useLocalHistory] 图片保存到 IndexedDB, imageId:', imageId);
       
       // 创建本地 blob URL（展示使用缩略图更节省资源，这里仍用原图 URL 以便立即编辑）
       const localUrl = blobManagerRef.current.createObjectURL(blob, imageId);
+      console.log('[useLocalHistory] Blob URL 创建成功:', localUrl.slice(0, 50));
       
       // 保存历史记录元数据
       const historyId = `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -197,6 +265,7 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       };
       
       await db.saveHistory(historyData);
+      console.log('[useLocalHistory] 历史记录保存成功, historyId:', historyId);
       
       // 更新UI
       const newImage: GeneratedImage = {
@@ -212,14 +281,19 @@ export function useLocalHistory(): UseLocalHistoryReturn {
         favorite: false
       };
       
-      setHistory(prev => [newImage, ...prev]);
+      setHistory(prev => {
+        console.log('[useLocalHistory] 更新 UI state, 新增一条记录');
+        return [newImage, ...prev];
+      });
       
       // 更新统计
       await loadStats();
+      console.log('[useLocalHistory] 统计信息已更新');
       
       return { localUrl, historyId };
     } catch (err) {
-      console.error('添加历史记录失败:', err);
+      console.error('[useLocalHistory] 添加历史记录失败:', err);
+      console.error('[useLocalHistory] 错误详情:', err instanceof Error ? err.message : String(err));
       throw err;
     }
   }, [supported, loadStats]);
@@ -399,13 +473,27 @@ export function useLocalHistory(): UseLocalHistoryReturn {
 
   // 初始化：加载历史记录
   useEffect(() => {
+    console.log('[useLocalHistory] useEffect 初始化(仅运行一次), supported:', supported);
+    console.log('[useLocalHistory] useEffect 运行前, isMountedRef.current:', isMountedRef.current);
+    
+    // 确保组件挂载状态
+    isMountedRef.current = true;
+    
+    if (!supported) {
+      console.warn('[useLocalHistory] IndexedDB 不支持, 跳过初始化加载');
+      return;
+    }
+    
+    // 初始化加载
     loadHistory();
     loadStats();
     
     return () => {
+      console.log('[useLocalHistory] 组件真正卸载');
       isMountedRef.current = false;
     };
-  }, [loadHistory, loadStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 空依赖数组 - 仅在组件挂载时运行一次
 
   // 清理：组件卸载时释放 Blob URL
   useEffect(() => {

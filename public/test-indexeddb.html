@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IndexedDB 测试</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    button {
+      background: #f97316;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #ea580c;
+    }
+    #log {
+      background: #000;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .log-entry {
+      margin: 3px 0;
+      padding: 2px 0;
+    }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #60a5fa; }
+    h1 { color: #f97316; }
+    .status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+    .status.ok { background: #10b981; }
+    .status.fail { background: #ef4444; }
+  </style>
+</head>
+<body>
+  <h1>🔍 IndexedDB 功能测试</h1>
+  
+  <div>
+    <button onclick="testBasicSupport()">1. 测试浏览器支持</button>
+    <button onclick="testDatabaseCreation()">2. 测试数据库创建</button>
+    <button onclick="testImageSave()">3. 测试保存图片</button>
+    <button onclick="testImageRead()">4. 测试读取图片</button>
+    <button onclick="clearDatabase()">清空数据库</button>
+    <button onclick="clearLog()">清空日志</button>
+  </div>
+
+  <div id="log"></div>
+
+  <script>
+    const DB_NAME = 'aigc-studio-local';
+    const DB_VERSION = 1;
+    
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(message);
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+
+    // 测试 1: 浏览器支持
+    function testBasicSupport() {
+      log('=== 测试 1: 浏览器支持 ===', 'info');
+      
+      if (!window.indexedDB) {
+        log('❌ 浏览器不支持 IndexedDB', 'error');
+        return;
+      }
+      
+      log('✅ 浏览器支持 IndexedDB', 'success');
+      log(`   版本: ${indexedDB.constructor.name}`, 'info');
+    }
+
+    // 测试 2: 数据库创建
+    function testDatabaseCreation() {
+      log('=== 测试 2: 数据库创建 ===', 'info');
+      
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      
+      request.onerror = (e) => {
+        log(`❌ 数据库打开失败: ${e.target.error}`, 'error');
+      };
+      
+      request.onsuccess = (e) => {
+        const db = e.target.result;
+        log('✅ 数据库打开成功', 'success');
+        log(`   数据库名: ${db.name}`, 'info');
+        log(`   版本: ${db.version}`, 'info');
+        
+        const stores = Array.from(db.objectStoreNames);
+        log(`   对象仓库: ${stores.join(', ')}`, 'info');
+        
+        // 检查表是否存在
+        if (stores.includes('images') && stores.includes('history')) {
+          log('✅ images 和 history 表都存在', 'success');
+        } else {
+          log(`⚠️ 缺少表: ${stores.includes('images') ? '' : 'images'} ${stores.includes('history') ? '' : 'history'}`, 'error');
+        }
+        
+        db.close();
+      };
+      
+      request.onupgradeneeded = (e) => {
+        log('⚠️ 数据库需要升级 (首次创建)', 'info');
+        const db = e.target.result;
+        
+        // 创建 images 表
+        if (!db.objectStoreNames.contains('images')) {
+          const imagesStore = db.createObjectStore('images', { keyPath: 'id' });
+          imagesStore.createIndex('createdAt', 'createdAt', { unique: false });
+          log('   创建 images 表', 'info');
+        }
+        
+        // 创建 history 表
+        if (!db.objectStoreNames.contains('history')) {
+          const historyStore = db.createObjectStore('history', { keyPath: 'id' });
+          historyStore.createIndex('timestamp', 'timestamp', { unique: false });
+          historyStore.createIndex('imageId', 'imageId', { unique: false });
+          log('   创建 history 表', 'info');
+        }
+      };
+    }
+
+    // 测试 3: 保存图片
+    async function testImageSave() {
+      log('=== 测试 3: 保存图片 ===', 'info');
+      
+      try {
+        // 创建一个测试图片 (1x1 红色像素)
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'red';
+        ctx.fillRect(0, 0, 1, 1);
+        
+        const blob = await new Promise(resolve => canvas.toBlob(resolve));
+        log(`   创建测试图片: ${blob.size} bytes`, 'info');
+        
+        // 打开数据库
+        const db = await openDatabase();
+        
+        // 保存图片
+        const imageId = `test-img-${Date.now()}`;
+        const imageData = {
+          id: imageId,
+          blob: blob,
+          mimeType: 'image/png',
+          size: blob.size,
+          createdAt: Date.now()
+        };
+        
+        const transaction = db.transaction(['images'], 'readwrite');
+        const store = transaction.objectStore('images');
+        const request = store.add(imageData);
+        
+        request.onsuccess = () => {
+          log(`✅ 图片保存成功! ID: ${imageId}`, 'success');
+          
+          // 同时保存历史记录
+          const historyData = {
+            id: `test-hist-${Date.now()}`,
+            imageId: imageId,
+            prompt: '测试提示词',
+            timestamp: Date.now(),
+            shared: false,
+            favorite: false
+          };
+          
+          const historyTx = db.transaction(['history'], 'readwrite');
+          const historyStore = historyTx.objectStore('history');
+          const historyReq = historyStore.add(historyData);
+          
+          historyReq.onsuccess = () => {
+            log(`✅ 历史记录保存成功! ID: ${historyData.id}`, 'success');
+            db.close();
+          };
+          
+          historyReq.onerror = (e) => {
+            log(`❌ 历史记录保存失败: ${e.target.error}`, 'error');
+            db.close();
+          };
+        };
+        
+        request.onerror = (e) => {
+          log(`❌ 图片保存失败: ${e.target.error}`, 'error');
+          db.close();
+        };
+        
+      } catch (err) {
+        log(`❌ 测试失败: ${err.message}`, 'error');
+      }
+    }
+
+    // 测试 4: 读取图片
+    async function testImageRead() {
+      log('=== 测试 4: 读取数据 ===', 'info');
+      
+      try {
+        const db = await openDatabase();
+        
+        // 读取 images 表
+        const imagesTx = db.transaction(['images'], 'readonly');
+        const imagesStore = imagesTx.objectStore('images');
+        const imagesReq = imagesStore.getAll();
+        
+        imagesReq.onsuccess = () => {
+          const images = imagesReq.result;
+          log(`✅ images 表: ${images.length} 条记录`, 'success');
+          images.forEach((img, i) => {
+            log(`   [${i+1}] ${img.id} - ${img.size} bytes`, 'info');
+          });
+        };
+        
+        // 读取 history 表
+        const historyTx = db.transaction(['history'], 'readonly');
+        const historyStore = historyTx.objectStore('history');
+        const historyReq = historyStore.getAll();
+        
+        historyReq.onsuccess = () => {
+          const history = historyReq.result;
+          log(`✅ history 表: ${history.length} 条记录`, 'success');
+          history.forEach((h, i) => {
+            log(`   [${i+1}] ${h.id} - ${h.prompt}`, 'info');
+          });
+          db.close();
+        };
+        
+      } catch (err) {
+        log(`❌ 读取失败: ${err.message}`, 'error');
+      }
+    }
+
+    // 清空数据库
+    async function clearDatabase() {
+      if (!confirm('确定要清空所有数据吗?')) return;
+      
+      log('=== 清空数据库 ===', 'info');
+      
+      try {
+        const db = await openDatabase();
+        
+        const tx = db.transaction(['images', 'history'], 'readwrite');
+        tx.objectStore('images').clear();
+        tx.objectStore('history').clear();
+        
+        tx.oncomplete = () => {
+          log('✅ 数据库已清空', 'success');
+          db.close();
+        };
+        
+        tx.onerror = (e) => {
+          log(`❌ 清空失败: ${e.target.error}`, 'error');
+          db.close();
+        };
+        
+      } catch (err) {
+        log(`❌ 清空失败: ${err.message}`, 'error');
+      }
+    }
+
+    // 辅助函数: 打开数据库
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+        
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          
+          if (!db.objectStoreNames.contains('images')) {
+            const imagesStore = db.createObjectStore('images', { keyPath: 'id' });
+            imagesStore.createIndex('createdAt', 'createdAt', { unique: false });
+          }
+          
+          if (!db.objectStoreNames.contains('history')) {
+            const historyStore = db.createObjectStore('history', { keyPath: 'id' });
+            historyStore.createIndex('timestamp', 'timestamp', { unique: false });
+            historyStore.createIndex('imageId', 'imageId', { unique: false });
+          }
+        };
+      });
+    }
+
+    // 页面加载时自动运行测试 1
+    window.onload = () => {
+      testBasicSupport();
+    };
+  </script>
+</body>
+</html>

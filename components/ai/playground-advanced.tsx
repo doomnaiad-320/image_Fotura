@@ -301,14 +301,17 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
   }, [handleImageSelect, history, originalImageUrl]);
 
   const addToHistory = useCallback(async (imageUrl: string, prompt: string, modelSlug?: string, genMode?: GenerationMode, size?: string) => {
+    console.log('[History] 开始保存历史记录:', { imageUrl: imageUrl.slice(0, 50), prompt: prompt.slice(0, 30), modelSlug, genMode });
+    
     // 获取模型显示名称
     const model = imageModels.find(m => m.slug === modelSlug);
     const modelName = model?.displayName;
     
     try {
       if (storageSupported) {
+        console.log('[History] IndexedDB 支持, 开始保存...');
         // 使用本地存储，并拿到本地URL
-        const { localUrl } = await addLocalHistory(imageUrl, prompt, {
+        const { localUrl, historyId } = await addLocalHistory(imageUrl, prompt, {
           model: modelSlug,
           modelName: modelName,
           mode: genMode,
@@ -317,14 +320,15 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
             aspectRatio: aspectRatio
           }
         });
-        // 用本地URL更新结果展示，保证“作为输入”直接读取本地
+        console.log('[History] 保存成功! historyId:', historyId, 'localUrl:', localUrl.slice(0, 50));
+        // 用本地URL更新结果展示，保证"作为输入"直接读取本地
         setGeneratedImageUrl(localUrl);
       } else {
         // 降级：使用内存存储（刷新会丢失）
-        console.warn('浏览器不支持 IndexedDB，使用内存存储');
+        console.warn('[History] 浏览器不支持 IndexedDB，使用内存存储');
       }
     } catch (error) {
-      console.error('保存历史记录失败:', error);
+      console.error('[History] 保存历史记录失败:', error);
       // 不阻塞用户操作
     }
   }, [imageModels, addLocalHistory, storageSupported, aspectRatio]);
@@ -414,8 +418,12 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         return;
       }
 
+      // 先显示临时URL
       setGeneratedImageUrl(imageUrl);
-      addToHistory(imageUrl, imagePrompt, selectedImageModel, mode, imageSize);
+      
+      // 异步保存到历史记录(会更新为本地URL)
+      await addToHistory(imageUrl, imagePrompt, selectedImageModel, mode, imageSize);
+      
       await refreshBalance();
       toast.success("生成成功！");
 
