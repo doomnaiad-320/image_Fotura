@@ -7,11 +7,12 @@ import toast from 'react-hot-toast';
 import ConversationHeader from './conversation-header';
 import MessageList from './message-list';
 import InputArea from './input-area';
-import type { ConversationMessage } from '@/types/conversation';
+import type { ConversationMessage, Conversation } from '@/types/conversation';
 import type { ModelOption } from '../playground';
 import { httpFetch } from '@/lib/http';
-import { createEditChain } from '@/lib/ai/prompt-chain';
+import { createEditChain, generateConversationTitle } from '@/lib/ai/prompt-chain';
 import { useLocalHistory } from '@/lib/hooks/useLocalHistory';
+import { getConversationDB, isConversationDBSupported } from '@/lib/storage/conversation-db';
 
 interface ConversationViewProps {
   models: ModelOption[];
@@ -24,12 +25,14 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
   // 状态管理
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [currentConversationId] = useState(() => `conv-${Date.now()}`);
+  const [currentConversationId, setCurrentConversationId] = useState(() => `conv-${Date.now()}`);
   const [parentMessageId, setParentMessageId] = useState<string | null>(null);
   const [inheritedPrompt, setInheritedPrompt] = useState<string>('');
+  const [isLoadingConversation, setIsLoadingConversation] = useState(true);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addHistory } = useLocalHistory();
+  const dbSupported = isConversationDBSupported();
 
   // 获取积分余额
   const { data: balance, mutate: refreshBalance } = useSWR(
@@ -37,6 +40,52 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
     fetcher,
     { refreshInterval: 60_000 }
   );
+
+  // 初始化：恢复最后的对话
+  useEffect(() => {
+    const loadLastConversation = async () => {
+      if (!dbSupported) {
+        console.log('[ConversationView] IndexedDB 不支持，使用内存模式');
+        setIsLoadingConversation(false);
+        return;
+      }
+
+      try {
+        const db = await getConversationDB();
+        const conversations = await db.listConversations(1);
+        
+        if (conversations.length > 0) {
+          const lastConv = conversations[0];
+          console.log('[ConversationView] 恢复对话:', lastConv.id);
+          
+          // 恢复对话ID
+          setCurrentConversationId(lastConv.id);
+          
+          // 恢复消息
+          const msgs = await db.getMessages(lastConv.id);
+          setMessages(msgs);
+          
+          // 恢复最后使用的模型
+          if (lastConv.lastActiveModel) {
+            setSelectedModel(lastConv.lastActiveModel);
+          }
+          
+          console.log('[ConversationView] 已恢复', msgs.length, '条消息');
+        } else {
+          console.log('[ConversationView] 无历史对话，创建新对话');
+          await createNewConversation();
+        }
+      } catch (error) {
+        console.error('[ConversationView] 恢复对话失败:', error);
+        toast.error('恢复对话失败，已创建新对话');
+      } finally {
+        setIsLoadingConversation(false);
+      }
+    };
+
+    loadLastConversation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 自动滚动到底部
   useEffect(() => {
@@ -53,6 +102,64 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
     }
     return true;
   }, [isAuthenticated]);
+
+  // 创建新对话
+  const createNewConversation = useCallback(async () => {
+    if (!dbSupported) return;
+
+    try {
+      const newConvId = `conv-${Date.now()}`;
+      const db = await getConversationDB();
+      
+      const newConv: Conversation = {
+        id: newConvId,
+        title: '新对话',
+        messageIds: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        lastActiveModel: selectedModel || undefined,
+        messageCount: 0,
+        imageCount: 0
+      };
+      
+      await db.createConversation(newConv);
+      setCurrentConversationId(newConvId);
+      setMessages([]);
+      
+      console.log('[ConversationView] 新对话已创建:', newConvId);
+    } catch (error) {
+      console.error('[ConversationView] 创建对话失败:', error);
+      toast.error('创建对话失败');
+    }
+  }, [dbSupported, selectedModel]);
+
+  // 保存消息到 IndexedDB
+  const saveMessageToDB = useCallback(async (message: ConversationMessage) => {
+    if (!dbSupported) return;
+
+    try {
+      const db = await getConversationDB();
+      await db.saveMessage(message);
+      
+      // 更新对话标题（如果是第一条用户消息）
+      const conversation = await db.getConversation(currentConversationId);
+      if (conversation && conversation.title === '新对话' && message.role === 'user') {
+        const newTitle = generateConversationTitle(message.content);
+        await db.updateConversation(currentConversationId, { title: newTitle });
+        console.log('[ConversationView] 对话标题已更新:', newTitle);
+      }
+      
+      // 更新最后使用的模型
+      if (selectedModel && conversation) {
+        await db.updateConversation(currentConversationId, { 
+          lastActiveModel: selectedModel 
+        });
+      }
+    } catch (error) {
+      console.error('[ConversationView] 保存消息失败:', error);
+      // 不阻塞用户操作，只记录错误
+    }
+  }, [dbSupported, currentConversationId, selectedModel]);
 
   // 处理发送消息
   const handleSend = useCallback(async (prompt: string) => {
@@ -77,6 +184,9 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
       timestamp: Date.now()
     };
     setMessages(prev => [...prev, userMsg]);
+    
+    // 保存用户消息到 DB
+    await saveMessageToDB(userMsg);
 
     // 2. 添加助手消息(生成中状态)
     const assistantMsgId = `msg-asst-${Date.now()}`;
@@ -175,17 +285,20 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
       );
 
       // 4. 更新助手消息
+      const updatedAssistantMsg: ConversationMessage = {
+        ...assistantMsg,
+        imageUrl: localUrl,
+        imageId: historyId,
+        editChain,
+        isGenerating: false
+      };
+      
       setMessages(prev => prev.map(m =>
-        m.id === assistantMsgId
-          ? {
-              ...m,
-              imageUrl: localUrl,
-              imageId: historyId,
-              editChain,
-              isGenerating: false
-            }
-          : m
+        m.id === assistantMsgId ? updatedAssistantMsg : m
       ));
+      
+      // 保存助手消息到 DB
+      await saveMessageToDB(updatedAssistantMsg);
 
       // 5. 刷新积分余额
       await refreshBalance();
@@ -263,6 +376,18 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
     console.log('[Timeline] 点击节点:', messageId, nodeId);
     toast.info('节点回退功能将在阶段 2 实现');
   }, []);
+
+  // 加载中状态
+  if (isLoadingConversation) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] bg-gray-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm text-gray-400">正在恢复对话...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-200px)] bg-gray-950">
