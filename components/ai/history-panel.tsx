@@ -41,8 +41,9 @@ const downloadImage = (url: string, filename: string) => {
 const HistoryItem: React.FC<{ 
   item: GeneratedImage; 
   onUseImage: (url: string) => void; 
-  onDownload: (url: string) => void; 
-}> = ({ item, onUseImage, onDownload }) => {
+  onDownload: (url: string) => void;
+  onToggleFavorite?: (id: string) => void;
+}> = ({ item, onUseImage, onDownload, onToggleFavorite }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   
   // 格式化时间
@@ -201,7 +202,7 @@ const HistoryItem: React.FC<{
   );
 };
 
-const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, onUseImage, onDownload, onSearch, onFilterModel, onShowFavorites, onShowAll, onToggleFavorite }) => {
+const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, onUseImage, onSearch, onShowFavorites, onShowAll, onToggleFavorite }) => {
   const handleDownload = (url: string) => {
     const filename = `generated-image-${Date.now()}.png`;
     downloadImage(url, filename);
@@ -241,7 +242,13 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
           ) : (
              <div className="space-y-4">
                 {history.map((item) => (
-                    <HistoryItem key={item.id} item={item} onUseImage={onUseImage} onDownload={handleDownload} />
+                    <HistoryItem 
+                      key={item.id} 
+                      item={item} 
+                      onUseImage={onUseImage} 
+                      onDownload={handleDownload}
+                      onToggleFavorite={onToggleFavorite}
+                    />
                 ))}
             </div>
           )}

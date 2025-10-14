@@ -110,6 +110,7 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
   const [isMaskToolActive, setIsMaskToolActive] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
+  const [promptOrigin, setPromptOrigin] = useState<'history' | 'manual'>('manual');
   // 使用本地存储 Hook 替代内存状态
   const {
     history,
@@ -125,11 +126,76 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
-  const ratioOptions = useMemo(() => Object.keys(ASPECT_RATIO_OPTIONS), []);
-  const sizeOptions = useMemo(
-    () => ASPECT_RATIO_OPTIONS[aspectRatio] ?? [],
-    [aspectRatio]
+  const selectedModel = useMemo(
+    () => imageModels.find((model) => model.slug === selectedImageModel) ?? null,
+    [imageModels, selectedImageModel]
   );
+
+  const modelSizeMap = useMemo(() => {
+    const pricing = selectedModel?.pricing;
+    const sizeMultipliers =
+      pricing && typeof pricing === "object" && "sizeMultipliers" in pricing
+        ? (pricing as { sizeMultipliers?: Record<string, unknown> }).sizeMultipliers
+        : undefined;
+
+    if (!sizeMultipliers || typeof sizeMultipliers !== "object") {
+      return ASPECT_RATIO_OPTIONS;
+    }
+
+    const entries = Object.keys(sizeMultipliers).reduce<Record<string, string[]>>(
+      (acc, size) => {
+        if (typeof size !== "string") {
+          return acc;
+        }
+        const [widthStr, heightStr] = size.split("x");
+        const width = Number(widthStr);
+        const height = Number(heightStr);
+        if (!Number.isFinite(width) || !Number.isFinite(height) || height === 0) {
+          return acc;
+        }
+        const gcdValue = (function gcd(a: number, b: number): number {
+          return b === 0 ? a : gcd(b, a % b);
+        })(width, height);
+        const ratioKey = `${width / gcdValue}:${height / gcdValue}`;
+        if (!acc[ratioKey]) {
+          acc[ratioKey] = [];
+        }
+        acc[ratioKey].push(size);
+        return acc;
+      },
+      {}
+    );
+
+    if (Object.keys(entries).length === 0) {
+      return ASPECT_RATIO_OPTIONS;
+    }
+
+    return Object.fromEntries(
+      Object.entries(entries).map(([ratio, sizes]) => [ratio, sizes.sort((a, b) => a.localeCompare(b))])
+    );
+  }, [selectedModel]);
+
+  const ratioOptions = useMemo(() => Object.keys(modelSizeMap), [modelSizeMap]);
+  const sizeOptions = useMemo(
+    () => modelSizeMap[aspectRatio] ?? [],
+    [modelSizeMap, aspectRatio]
+  );
+
+  useEffect(() => {
+    if (ratioOptions.length === 0) {
+      if (aspectRatio !== "") {
+        setAspectRatio("");
+      }
+      if (imageSize !== "") {
+        setImageSize("");
+      }
+      return;
+    }
+
+    if (!ratioOptions.includes(aspectRatio)) {
+      setAspectRatio(ratioOptions[0]);
+    }
+  }, [ratioOptions, aspectRatio, imageSize]);
 
   // Effects
   useEffect(() => {
@@ -200,15 +266,39 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
       .then((blob) => {
         const type = blob.type || "image/png";
         const file = new File([blob], `input-${Date.now()}.png`, { type });
+        
+        // 从历史记录中查找对应的提示词和元数据
+        const historyItem = history.find(h => h.url === imageUrl);
+        
+        // 保存原图URL用于对比显示
+        if (!originalImageUrl) {
+          setOriginalImageUrl(imageUrl);
+        }
+        
+        // 加载图片到编辑器
         handleImageSelect(file, imageUrl);
+        
+        // 切换到图生图模式
         setMode("img2img");
-        toast.success("图片已设为输入");
+        
+        // 如果找到历史记录，继承提示词
+        if (historyItem && historyItem.prompt) {
+          setImagePrompt(historyItem.prompt);
+          setPromptOrigin('history');
+          toast.success(`已加载为输入图，提示词已继承`);
+        } else {
+          setPromptOrigin('manual');
+          toast.success("图片已设为输入，可以开始二次编辑");
+        }
+        
+        // 清空之前的生成结果，准备新编辑
+        setGeneratedImageUrl(null);
       })
       .catch((err) => {
         console.error(err);
         toast.error("设置输入图片失败");
       });
-  }, [handleImageSelect]);
+  }, [handleImageSelect, history, originalImageUrl]);
 
   const addToHistory = useCallback(async (imageUrl: string, prompt: string, modelSlug?: string, genMode?: GenerationMode, size?: string) => {
     // 获取模型显示名称
@@ -428,12 +518,17 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
               <Select
                 value={aspectRatio}
                 onChange={(event) => setAspectRatio(event.target.value)}
+                disabled={ratioOptions.length === 0}
               >
-                {ratioOptions.map((ratio) => (
-                  <option key={ratio} value={ratio}>
-                    {ratio}
-                  </option>
-                ))}
+                {ratioOptions.length === 0 ? (
+                  <option value="">暂无可用比例</option>
+                ) : (
+                  ratioOptions.map((ratio) => (
+                    <option key={ratio} value={ratio}>
+                      {ratio}
+                    </option>
+                  ))
+                )}
               </Select>
             </div>
             <div className="space-y-2">
@@ -491,18 +586,44 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
 
         {/* Prompt Input */}
 <div className="space-y-3 rounded-3xl border border-default bg-surface p-5">
+          <div className="flex items-center justify-between">
 <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            提示词
-          </label>
+              提示词
+            </label>
+            {promptOrigin === 'history' && (
+              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-orange-500/20 text-orange-500 border border-orange-500/30">
+                已继承
+              </span>
+            )}
+          </div>
           <Textarea
             rows={6}
             placeholder="描述你想要生成的画面，例如：霓虹灯下的赛博朋克街道，强调反射与光影。"
             value={imagePrompt}
-            onChange={(event) => setImagePrompt(event.target.value)}
+            onChange={(event) => {
+              setImagePrompt(event.target.value);
+              setPromptOrigin('manual');
+            }}
           />
+          <div className="flex items-center justify-between">
 <p className="text-xs text-muted-foreground">
-            提示词越具体，越能帮助模型生成符合预期的内容。
-          </p>
+              提示词越具体，越能帮助模型生成符合预期的内容。
+            </p>
+            {mode === 'img2img' && imagePrompt && (
+              <button
+                onClick={() => {
+                  setImagePrompt('');
+                  setPromptOrigin('manual');
+                }}
+                className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                清空
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Generate Button */}

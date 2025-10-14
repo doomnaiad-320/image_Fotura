@@ -54,6 +54,7 @@ async function historyStoreToGeneratedImage(
   // 尝试从缓存获取URL（缩略图优先）
   let blobUrl = blobManager.getCachedURL(historyStore.imageId);
   
+  // 如果缓存中没有(页面刷新后),重新从 IndexedDB 加载
   if (!blobUrl) {
     const blob = await db.getThumbnail(historyStore.imageId);
     if (blob) {
