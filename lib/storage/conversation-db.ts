@@ -5,6 +5,7 @@
  */
 
 import type { Conversation, ConversationMessage } from '@/types/conversation';
+import { imageBlobStore } from './image-blob';
 
 const DB_NAME = 'aigc-studio-conversations';
 const DB_VERSION = 1;
@@ -196,8 +197,14 @@ export class ConversationDatabase {
   async deleteConversation(id: string): Promise<void> {
     const db = await this.ensureDB();
 
-    // 先删除所有消息
+    // 先删除所有消息及其图片 Blob
     const messages = await this.getMessages(id);
+    const messageIds = messages.map(m => m.id);
+    
+    // 删除所有图片 Blob
+    await imageBlobStore.deleteBlobsByMessageIds(messageIds);
+    
+    // 删除消息记录
     for (const message of messages) {
       await this.deleteMessage(message.id);
     }
@@ -324,6 +331,13 @@ export class ConversationDatabase {
   async deleteMessage(id: string): Promise<void> {
     const db = await this.ensureDB();
 
+    // 删除关联的图片 Blob
+    try {
+      await imageBlobStore.deleteBlob(id);
+    } catch (error) {
+      console.warn('[ConversationDB] 删除图片 Blob 失败（可能不存在）:', id);
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([CONVERSATION_STORES.messages], 'readwrite');
       const store = transaction.objectStore(CONVERSATION_STORES.messages);
@@ -344,6 +358,9 @@ export class ConversationDatabase {
    */
   async clearAll(): Promise<void> {
     const db = await this.ensureDB();
+
+    // 清空所有图片 Blob
+    await imageBlobStore.clearAll();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(

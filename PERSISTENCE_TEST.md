@@ -4,6 +4,16 @@
 
 对话持久化功能现已完全集成！以下是测试步骤。
 
+### 🔧 核心技术
+
+**Blob URL 持久化解决方案：**
+- 生成图片时：`blob:http://...` → 保存为 Blob 对象到 IndexedDB
+- 刷新页面时：Blob 对象 → 重新生成新的 `blob:http://...`
+- 利用 3 个 IndexedDB 数据库：
+  - `aigc-studio-conversations` - 对话元数据
+  - `aigc-studio-image-blobs` - **图片 Blob 存储（新增）**
+  - `aigc-studio-local` - 历史记录（已有）
+
 ---
 
 ## 🎯 测试场景
@@ -28,9 +38,12 @@
 // 打开浏览器控制台，查看日志
 // 应该看到:
 // [ConversationDB] 数据库初始化成功
+// [ImageBlobStore] 数据库初始化成功  ⭐ 新增
 // [ConversationDB] 加载 N 个对话
 // [ConversationView] 恢复对话: conv-xxx
 // [ConversationDB] 加载 N 条消息
+// [ImageBlobStore] 生成新的 blob URL: msg-asst-xxx  ⭐ 新增
+// [ConversationView] 恢复图片 Blob: msg-asst-xxx  ⭐ 新增
 // [ConversationView] 已恢复 N 条消息
 ```
 
@@ -68,8 +81,12 @@
 
 **查看 IndexedDB：**
 ```
-Chrome: F12 → Application → IndexedDB → aigc-studio-conversations
-Firefox: F12 → Storage → Indexed DB → aigc-studio-conversations
+Chrome: F12 → Application → IndexedDB
+  ├─ aigc-studio-conversations  (对话元数据)
+  ├─ aigc-studio-image-blobs    (图片 Blob 存储)  ⭐ 新增
+  └─ aigc-studio-local          (历史记录)
+
+Firefox: F12 → Storage → Indexed DB
 Safari: Develop → Web Inspector → Storage → Indexed DB
 ```
 
@@ -127,6 +144,7 @@ localStorage.setItem('debug', 'ConversationDB,ConversationView')
 ```javascript
 // 在控制台执行
 indexedDB.deleteDatabase('aigc-studio-conversations');
+indexedDB.deleteDatabase('aigc-studio-image-blobs'); // ⭐ 也需要清空
 location.reload();
 ```
 
@@ -136,12 +154,12 @@ location.reload();
 
 ### 问题 1: 刷新后图片不显示
 
-**原因:** blob URL 已释放
+**原因：** blob URL 已释放
 
-**解决方案:** 
-- 当前版本图片存储在 `aigc-studio-local` (历史记录数据库)
-- 对话恢复时自动从历史记录读取 blob URL
-- 如果仍有问题，清空两个数据库重新开始
+**解决方案：** ✅ **已修复！**
+- 使用 `aigc-studio-image-blobs` 数据库存储 Blob 对象
+- 刷新时从 Blob 重新生成 blob URL
+- 不再依赖短命的 blob URL
 
 ### 问题 2: 对话未自动恢复
 
@@ -266,4 +284,39 @@ console.timeEnd('对话恢复');
 
 **测试完成标志:** 所有场景测试通过 + 验证清单全部勾选 ✅
 
-**最后更新:** 2025-01-14 22:26 UTC
+**最后更新：** 2025-01-14 23:00 UTC
+
+---
+
+## 🔧 技术详情
+
+### Blob 存储架构
+
+```
+生成图片流程：
+1. API 返回 URL → useLocalHistory 创建 Blob → 生成 blob:// URL
+2. 保存消息时：blob:// URL → fetch Blob → 存入 IndexedDB
+
+恢复图片流程：
+1. 从消息记录获取消息 ID
+2. 使用消息 ID 查询 image-blobs 数据库
+3. Blob → URL.createObjectURL() → 新的 blob:// URL
+4. 替换消息中的 imageUrl
+```
+
+### 数据库结构
+
+**aigc-studio-image-blobs:**
+```typescript
+interface ImageBlobRecord {
+  id: string;        // 消息 ID (主键)
+  blob: Blob;        // 图片 Blob 对象
+  timestamp: number; // 保存时间戳
+}
+```
+
+**关键 API：**
+- `imageBlobStore.saveBlobFromURL(id, blobURL)` - 保存
+- `imageBlobStore.getBlobURL(id)` - 恢复
+- `imageBlobStore.deleteBlob(id)` - 删除
+- `imageBlobStore.clearAll()` - 清空

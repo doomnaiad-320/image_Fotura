@@ -36,7 +36,7 @@ export function InputArea({
   isEditMode = false
 }: InputAreaProps) {
   const [prompt, setPrompt] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true); // 默认展开
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [selectedSize, setSelectedSize] = useState('1024x1024');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
