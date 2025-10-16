@@ -67,6 +67,7 @@ export type ModelView = {
   tags: string[];
   supportsStream: boolean;
   enabled: boolean;
+  isPromptOptimizer: boolean;
   sort: number;
   pricing: ModelPricingView;
 };
@@ -260,6 +261,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deletingModel, setDeletingModel] = useState<string | null>(null);
+  const [togglingOptimizer, setTogglingOptimizer] = useState<string | null>(null);
 
   const [modelSelector, setModelSelector] = useState<{
     open: boolean;
@@ -410,6 +412,27 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
       toast.error(error instanceof Error ? error.message : "删除失败");
     } finally {
       setDeletingModel(null);
+    }
+  };
+
+  const handleTogglePromptOptimizer = async (slug: string, isCurrentlyOptimizer: boolean) => {
+    try {
+      setTogglingOptimizer(slug);
+      if (isCurrentlyOptimizer) {
+        // 取消优化器标记
+        await httpFetch(`/api/models/${slug}/optimizer`, { method: "DELETE" });
+        toast.success("已取消 Prompt 优化器标记");
+      } else {
+        // 设置为优化器
+        await httpFetch(`/api/models/${slug}/optimizer`, { method: "POST" });
+        toast.success("已设置为 Prompt 优化器");
+      }
+      await mutateModels();
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "操作失败");
+    } finally {
+      setTogglingOptimizer(null);
     }
   };
 
@@ -809,8 +832,17 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
               {modelsList.map((model) => (
                 <tr key={model.slug} className="border-t border-white/5 hover:bg-white/5">
                     <td className="px-4 py-3 text-white">
-                      <div className="font-semibold">{model.displayName}</div>
-                      <div className="text-xs text-gray-500">{model.slug}</div>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="font-semibold">{model.displayName}</div>
+                          <div className="text-xs text-gray-500">{model.slug}</div>
+                        </div>
+                        {model.isPromptOptimizer && (
+                          <span className="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] text-purple-300">
+                            ⚡ Prompt 优化器
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-400">
                       {model.provider.name}
@@ -831,6 +863,14 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                           onClick={() => openPricingModalForModel(model)}
                         >
                           设置价格
+                        </Button>
+                        <Button
+                          variant={model.isPromptOptimizer ? "primary" : "secondary"}
+                          size="sm"
+                          loading={togglingOptimizer === model.slug}
+                          onClick={() => handleTogglePromptOptimizer(model.slug, model.isPromptOptimizer)}
+                        >
+                          {model.isPromptOptimizer ? "✅ 优化器" : "设为优化器"}
                         </Button>
                         <Button
                           variant="secondary"

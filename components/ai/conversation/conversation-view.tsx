@@ -343,13 +343,17 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
       let editChain: ConversationMessage['editChain'];
 
       if (isEditMode && parentMsg?.imageUrl) {
-        // 图生图模式 - 创建编辑链
-        editChain = createEditChain(parentMsg, prompt, assistantMsgId);
+        // 图生图模式
+        // 获取原始 Prompt（父消息的最终 Prompt）
+        const originalPrompt = parentMsg.editChain
+          ? parentMsg.editChain.currentFullPrompt || parentMsg.editChain.fullPrompt
+          : parentMsg.content;
 
         // 调用图像编辑 API
         const formData = new FormData();
         formData.append('model', selectedModel);
-        formData.append('prompt', editChain.fullPrompt); // 使用完整提示词!
+        formData.append('prompt', prompt); // 用户输入的修改指令
+        formData.append('originalPrompt', originalPrompt); // 原始完整 Prompt
         formData.append('size', '1024x1024');
         formData.append('n', '1');
 
@@ -357,7 +361,11 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
         const parentBlob = await fetch(parentMsg.imageUrl).then(r => r.blob());
         formData.append('image', parentBlob);
 
-        const response = await httpFetch<{ data: { url?: string; b64_json?: string }[] }>(
+        const response = await httpFetch<{ 
+          data: { url?: string; b64_json?: string }[]; 
+          generatedPrompt?: string;
+          originalInput?: string;
+        }>(
           '/api/ai/images/edits',
           {
             method: 'POST',
@@ -371,6 +379,10 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
         }
 
         imageUrl = imageData.url ?? (imageData.b64_json ? `data:image/png;base64,${imageData.b64_json}` : '');
+        
+        // 使用 API 返回的生成 Prompt 创建编辑链
+        const generatedPrompt = response.generatedPrompt || prompt;
+        editChain = createEditChain(parentMsg, prompt, generatedPrompt, assistantMsgId);
       } else {
         // 文生图模式
         const response = await httpFetch<{ data: { url?: string; b64_json?: string }[] }>(
@@ -499,10 +511,66 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
 
   // 处理时间轴节点点击
   const handleTimelineNodeClick = useCallback((messageId: string, nodeId: string) => {
-    // TODO: 实现回退到指定节点的逻辑
-    console.log('[Timeline] 点击节点:', messageId, nodeId);
-    toast.info('节点回退功能将在阶段 2 实现');
-  }, []);
+    const message = messages.find(m => m.id === messageId);
+    if (!message || !message.editChain) {
+      toast.error('无效的消息或编辑链');
+      return;
+    }
+
+    // 查找节点对应的消息
+    let targetMessage: ConversationMessage | undefined;
+    let targetPrompt: string;
+
+    if (nodeId === 'base') {
+      // 回退到基础节点（初始图片）
+      // 查找编辑链的父消息
+      targetMessage = messages.find(m => m.id === message.editChain?.parentMessageId);
+      targetPrompt = message.editChain.basePrompt;
+      
+      if (!targetMessage) {
+        // 如果找不到父消息，说明当前消息就是第一张图
+        toast.info('当前已经是初始状态');
+        return;
+      }
+    } else {
+      // 回退到编辑链中的某个节点
+      // nodeId 就是 messageId
+      const editIndex = message.editChain.edits.findIndex(e => e.messageId === nodeId);
+      if (editIndex === -1) {
+        toast.error('节点不存在');
+        return;
+      }
+
+      targetMessage = messages.find(m => m.id === nodeId);
+      
+      // 构建到该节点的完整提示词
+      const prompts = [message.editChain.basePrompt];
+      for (let i = 0; i <= editIndex; i++) {
+        prompts.push(message.editChain.edits[i].prompt);
+      }
+      targetPrompt = prompts.join(', ');
+    }
+
+    if (!targetMessage || !targetMessage.imageUrl) {
+      toast.error('找不到目标节点的图片');
+      return;
+    }
+
+    // 设置为编辑模式
+    setParentMessageId(targetMessage.id);
+    setInheritedPrompt(targetPrompt);
+    
+    // 滚动到输入区
+    setTimeout(() => {
+      const inputArea = document.querySelector('textarea');
+      if (inputArea) {
+        inputArea.focus();
+        inputArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+    
+    toast.success(`已回退到节点，可以继续编辑`);
+  }, [messages]);
 
   // 加载中状态
   if (isLoadingConversation) {
@@ -529,51 +597,57 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
-      {/* 主内容区 */}
+      {/* 主内容区 - 全等宽布局 */}
       <div className="flex-1 flex flex-col">
-        {/* 顶部工具栏 */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-          {/* 移动端菜单按钮 */}
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="打开侧边栏"
-          >
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+        {/* 顶部工具栏 - 全等宽 */}
+        <div className="border-b border-white/10">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3 py-3">
+              {/* 移动端菜单按钮 */}
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="打开侧边栏"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
 
-          <ConversationHeader
-            models={models}
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
-            credits={balance?.credits}
-          />
-        </div>
-
-        {/* 消息列表 */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto px-4 py-6 space-y-6 overscroll-contain"
-        >
-          <div className="max-w-4xl mx-auto">
-            <MessageList
-              messages={messages}
-              onUseAsInput={handleUseAsInput}
-              onPublish={handlePublish}
-              onTimelineNodeClick={handleTimelineNodeClick}
-            />
+              <ConversationHeader
+                models={models}
+                selectedModel={selectedModel}
+                onModelChange={setSelectedModel}
+                credits={balance?.credits}
+              />
+            </div>
           </div>
         </div>
 
-        {/* 输入区域 */}
-        <InputArea
-          onSend={handleSend}
-          disabled={!selectedModel || messages.some(m => m.isGenerating)}
-          inheritedPrompt={inheritedPrompt}
-          isEditMode={Boolean(parentMessageId)}
-        />
+        {/* 消息列表 - 完全全宽，0 padding */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto overscroll-contain py-6"
+        >
+          <MessageList
+            messages={messages}
+            onUseAsInput={handleUseAsInput}
+            onPublish={handlePublish}
+            onTimelineNodeClick={handleTimelineNodeClick}
+          />
+        </div>
+
+        {/* 输入区域 - 全等宽 */}
+        <div className="border-t border-white/10">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <InputArea
+              onSend={handleSend}
+              disabled={!selectedModel || messages.some(m => m.isGenerating)}
+              inheritedPrompt={inheritedPrompt}
+              isEditMode={Boolean(parentMessageId)}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

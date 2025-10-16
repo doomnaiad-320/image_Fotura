@@ -41,7 +41,8 @@ export interface ConversationMessage {
 export interface EditChain {
   basePrompt: string; // 初始提示词 (第一次文生图)
   edits: EditStep[]; // 后续编辑步骤
-  fullPrompt: string; // 累积的完整提示词 (用于发布)
+  currentFullPrompt: string; // 当前最新的完整 Prompt（总是 edits 中最后一个的 generatedPrompt）
+  fullPrompt: string; // @deprecated 使用 currentFullPrompt 替代
   parentMessageId?: string; // 基于哪条消息编辑 (用于链式追溯)
   originalImageId?: string; // 原始图片ID (第一张图)
 }
@@ -50,10 +51,14 @@ export interface EditChain {
  * 单个编辑步骤
  */
 export interface EditStep {
-  prompt: string; // 这一步的编辑提示
+  userInput: string; // 用户输入的修改指令
+  generatedPrompt: string; // LLM 生成的完整 Prompt（用于实际生成图片）
   messageId: string; // 关联到哪条消息
   timestamp: number;
   mode: 'txt2img' | 'img2img';
+  
+  // 兼容旧字段（逼过渡）
+  prompt?: string; // @deprecated 使用 generatedPrompt 替代
 }
 
 /**

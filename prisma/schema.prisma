@@ -72,21 +72,22 @@ model Provider {
 }
 
 model AiModel {
-  id             String    @id @default(cuid())
-  slug           String    @unique
-  displayName    String
-  providerId     String
-  family         String
-  modalities     String      @default("[]")
-  contextWindow  Int?
-  supportsStream Boolean   @default(false)
-  pricing        String      @default("{}")
-  rateLimit      String      @default("{}")
-  tags           String      @default("[]")
-  enabled        Boolean   @default(true)
-  sort           Int       @default(100)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  slug               String    @unique
+  displayName        String
+  providerId         String
+  family             String
+  modalities         String      @default("[]")
+  contextWindow      Int?
+  supportsStream     Boolean   @default(false)
+  pricing            String      @default("{}")
+  rateLimit          String      @default("{}")
+  tags               String      @default("[]")
+  enabled            Boolean   @default(true)
+  isPromptOptimizer  Boolean   @default(false)
+  sort               Int       @default(100)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   transactions CreditTransaction[]

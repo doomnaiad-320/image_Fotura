@@ -113,9 +113,19 @@ export function reconstructEditChain(
  * @param newMessageId 新生成的消息ID
  * @returns 新的编辑链
  */
+/**
+ * 创建新的编辑链
+ * 
+ * @param parentMessage 父消息(要编辑的图片所在消息)
+ * @param userInput 用户输入的修改指令
+ * @param generatedPrompt LLM 生成的完整 Prompt
+ * @param newMessageId 新生成的消息ID
+ * @returns 新的编辑链
+ */
 export function createEditChain(
   parentMessage: ConversationMessage,
-  newPrompt: string,
+  userInput: string,
+  generatedPrompt: string,
   newMessageId: string
 ): EditChain {
   // 如果父消息已有编辑链，在其基础上扩展
@@ -125,7 +135,8 @@ export function createEditChain(
     const newEdits: EditStep[] = [
       ...edits,
       {
-        prompt: newPrompt,
+        userInput,
+        generatedPrompt,
         messageId: newMessageId,
         timestamp: Date.now(),
         mode: 'img2img'
@@ -135,7 +146,8 @@ export function createEditChain(
     return {
       basePrompt,
       edits: newEdits,
-      fullPrompt: buildFullPrompt(basePrompt, newEdits),
+      currentFullPrompt: generatedPrompt, // 当前最新的完整 Prompt
+      fullPrompt: generatedPrompt, // 兼容旧字段
       parentMessageId: parentMessage.id,
       originalImageId
     };
@@ -146,20 +158,15 @@ export function createEditChain(
     basePrompt: parentMessage.content,
     edits: [
       {
-        prompt: newPrompt,
+        userInput,
+        generatedPrompt,
         messageId: newMessageId,
         timestamp: Date.now(),
         mode: 'img2img'
       }
     ],
-    fullPrompt: buildFullPrompt(parentMessage.content, [
-      {
-        prompt: newPrompt,
-        messageId: newMessageId,
-        timestamp: Date.now(),
-        mode: 'img2img'
-      }
-    ]),
+    currentFullPrompt: generatedPrompt,
+    fullPrompt: generatedPrompt, // 兼容旧字段
     parentMessageId: parentMessage.id,
     originalImageId: parentMessage.imageId
   };

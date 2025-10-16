@@ -85,6 +85,7 @@ export default async function AdminAIPage() {
     tags: parseModalities(model.tags),
     supportsStream: model.supportsStream,
     enabled: model.enabled,
+    isPromptOptimizer: model.isPromptOptimizer,
     sort: model.sort,
     pricing: parsePricing(model.pricing)
   }));

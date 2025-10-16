@@ -56,15 +56,26 @@ export function MessageItem({
 
       {/* 消息内容 */}
       <div
-        className={`max-w-[75%] ${
+        className={`w-full ${
           isUser
             ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
             : 'bg-gray-800/80 backdrop-blur-sm text-gray-100 border border-white/5'
         } rounded-2xl shadow-lg`}
       >
         {/* 文本内容 */}
-        <div className="px-4 py-3">
+        <div className="px-4 py-3 space-y-2">
+          {/* 用户输入 */}
           <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+          
+          {/* 如果有编辑链，显示生成的完整 Prompt */}
+          {isAssistant && message.editChain && message.editChain.currentFullPrompt && (
+            <div className="pt-2 border-t border-white/10">
+              <p className="text-xs text-gray-400 mb-1">生成的完整 Prompt：</p>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+                {message.editChain.currentFullPrompt}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 图片结果 (仅助手消息) */}

@@ -15,8 +15,10 @@ export default async function StudioV2Page() {
   const models = await listEnabledModelsForPlayground();
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-3">
+    // 突破外层 max-w-7xl 限制，使用负 margin 和 100vw
+    <div className="relative" style={{ marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)', width: '100vw' }}>
+      {/* 页面标题 - 居中显示 */}
+      <header className="max-w-7xl mx-auto px-4 py-6 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-semibold text-white">创作工作台 V2</h1>
@@ -32,6 +34,8 @@ export default async function StudioV2Page() {
           </a>
         </div>
       </header>
+      
+      {/* 对话区域 - 全屏宽度 */}
       <ConversationView models={models} isAuthenticated={Boolean(user)} />
     </div>
   );

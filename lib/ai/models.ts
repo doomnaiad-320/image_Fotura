@@ -107,6 +107,42 @@ export async function deleteModel(slug: string) {
   await prisma.aiModel.delete({ where: { slug } });
 }
 
+/**
+ * 获取系统配置的 Prompt 优化器模型
+ * @returns Prompt 优化器模型，如果未配置则返回 null
+ */
+export async function getPromptOptimizerModel() {
+  return prisma.aiModel.findFirst({
+    where: {
+      isPromptOptimizer: true,
+      enabled: true,
+      provider: { enabled: true }
+    },
+    include: {
+      provider: true
+    }
+  });
+}
+
+/**
+ * 设置某个模型为 Prompt 优化器
+ * 注意：同一时间只能有一个模型被标记为优化器
+ * @param slug 模型 slug
+ */
+export async function setPromptOptimizerModel(slug: string) {
+  // 先取消所有模型的优化器标记
+  await prisma.aiModel.updateMany({
+    where: { isPromptOptimizer: true },
+    data: { isPromptOptimizer: false }
+  });
+
+  // 设置新的优化器
+  await prisma.aiModel.update({
+    where: { slug },
+    data: { isPromptOptimizer: true }
+  });
+}
+
 export async function listEnabledModelsForPlayground() {
   const models = await prisma.aiModel.findMany({
     where: {
@@ -145,11 +181,15 @@ export async function importRemoteModels(providerSlug: string, remotes: RemoteMo
     throw new Error("Provider 不存在");
   }
 
+  // 获取现有模型的最大 sort 值，用于为新模型分配递增的 sort
   const existingModels = await prisma.aiModel.findMany({
-    where: { providerId: provider.id }
+    where: { providerId: provider.id },
+    orderBy: { sort: "desc" },
+    take: 1
   });
+  const maxSort = existingModels[0]?.sort ?? 0;
 
-  const existingSlugs = new Set(existingModels.map((model) => model.slug));
+  // 只 upsert 选中的模型，不影响其他已有模型
   const upserts = remotes.map((remote, index) =>
     prisma.aiModel.upsert({
       where: { slug: remote.id },
@@ -157,8 +197,8 @@ export async function importRemoteModels(providerSlug: string, remotes: RemoteMo
         displayName: remote.name ?? remote.id,
         tags: serializeStringArray(remote.capabilities ?? []),
         modalities: serializeStringArray(remote.capabilities ?? []),
-        enabled: true,
-        sort: index * 10
+        enabled: true
+        // 保留原有 sort，不修改排序
       },
       create: {
         slug: remote.id,
@@ -176,7 +216,7 @@ export async function importRemoteModels(providerSlug: string, remotes: RemoteMo
         }),
         rateLimit: serializeRecord({ rpm: 60 }),
         tags: serializeStringArray(remote.capabilities ?? []),
-        sort: index * 10,
+        sort: maxSort + (index + 1) * 10, // 新模型排在最后
         enabled: true
       }
     })
@@ -184,19 +224,8 @@ export async function importRemoteModels(providerSlug: string, remotes: RemoteMo
 
   await prisma.$transaction(upserts);
 
-  const remoteSlugs = new Set(remotes.map((item) => item.id));
-  const disabled = existingModels
-    .filter((model) => !remoteSlugs.has(model.slug))
-    .map((model) =>
-      prisma.aiModel.update({
-        where: { id: model.id },
-        data: { enabled: false }
-      })
-    );
-
-  if (disabled.length > 0) {
-    await prisma.$transaction(disabled);
-  }
+  // 移除了自动禁用未选中模型的逻辑
+  // 用户的已有模型保持原样，不会被影响
 }
 
 export async function loadSeedsFromConfig(seeds: SeedProvider[]) {
