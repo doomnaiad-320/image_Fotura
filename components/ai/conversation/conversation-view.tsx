@@ -596,8 +596,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   }
 
   return (
-    <div className="flex h-screen bg-app">
-      {/* 侧边栏 */}
+    <div className="bg-app min-h-screen">
+      {/* 侧边栏（固定，桌面常显，移动遮罩抽屉） */}
       <ConversationSidebar
         conversations={conversations}
         currentConversationId={currentConversationId}
@@ -609,11 +609,11 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         user={user ? { ...user, credits: balance?.credits ?? user.credits } : undefined}
       />
 
-      {/* 主内容区 - 全等宽布局 */}
-      <div className="flex-1 flex flex-col">
-        {/* 顶部工具栏 - 全等宽 */}
+      {/* 主内容区：与 ChatGPT 一样，桌面偏移左侧边栏宽度 */}
+      <div className="flex flex-col min-h-screen lg:ml-72">
+        {/* 顶部工具栏 */}
         <div className="border-b border-default">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <div className="flex items-center gap-3 py-3">
               {/* 移动端菜单按钮 */}
               <button
@@ -636,7 +636,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           </div>
         </div>
 
-        {/* 消息列表 - 完全全宽，0 padding */}
+        {/* 消息列表 */}
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto overscroll-contain py-6 pb-0 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
@@ -649,9 +649,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           />
         </div>
 
-        {/* 输入区域 - 全等宽 */}
+        {/* 输入区域 */}
         <div className="border-t border-default">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <InputArea
               onSend={handleSend}
               disabled={!selectedModel || messages.some(m => m.isGenerating)}

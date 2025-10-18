@@ -52,7 +52,7 @@ export function ConversationSidebar({
 
       {/* 侧边栏 */}
       <div
-        className={`fixed lg:sticky top-0 left-0 h-screen bg-surface border-r border-default flex flex-col z-40 transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 h-screen bg-surface border-r border-default flex flex-col z-40 transition-transform duration-300 lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } w-72`}
       >

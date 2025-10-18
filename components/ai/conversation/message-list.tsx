@@ -54,7 +54,7 @@ export function MessageList({
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl space-y-4 px-4 sm:px-6">
       {messages.map((message) => (
         <MessageItem
           key={message.id}
