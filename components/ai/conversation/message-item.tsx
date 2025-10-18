@@ -22,11 +22,32 @@ export function MessageItem({
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
   const [showLightbox, setShowLightbox] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false); // 控制 Prompt 弹窗
 
   // 系统消息（暂时不显示）
   if (message.role === 'system') {
     return null;
   }
+
+  // 尝试格式化 JSON
+  const formatPrompt = (prompt: string) => {
+    try {
+      const parsed = JSON.parse(prompt);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return prompt;
+    }
+  };
+
+  // 判断是否是 JSON
+  const isJSON = (str: string) => {
+    try {
+      JSON.parse(str);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const handleDownload = () => {
     if (!message.imageUrl) return;
@@ -38,6 +59,9 @@ export function MessageItem({
     link.click();
     document.body.removeChild(link);
   };
+
+  // 统一获取要展示/复制的完整 Prompt（兼容旧字段）
+  const promptText = message.editChain?.currentFullPrompt ?? message.editChain?.fullPrompt ?? '';
 
   return (
     <div
@@ -54,28 +78,18 @@ export function MessageItem({
         </div>
       )}
 
-      {/* 消息内容 */}
+      {/* 消息内容 - ChatGPT 风格：用户消息限制 70%，AI 消息全宽 */}
       <div
-        className={`w-full ${
-          isUser
-            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-            : 'bg-gray-800/80 backdrop-blur-sm text-gray-100 border border-white/5'
+        className={`${
+          isUser 
+            ? 'max-w-[70%] bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+            : 'flex-1 bg-gray-800/80 backdrop-blur-sm text-gray-100 border border-white/5'
         } rounded-2xl shadow-lg`}
       >
         {/* 文本内容 */}
-        <div className="px-4 py-3 space-y-2">
+        <div className="px-4 py-3">
           {/* 用户输入 */}
           <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-          
-          {/* 如果有编辑链，显示生成的完整 Prompt */}
-          {isAssistant && message.editChain && message.editChain.currentFullPrompt && (
-            <div className="pt-2 border-t border-white/10">
-              <p className="text-xs text-gray-400 mb-1">生成的完整 Prompt：</p>
-              <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
-                {message.editChain.currentFullPrompt}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* 图片结果 (仅助手消息) */}
@@ -133,9 +147,10 @@ export function MessageItem({
             {/* 操作按钮 */}
             {!message.isGenerating && (
               <MessageActions
-                onUseAsInput={onUseAsInput}
                 onDownload={handleDownload}
                 onPublish={onPublish}
+                onViewPrompt={() => setShowPromptModal(true)}
+                hasPrompt={!!promptText}
                 published={message.published}
                 disabled={message.isGenerating}
               />
@@ -201,6 +216,70 @@ export function MessageItem({
           alt={message.content}
           onClose={() => setShowLightbox(false)}
         />
+      )}
+      
+      {/* Prompt 弹窗 */}
+      {showPromptModal && promptText && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setShowPromptModal(false)}
+        >
+          <div 
+            className="bg-gray-900 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden border border-white/10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-gray-800/50">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-white">AI 生成的完整 Prompt</h3>
+                {isJSON(promptText) && (
+                  <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
+                    JSON
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {/* 复制按钮 */}
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(promptText);
+                    // TODO: 显示复制成功提示
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors group"
+                  title="复制到剪贴板"
+                >
+                  <svg className="w-5 h-5 text-gray-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+                {/* 关闭按钮 */}
+                <button
+                  onClick={() => setShowPromptModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors group"
+                  title="关闭"
+                >
+                  <svg className="w-5 h-5 text-gray-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+              <pre className={`text-sm leading-relaxed whitespace-pre-wrap ${
+                isJSON(promptText) 
+                  ? 'text-green-300 font-mono' 
+                  : 'text-gray-300'
+              }`}>
+                {formatPrompt(promptText)}
+              </pre>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

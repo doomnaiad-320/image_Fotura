@@ -3,44 +3,38 @@
 import React from 'react';
 
 interface MessageActionsProps {
-  onUseAsInput: () => void;
   onDownload: () => void;
   onPublish: () => void;
+  onViewPrompt?: () => void;  // 查看 Prompt 回调
   published?: boolean;
   disabled?: boolean;
+  hasPrompt?: boolean;  // 是否有 Prompt 可查看
 }
 
 export function MessageActions({
-  onUseAsInput,
   onDownload,
   onPublish,
+  onViewPrompt,
   published = false,
-  disabled = false
+  disabled = false,
+  hasPrompt = false
 }: MessageActionsProps) {
   return (
     <div className="flex flex-wrap gap-2">
-      {/* 编辑按钮 - 主要操作 */}
-      <button
-        onClick={onUseAsInput}
-        disabled={disabled}
-        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm hover:from-orange-600 hover:to-orange-700 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <svg 
-          className="w-4 h-4" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
+      {/* 查看 Prompt 按钮 */}
+      {hasPrompt && onViewPrompt && (
+        <button
+          onClick={onViewPrompt}
+          disabled={disabled}
+          className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" 
-          />
-        </svg>
-        <span>编辑</span>
-      </button>
-
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          <span>🤖 查看 Prompt</span>
+        </button>
+      )}
+      
       {/* 下载按钮 */}
       <button
         onClick={onDownload}

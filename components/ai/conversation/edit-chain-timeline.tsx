@@ -42,6 +42,26 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
     setConfirmingNodeId(null);
   };
 
+  // 尝试格式化 JSON
+  const formatPrompt = (prompt: string) => {
+    try {
+      const parsed = JSON.parse(prompt);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return prompt; // 不是 JSON，返回原文
+    }
+  };
+
+  // 判断是否是 JSON
+  const isJSON = (str: string) => {
+    try {
+      JSON.parse(str);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -59,8 +79,19 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
         )}
       </div>
 
-      {/* 水平时间轴 */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+      {/* 水平时间轴 - 隐藏滚动条 */}
+      <div 
+        className="flex items-center gap-2 overflow-x-auto pb-2" 
+        style={{ 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none' 
+        }}
+      >
+        <style jsx>{`
+          div::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         {timeline.map((node, index) => (
           <React.Fragment key={node.id}>
             {/* 节点 */}
@@ -72,9 +103,9 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
               }`}
               title={node.prompt}
             >
-              {/* 节点圆圈 */}
+              {/* 节点圆圈 - 减小尺寸 */}
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-200 ${
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-200 ${
                   node.id === currentNodeId
                     ? 'bg-green-500 border-green-400 text-white ring-2 ring-green-500/30 animate-pulse'
                     : node.isBase
@@ -91,17 +122,17 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
                 {node.isBase ? '🎨' : index}
               </div>
               
-              {/* 状态标签 */}
+              {/* 状态标签 - 减小尺寸 */}
               {index === timeline.length - 1 && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 </div>
               )}
 
               {/* 节点标签 */}
-              <div className="absolute top-10 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <span className="text-xs text-gray-500">{node.label}</span>
               </div>
 
@@ -134,11 +165,6 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
         ))}
       </div>
 
-      {/* 完整提示词预览 */}
-      <div className="bg-black/30 rounded-lg p-3 border border-white/5">
-        <p className="text-xs text-gray-400 mb-1">完整提示词:</p>
-        <p className="text-xs text-gray-300 leading-relaxed">{editChain.fullPrompt}</p>
-      </div>
       
       {/* 确认对话框 */}
       {confirmingNodeId && (
@@ -185,6 +211,7 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
           </div>
         </div>
       )}
+      
     </div>
   );
 }

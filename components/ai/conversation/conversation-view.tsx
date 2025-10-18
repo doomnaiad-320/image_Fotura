@@ -297,10 +297,20 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
       return;
     }
 
-    const isEditMode = Boolean(parentMessageId);
-    const parentMsg = parentMessageId
-      ? messages.find(m => m.id === parentMessageId)
-      : null;
+    // 自动持续编辑：找到最后一条 AI 回复作为父消息
+    let parentMsg = null;
+    let isEditMode = false;
+    
+    if (messages.length > 0) {
+      // 从后往前找最后一条 assistant 消息
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].role === 'assistant' && messages[i].imageUrl) {
+          parentMsg = messages[i];
+          isEditMode = true;
+          break;
+        }
+      }
+    }
 
     // 1. 添加用户消息
     const userMsg: ConversationMessage = {
