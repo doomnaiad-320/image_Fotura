@@ -610,9 +610,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       />
 
       {/* 主内容区：与 ChatGPT 一样，桌面偏移左侧边栏宽度 */}
-      <div className="flex flex-col min-h-screen lg:ml-72">
+      <div className="flex flex-col h-screen lg:ml-72 min-h-0 overflow-hidden">
         {/* 顶部工具栏 */}
-        <div className="border-b border-default">
+        <div className="border-b border-default shrink-0">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <div className="flex items-center gap-3 py-3">
               {/* 移动端菜单按钮 */}
@@ -639,7 +639,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         {/* 消息列表 */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto overscroll-contain py-6 pb-0 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 pb-0 no-scrollbar"
         >
           <MessageList
             messages={messages}
@@ -650,7 +650,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         </div>
 
         {/* 输入区域 */}
-        <div className="border-t border-default">
+        <div className="shrink-0">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <InputArea
               onSend={handleSend}

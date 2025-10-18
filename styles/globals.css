@@ -56,6 +56,10 @@ body {
   .text-muted-foreground { color: var(--color-muted-foreground); }
   .text-link { color: var(--color-link); }
   .border-default { border-color: var(--color-border); }
+
+  /* Hide scrollbars while keeping scrollability */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }
 
 a {
