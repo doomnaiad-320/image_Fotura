@@ -45,35 +45,35 @@ export function ConversationSidebar({
       {/* 移动端遮罩 */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-scrim backdrop-blur-sm z-40 lg:hidden"
           onClick={onToggle}
         />
       )}
 
       {/* 侧边栏 */}
       <div
-        className={`fixed lg:sticky top-0 left-0 h-screen bg-gray-900 border-r border-white/10 flex flex-col z-40 transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed lg:sticky top-0 left-0 h-screen bg-surface border-r border-default flex flex-col z-40 transition-transform duration-300 lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } w-72`}
       >
         {/* Logo 区域 */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 border-b border-default flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <span className="text-lg font-semibold text-white group-hover:text-orange-400 transition-colors">AIGC Studio</span>
+            <span className="text-lg font-semibold text-foreground group-hover:text-orange-400 transition-colors">AIGC Studio</span>
           </Link>
           
           {/* 移动端关闭按钮 */}
           <button
             onClick={onToggle}
-            className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="lg:hidden p-2 hover:bg-surface-2 rounded-lg transition-colors"
             aria-label="关闭侧边栏"
           >
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -89,7 +89,7 @@ export function ConversationSidebar({
                 onToggle();
               }
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-primary-foreground font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -99,9 +99,9 @@ export function ConversationSidebar({
         </div>
 
         {/* 对话列表 */}
-        <div className="flex-1 overflow-y-auto px-2 pb-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+        <div className="flex-1 overflow-y-auto px-2 pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
           {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-500 text-sm">
+            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm">
               <svg className="w-12 h-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
@@ -118,8 +118,8 @@ export function ConversationSidebar({
                     key={conv.id}
                     className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
                       isActive
-                        ? 'bg-white/10 text-white'
-                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-300'
+                        ? 'bg-surface-2 text-foreground'
+                        : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
                     }`}
                     onMouseEnter={() => setHoverId(conv.id)}
                     onMouseLeave={() => setHoverId(null)}
@@ -155,7 +155,7 @@ export function ConversationSidebar({
                             onDeleteConversation(conv.id);
                           }
                         }}
-                        className="flex-shrink-0 p-1.5 rounded-md hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
+                        className="flex-shrink-0 p-1.5 rounded-md hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition-colors"
                         aria-label="删除对话"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,30 +171,30 @@ export function ConversationSidebar({
         </div>
 
         {/* 底部用户菜单 */}
-        <div className="p-3 border-t border-white/10">
+        <div className="p-3 border-t border-default">
           {user ? (
             <>
               {/* 用户信息按钮 */}
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-2 transition-colors group"
               >
                 {/* 用户头像 */}
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-sm font-semibold">
+                  <span className="text-on-accent text-sm font-semibold">
                     {user.email?.[0]?.toUpperCase() || 'U'}
                   </span>
                 </div>
                 
                 {/* 用户信息 */}
                 <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user.email}</p>
-                  <p className="text-xs text-gray-400">余额: {user.credits} 豆</p>
+                  <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">余额: {user.credits} 豆</p>
                 </div>
                 
                 {/* 展开图标 */}
                 <svg
-                  className={`w-4 h-4 text-gray-400 group-hover:text-gray-300 transition-transform ${
+                  className={`w-4 h-4 text-muted-foreground group-hover:text-foreground transition-transform ${
                     showUserMenu ? 'rotate-180' : ''
                   }`}
                   fill="none"
@@ -211,7 +211,7 @@ export function ConversationSidebar({
                   {/* 导航链接 */}
                   <Link
                     href="/"
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-gray-300 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -221,7 +221,7 @@ export function ConversationSidebar({
                   
                   <Link
                     href="/explore"
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-gray-300 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -231,7 +231,7 @@ export function ConversationSidebar({
                   
                   <Link
                     href="/studio"
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-gray-300 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -241,7 +241,7 @@ export function ConversationSidebar({
                   
                   <Link
                     href="/settings"
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-gray-300 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -262,7 +262,7 @@ export function ConversationSidebar({
                     </Link>
                   )}
                   
-                  <div className="border-t border-white/10 my-2"></div>
+                  <div className="border-t border-default my-2"></div>
                   
                   {/* 退出登录 */}
                   <button
@@ -280,7 +280,7 @@ export function ConversationSidebar({
           ) : (
             <Link
               href="/auth/signin?redirect=/studio-v2"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-primary-foreground font-medium hover:bg-orange-600 transition-colors"
             >
               登录使用
             </Link>

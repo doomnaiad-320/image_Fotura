@@ -26,7 +26,7 @@ export function MessageActions({
         <button
           onClick={onViewPrompt}
           disabled={disabled}
-          className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-surface-2 hover:bg-surface text-muted-foreground hover:text-foreground border border-default disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -39,7 +39,7 @@ export function MessageActions({
       <button
         onClick={onDownload}
         disabled={disabled}
-        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-surface-2 hover:bg-surface text-muted-foreground hover:text-foreground border border-default disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <svg 
           className="w-4 h-4" 
@@ -61,10 +61,10 @@ export function MessageActions({
       <button
         onClick={onPublish}
         disabled={disabled || published}
-        className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed ${
           published
             ? 'bg-green-500/20 text-green-400 border-green-500/30'
-            : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white'
+            : 'bg-surface-2 hover:bg-surface text-muted-foreground hover:text-foreground border-default'
         }`}
       >
         <svg 

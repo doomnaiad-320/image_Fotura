@@ -65,7 +65,7 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 text-xs text-gray-400">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
@@ -73,7 +73,7 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
         </div>
         
         {onNodeClick && (
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-muted-foreground">
             点击节点可回退
           </div>
         )}
@@ -107,12 +107,12 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-200 ${
                   node.id === currentNodeId
-                    ? 'bg-green-500 border-green-400 text-white ring-2 ring-green-500/30 animate-pulse'
+? 'bg-green-500 border-green-400 text-on-accent ring-2 ring-green-500/30 animate-pulse'
                     : node.isBase
-                    ? 'bg-blue-500 border-blue-400 text-white'
+? 'bg-blue-500 border-blue-400 text-on-accent'
                     : index === timeline.length - 1
-                    ? 'bg-orange-500 border-orange-400 text-white ring-2 ring-orange-500/30'
-                    : 'bg-gray-700 border-gray-600 text-gray-300'
+? 'bg-orange-500 border-orange-400 text-on-accent ring-2 ring-orange-500/30'
+                    : 'bg-surface-2 border-default text-foreground/80'
                 } ${
                   onNodeClick && index < timeline.length - 1
                     ? 'group-hover:scale-110 group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-500/50 group-hover:border-blue-400'
@@ -125,7 +125,7 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
               {/* 状态标签 - 减小尺寸 */}
               {index === timeline.length - 1 && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-2.5 h-2.5 text-on-accent" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 </div>
@@ -133,13 +133,13 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
 
               {/* 节点标签 */}
               <div className="absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="text-xs text-gray-500">{node.label}</span>
+                <span className="text-xs text-muted-foreground">{node.label}</span>
               </div>
 
               {/* Tooltip (悬浮提示) */}
               {onNodeClick && index < timeline.length - 1 && (
                 <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 animate-in fade-in duration-200">
-                  <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white text-xs rounded-lg px-3 py-2 max-w-xs shadow-xl border border-blue-500/50">
+                  <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-on-accent text-xs rounded-lg px-3 py-2 max-w-xs shadow-xl border border-blue-500/50">
                     <div className="flex items-start gap-2 mb-1">
                       <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
@@ -159,7 +159,7 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
 
             {/* 连接线 */}
             {index < timeline.length - 1 && (
-              <div className="flex-shrink-0 h-0.5 w-8 bg-gradient-to-r from-gray-600 to-gray-700"></div>
+              <div className="flex-shrink-0 h-0.5 w-8 bg-gradient-to-r from-default to-default"></div>
             )}
           </React.Fragment>
         ))}
@@ -168,8 +168,8 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
       
       {/* 确认对话框 */}
       {confirmingNodeId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-6 max-w-md mx-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl shadow-2xl border border-default p-6 max-w-md mx-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                 <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,16 +178,16 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
               </div>
               
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   确认回退到此节点？
                 </h3>
-                <p className="text-sm text-gray-400 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   回退后，当前图片将被替换为该节点的图片，你可以从这里继续编辑。
                 </p>
                 
-                <div className="bg-gray-900/50 rounded-lg p-3 mb-4 border border-gray-700">
-                  <p className="text-xs text-gray-400 mb-1">节点提示词:</p>
-                  <p className="text-xs text-gray-300">
+                <div className="bg-surface-2/50 rounded-lg p-3 mb-4 border border-default">
+                  <p className="text-xs text-muted-foreground mb-1">节点提示词:</p>
+                  <p className="text-xs text-foreground/80">
                     {timeline.find(n => n.id === confirmingNodeId)?.prompt}
                   </p>
                 </div>
@@ -195,13 +195,13 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
                 <div className="flex gap-3">
                   <button
                     onClick={cancelRollback}
-                    className="flex-1 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface text-foreground text-sm font-medium transition-colors"
                   >
                     取消
                   </button>
                   <button
                     onClick={confirmRollback}
-                    className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium transition-all shadow-lg hover:shadow-xl"
+className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-on-accent text-sm font-medium transition-all shadow-lg hover:shadow-xl"
                   >
                     确认回退
                   </button>

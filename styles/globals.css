@@ -2,12 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-}
 
 /* Theme tokens */
 html[data-theme='dark'] {
+  color-scheme: dark;
   /* 纯黑白配色，无彩色 */
   --color-bg: #0D0D0D;                 /* 页面主背景（黑）*/
   --color-surface: #161616;            /* 卡片、导航栏背景（深灰）*/
@@ -19,9 +17,12 @@ html[data-theme='dark'] {
   --color-primary-foreground: #0D0D0D; /* 按钮文字（黑）*/
   --color-link: #FFFFFF;               /* 链接（白）*/
   --color-nav-bg: rgba(22,22,22,0.80); /* 顶部导航半透明背景（灰黑）*/
+  --color-scrim: rgba(0,0,0,0.6);      /* 遮罩层 */
+  --color-on-accent: #ffffff;          /* 彩色强调背景上的前景色 */
 }
 
 html[data-theme='light'] {
+  color-scheme: light;
   /* Light 主题：使用指定的品牌与文字/卡片配色 */
   --color-bg: oklch(0.9818 0.0054 95.0986);             /* 页面背景 */
   /* 卡片/组件背景与页面同色相、同色度，只降低亮度制造微弱层次 */
@@ -34,6 +35,8 @@ html[data-theme='light'] {
   --color-primary-foreground: #ffffff;                   /* 按钮文字 */
   --color-link: #cb6444;                                 /* 链接 */
   --color-nav-bg: color-mix(in oklch, oklch(0.9818 0.0054 95.0986) 80%, transparent); /* 顶部导航 */
+  --color-scrim: rgba(0,0,0,0.6);      /* 遮罩层 */
+  --color-on-accent: #ffffff;          /* 彩色强调背景上的前景色 */
 }
 
 body {
@@ -51,6 +54,7 @@ body {
   .bg-surface-2 { background-color: var(--color-surface-2); }
   .text-foreground { color: var(--color-foreground); }
   .text-muted-foreground { color: var(--color-muted-foreground); }
+  .text-link { color: var(--color-link); }
   .border-default { border-color: var(--color-border); }
 }
 

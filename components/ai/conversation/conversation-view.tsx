@@ -586,17 +586,17 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   // 加载中状态
   if (isLoadingConversation) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-950">
+      <div className="flex flex-col items-center justify-center h-screen bg-app">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm text-gray-400">正在恢复对话...</p>
+          <p className="text-sm text-muted-foreground">正在恢复对话...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen bg-app">
       {/* 侧边栏 */}
       <ConversationSidebar
         conversations={conversations}
@@ -612,16 +612,16 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       {/* 主内容区 - 全等宽布局 */}
       <div className="flex-1 flex flex-col">
         {/* 顶部工具栏 - 全等宽 */}
-        <div className="border-b border-white/10">
+        <div className="border-b border-default">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 py-3">
               {/* 移动端菜单按钮 */}
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="lg:hidden p-2 hover:bg-surface-2 rounded-lg transition-colors"
                 aria-label="打开侧边栏"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -639,7 +639,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         {/* 消息列表 - 完全全宽，0 padding */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto overscroll-contain py-6"
+          className="flex-1 overflow-y-auto overscroll-contain py-6 pb-0 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
         >
           <MessageList
             messages={messages}
@@ -650,7 +650,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         </div>
 
         {/* 输入区域 - 全等宽 */}
-        <div className="border-t border-white/10">
+        <div className="border-t border-default">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <InputArea
               onSend={handleSend}

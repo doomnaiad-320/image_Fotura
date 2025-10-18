@@ -41,13 +41,13 @@ export function ImageLightbox({ imageUrl, alt = '生成的图片', onClose }: Im
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* 关闭按钮 */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
+        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-surface-2/80 hover:bg-surface-2 text-foreground transition-colors backdrop-blur-sm"
         aria-label="关闭"
       >
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,8 +73,8 @@ export function ImageLightbox({ imageUrl, alt = '生成的图片', onClose }: Im
         </div>
 
         {/* 底部工具栏 */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 rounded-b-lg">
-          <div className="flex items-center justify-between text-white text-sm">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/60 to-transparent p-4 rounded-b-lg">
+          <div className="flex items-center justify-between text-foreground text-sm">
             <span className="opacity-75">{alt}</span>
             
             <div className="flex gap-2">
@@ -86,7 +86,7 @@ export function ImageLightbox({ imageUrl, alt = '生成的图片', onClose }: Im
                   link.download = `aigc-${Date.now()}.png`;
                   link.click();
                 }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-2/80 hover:bg-surface-2 transition-colors backdrop-blur-sm"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -99,7 +99,7 @@ export function ImageLightbox({ imageUrl, alt = '生成的图片', onClose }: Im
       </div>
 
       {/* 提示文本 */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-sm">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-foreground/60 text-sm">
         点击背景或按 ESC 关闭
       </div>
     </div>
