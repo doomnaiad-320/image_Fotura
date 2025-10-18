@@ -19,11 +19,12 @@ import { imageBlobStore } from '@/lib/storage/image-blob';
 interface ConversationViewProps {
   models: ModelOption[];
   isAuthenticated: boolean;
+  user?: { email: string; credits: number; role: string; };
 }
 
 const fetcher = (url: string) => httpFetch<any>(url);
 
-export function ConversationView({ models, isAuthenticated }: ConversationViewProps) {
+export function ConversationView({ models, isAuthenticated, user }: ConversationViewProps) {
   // 状态管理
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
@@ -585,7 +586,7 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
   // 加载中状态
   if (isLoadingConversation) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] bg-gray-950">
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-950">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm text-gray-400">正在恢复对话...</p>
@@ -595,7 +596,7 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
   }
 
   return (
-    <div className="flex h-[calc(100vh-200px)] bg-gray-950">
+    <div className="flex h-screen bg-gray-950">
       {/* 侧边栏 */}
       <ConversationSidebar
         conversations={conversations}
@@ -605,6 +606,7 @@ export function ConversationView({ models, isAuthenticated }: ConversationViewPr
         onDeleteConversation={handleDeleteConversation}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        user={user ? { ...user, credits: balance?.credits ?? user.credits } : undefined}
       />
 
       {/* 主内容区 - 全等宽布局 */}

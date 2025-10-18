@@ -15,28 +15,14 @@ export default async function StudioV2Page() {
   const models = await listEnabledModelsForPlayground();
 
   return (
-    // 突破外层 max-w-7xl 限制，使用负 margin 和 100vw
-    <div className="relative" style={{ marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)', width: '100vw' }}>
-      {/* 页面标题 - 居中显示 */}
-      <header className="max-w-7xl mx-auto px-4 py-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-white">创作工作台 V2</h1>
-            <p className="max-w-2xl text-sm text-gray-400 mt-2">
-              对话式 AI 工作台：通过聊天的方式生成图片，支持链式编辑和完整提示词累积。
-            </p>
-          </div>
-          <a
-            href="/studio"
-            className="text-sm text-gray-400 hover:text-gray-300 underline"
-          >
-            返回经典版本
-          </a>
-        </div>
-      </header>
-      
-      {/* 对话区域 - 全屏宽度 */}
-      <ConversationView models={models} isAuthenticated={Boolean(user)} />
-    </div>
+    <ConversationView 
+      models={models} 
+      isAuthenticated={Boolean(user)}
+      user={user ? {
+        email: user.email,
+        credits: user.credits,
+        role: user.role
+      } : undefined}
+    />
   );
 }
