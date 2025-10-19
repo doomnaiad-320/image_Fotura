@@ -1,0 +1,224 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const asset = await prisma.asset.findUnique({
+    where: { id: params.id }
+  });
+
+  if (!asset) {
+    return {
+      title: "作品未找到"
+    };
+  }
+
+  return {
+    title: `${asset.title} - AIGC Studio`,
+    description: asset.prompt || asset.title
+  };
+}
+
+export default async function AssetDetailPage({ params }: { params: { id: string } }) {
+  const asset = await prisma.asset.findUnique({
+    where: { id: params.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      },
+      favorites: {
+        select: {
+          userId: true
+        }
+      }
+    }
+  });
+
+  if (!asset) {
+    notFound();
+  }
+
+  const currentUser = await getCurrentUser();
+  const isFavorited = currentUser
+    ? asset.favorites.some((f) => f.userId === currentUser.id)
+    : false;
+
+  const tags = Array.isArray(asset.tags)
+    ? (asset.tags as string[])
+    : typeof asset.tags === "string"
+      ? JSON.parse(asset.tags || "[]")
+      : [];
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-8">
+      {/* 返回按钮 */}
+      <div>
+        <Link href="/">
+          <Button variant="ghost">
+            ← 返回首页
+          </Button>
+        </Link>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* 左侧：图片 */}
+        <div className="rounded-2xl border border-default bg-surface overflow-hidden">
+          {asset.type === "video" ? (
+            <video
+              className="w-full h-auto"
+              style={{ aspectRatio: asset.aspectRatio }}
+              poster={asset.coverUrl}
+              src={asset.videoUrl ?? undefined}
+              controls
+            />
+          ) : (
+            <Image
+              src={asset.coverUrl}
+              alt={asset.title}
+              width={1200}
+              height={1200 / asset.aspectRatio}
+              className="w-full h-auto object-cover"
+            />
+          )}
+        </div>
+
+        {/* 右侧：详细信息 */}
+        <div className="space-y-6">
+          {/* 标题和徽章 */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Badge className="border-default bg-surface-2 text-foreground">
+                {asset.type === "video" ? "视频" : "图片"}
+              </Badge>
+              {asset.isPublic ? (
+                <Badge variant="outline">公开</Badge>
+              ) : (
+                <Badge variant="secondary">私密</Badge>
+              )}
+            </div>
+            <h1 className="text-3xl font-bold text-foreground">{asset.title}</h1>
+          </div>
+
+          {/* Prompt */}
+          {asset.prompt && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">提示词 (Prompt)</h3>
+              <p className="rounded-xl border border-default bg-surface-2 p-4 text-sm leading-relaxed">
+                {asset.prompt}
+              </p>
+            </div>
+          )}
+
+          {/* 模型信息 */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">生成信息</h3>
+            <div className="rounded-xl border border-default bg-surface-2 p-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">模型</span>
+                <span className="font-medium">{asset.modelName || asset.model || asset.modelTag}</span>
+              </div>
+              {asset.size && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">尺寸</span>
+                  <span className="font-medium">{asset.size}</span>
+                </div>
+              )}
+              {asset.mode && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">模式</span>
+                  <span className="font-medium">
+                    {asset.mode === "txt2img" ? "文生图" : "图生图"}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">宽高比</span>
+                <span className="font-medium">{asset.aspectRatio.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 标签 */}
+          {tags.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">标签</h3>
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-default bg-surface-2 px-3 py-1 text-xs uppercase tracking-[0.2em]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 统计信息 */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">统计</h3>
+            <div className="rounded-xl border border-default bg-surface-2 p-4 grid grid-cols-3 gap-4 text-center text-sm">
+              <div>
+                <p className="text-2xl font-bold text-foreground">{asset.views}</p>
+                <p className="text-muted-foreground">浏览</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{asset.likes}</p>
+                <p className="text-muted-foreground">点赞</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{asset.hotScore.toFixed(1)}</p>
+                <p className="text-muted-foreground">热度</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 创作者 */}
+          {asset.user && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">创作者</h3>
+              <div className="rounded-xl border border-default bg-surface-2 p-4 text-sm">
+                <p className="font-medium">{asset.user.name || asset.user.email}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  发布于 {new Date(asset.createdAt).toLocaleDateString("zh-CN")}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 操作按钮 */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant={isFavorited ? "primary" : "secondary"}
+              className="flex-1"
+            >
+              {isFavorited ? "已收藏" : "收藏"}
+            </Button>
+            {currentUser && (
+              <Button variant="ghost" className="flex-1">
+                复用
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

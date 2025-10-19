@@ -28,6 +28,13 @@ export type AssetListItem = {
   hotScore: number;
   createdAt: Date;
   isFavorited: boolean;
+  // AI 生成相关信息 (可选)
+  prompt?: string | null;
+  userId?: string | null;
+  model?: string | null;
+  modelName?: string | null;
+  size?: string | null;
+  mode?: string | null;
 };
 
 export type AssetListResponse = {
@@ -118,7 +125,14 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
       likes: asset.likes,
       hotScore: asset.hotScore,
       createdAt: asset.createdAt,
-      isFavorited: userId ? favorites.length > 0 : false
+      isFavorited: userId ? favorites.length > 0 : false,
+      // AI 生成相关信息
+      prompt: asset.prompt,
+      userId: asset.userId,
+      model: asset.model,
+      modelName: asset.modelName,
+      size: asset.size,
+      mode: asset.mode
     };
   });
 

@@ -8,13 +8,14 @@ import ConversationHeader from './conversation-header';
 import ConversationSidebar from './conversation-sidebar';
 import MessageList from './message-list';
 import InputArea from './input-area';
-import type { ConversationMessage, Conversation } from '@/types/conversation';
+import type { ConversationMessage, Conversation, PublishResponse } from '@/types/conversation';
 import type { ModelOption } from '../playground';
 import { httpFetch } from '@/lib/http';
 import { createEditChain, generateConversationTitle } from '@/lib/ai/prompt-chain';
 import { useLocalHistory } from '@/lib/hooks/useLocalHistory';
 import { getConversationDB, isConversationDBSupported } from '@/lib/storage/conversation-db';
 import { imageBlobStore } from '@/lib/storage/image-blob';
+import PublishDialog from './publish-dialog';
 
 interface ConversationViewProps {
   models: ModelOption[];
@@ -34,6 +35,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const [isLoadingConversation, setIsLoadingConversation] = useState(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [publishTarget, setPublishTarget] = useState<ConversationMessage | null>(null);
+  const [isPublishOpen, setIsPublishOpen] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addHistory } = useLocalHistory();
@@ -510,14 +513,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       toast.error('无效的消息');
       return;
     }
-
-    // TODO: 打开发布对话框
-    toast.info('发布功能将在阶段 3 实现');
-    
-    // 暂时标记为已发布
-    setMessages(prev => prev.map(m =>
-      m.id === messageId ? { ...m, published: true } : m
-    ));
+    setPublishTarget(message);
+    setIsPublishOpen(true);
   }, [messages]);
 
   // 处理时间轴节点点击
@@ -661,6 +658,18 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           </div>
         </div>
       </div>
+
+      {/* 发布对话框 */}
+      <PublishDialog
+        open={isPublishOpen}
+        message={publishTarget}
+        onClose={() => setIsPublishOpen(false)}
+        onSuccess={(assetId) => {
+          if (!publishTarget) return;
+          setMessages(prev => prev.map(m => m.id === publishTarget.id ? { ...m, published: true, assetId } : m));
+          setPublishTarget(null);
+        }}
+      />
     </div>
   );
 }

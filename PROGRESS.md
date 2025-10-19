@@ -93,9 +93,9 @@
 - [ ] **编辑链时间轴交互** - 节点点击回退功能
 
 ### 阶段 3: 发布与优化 (预计 1-2 天)
-- [ ] **发布 API** - `app/api/assets/publish/route.ts`
-- [ ] **发布对话框** - `publish-dialog.tsx`
-- [ ] **移动端适配** - 触摸友好尺寸
+- [x] **发布 API** - `app/api/assets/publish/route.ts`
+- [x] **发布对话框** - `publish-dialog.tsx`
+- [x] **移动端适配** - 触摸友好尺寸
 
 ### 阶段 4: 高级功能 (预计 1-2 天)
 - [ ] **会话管理** - 侧边栏会话列表

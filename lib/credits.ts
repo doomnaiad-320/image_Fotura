@@ -204,3 +204,50 @@ export async function adjustCreditsByAdmin({
     });
   });
 }
+
+export async function grantCreditsBySystem({
+  userId,
+  amount,
+  reason,
+  requestId,
+  metadata,
+}: {
+  userId: string;
+  amount: number;
+  reason: string;
+  requestId?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  if (!amount || amount <= 0) {
+    throw new Error("充值金额必须大于 0");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    if (requestId) {
+      const exist = await tx.creditTransaction.findFirst({ where: { requestId, status: "success" } });
+      if (exist) return exist;
+    }
+
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { credits: true } });
+    if (!user) throw new Error("用户不存在");
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { credits: { increment: amount } },
+    });
+
+    return tx.creditTransaction.create({
+      data: {
+        id: randomUUID(),
+        userId,
+        delta: amount,
+        reason,
+        providerSlug: "easypay",
+        modelSlug: null,
+        status: "success",
+        requestId: requestId || undefined,
+        metadata: JSON.stringify(metadata || {}),
+      },
+    });
+  });
+}

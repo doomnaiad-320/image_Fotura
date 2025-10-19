@@ -48,9 +48,16 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated }: AssetCar
     router.push(`/studio?asset=${asset.id}`);
   };
 
+  const handleViewDetail = () => {
+    router.push(`/assets/${asset.id}`);
+  };
+
   return (
 <article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-default bg-surface shadow transition hover:-translate-y-1">
-      <div className="relative w-full overflow-hidden">
+      <div 
+        className="relative w-full overflow-hidden cursor-pointer" 
+        onClick={handleViewDetail}
+      >
         {asset.type === "video" ? (
           <video
             className="h-full w-full"
