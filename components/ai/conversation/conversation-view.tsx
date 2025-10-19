@@ -49,6 +49,48 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     { refreshInterval: 60_000 }
   );
 
+  // 检查复用预填数据
+  useEffect(() => {
+    const checkReusePrefill = () => {
+      try {
+        const prefillDataStr = localStorage.getItem('reuse_prefill_data');
+        if (prefillDataStr) {
+          const prefillData = JSON.parse(prefillDataStr);
+          
+          // 检查数据是否过期（5分钟）
+          const now = Date.now();
+          if (prefillData.timestamp && now - prefillData.timestamp < 5 * 60 * 1000) {
+            console.log('[ConversationView] 检测到复用预填数据:', prefillData);
+            
+            // 显示提示
+            toast.success(`已加载复用作品：${prefillData.assetTitle || '无标题'}`);
+            
+            // 将 prompt 设置为继承提示词
+            if (prefillData.prompt) {
+              setInheritedPrompt(prefillData.prompt);
+            }
+            
+            // 如果有模型信息，尝试设置
+            if (prefillData.modelSlug) {
+              const matchedModel = models.find(m => m.slug === prefillData.modelSlug);
+              if (matchedModel) {
+                setSelectedModel(prefillData.modelSlug);
+              }
+            }
+          }
+          
+          // 清除已使用的数据
+          localStorage.removeItem('reuse_prefill_data');
+        }
+      } catch (error) {
+        console.error('[ConversationView] 读取复用数据失败:', error);
+      }
+    };
+    
+    // 延迟执行，确保在对话恢复后
+    setTimeout(checkReusePrefill, 500);
+  }, [models]);
+
   // 初始化：恢复最后的对话
   useEffect(() => {
     const loadLastConversation = async () => {

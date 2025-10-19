@@ -18,6 +18,7 @@ export type AssetFeedProps = {
   initialCursor: string | null;
   initialState: AssetFilterState;
   isAuthenticated?: boolean;
+  userCredits?: number;
 };
 
 const DEFAULT_STATE: AssetFilterState = {
@@ -29,7 +30,8 @@ export function AssetFeed({
   initialItems,
   initialCursor,
   initialState = DEFAULT_STATE,
-  isAuthenticated
+  isAuthenticated,
+  userCredits
 }: AssetFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -183,6 +185,7 @@ export function AssetFeed({
         assets={items}
         onToggleFavorite={handleToggleFavorite}
         isAuthenticated={isAuthenticated}
+        userCredits={userCredits}
       />
       <div className="flex flex-col items-center gap-3">
         {query.hasNextPage && (

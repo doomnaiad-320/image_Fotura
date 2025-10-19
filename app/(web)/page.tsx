@@ -47,6 +47,7 @@ export default async function HomePage({
         initialCursor={assetResult.nextCursor}
         initialState={{ type: parsed.type, sort: parsed.sort }}
         isAuthenticated={Boolean(sessionUser)}
+        userCredits={sessionUser?.credits}
       />
     </div>
   );

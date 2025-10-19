@@ -8,9 +8,10 @@ export type AssetMasonryProps = {
   assets: AssetListItem[];
   onToggleFavorite?: (assetId: string, nextState: boolean) => Promise<void>;
   isAuthenticated?: boolean;
+  userCredits?: number;
 };
 
-export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated }: AssetMasonryProps) {
+export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated, userCredits }: AssetMasonryProps) {
   if (assets.length === 0) {
     return (
 <div className="grid min-h-[320px] place-items-center rounded-3xl border border-dashed border-default py-24 text-muted-foreground">
@@ -27,6 +28,7 @@ export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated }: Asse
           asset={asset}
           onToggleFavorite={onToggleFavorite}
           isAuthenticated={isAuthenticated}
+          userCredits={userCredits}
         />
       ))}
     </div>

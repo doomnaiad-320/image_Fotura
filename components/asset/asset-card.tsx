@@ -8,14 +8,16 @@ import type { AssetListItem } from "@/lib/assets";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ReuseButton } from "@/components/asset/reuse-button";
 
 export type AssetCardProps = {
   asset: AssetListItem;
   onToggleFavorite?: (assetId: string, nextState: boolean) => Promise<void>;
   isAuthenticated?: boolean;
+  userCredits?: number;
 };
 
-export function AssetCard({ asset, onToggleFavorite, isAuthenticated }: AssetCardProps) {
+export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredits = 0 }: AssetCardProps) {
   const router = useRouter();
   const [optimisticFavorite, setOptimisticFavorite] = useState(asset.isFavorited);
   const favorited = optimisticFavorite;
@@ -40,13 +42,6 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated }: AssetCar
     }
   };
 
-  const handleReuse = () => {
-    if (!isAuthenticated) {
-      router.push(`/auth/signin?redirect=/`);
-      return;
-    }
-    router.push(`/studio?asset=${asset.id}`);
-  };
 
   const handleViewDetail = () => {
     router.push(`/assets/${asset.id}`);
@@ -115,9 +110,12 @@ className="rounded-full border border-default px-3 py-1 text-[11px] uppercase tr
           >
             {favorited ? "已收藏" : "收藏"}
           </Button>
-          <Button variant="ghost" className="flex-1" onClick={handleReuse}>
-            复用
-          </Button>
+          <ReuseButton
+            assetId={asset.id}
+            assetTitle={asset.title}
+            isAuthenticated={isAuthenticated ?? false}
+            userCredits={userCredits}
+          />
         </div>
       </div>
     </article>
