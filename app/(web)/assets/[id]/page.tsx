@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ReuseButton } from "@/components/asset/reuse-button";
 
 export const dynamic = "force-dynamic";
 
@@ -211,10 +212,14 @@ export default async function AssetDetailPage({ params }: { params: { id: string
             >
               {isFavorited ? "已收藏" : "收藏"}
             </Button>
-            {currentUser && (
-              <Button variant="ghost" className="flex-1">
-                复用
-              </Button>
+            {/* 复用按钮 - 仅非作者可见 */}
+            {(!currentUser || currentUser.id !== asset.userId) && (
+              <ReuseButton
+                assetId={asset.id}
+                assetTitle={asset.title}
+                isAuthenticated={Boolean(currentUser)}
+                userCredits={currentUser?.credits || 0}
+              />
             )}
           </div>
         </div>

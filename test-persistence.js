@@ -57,7 +57,7 @@ async function test2_CountConversations() {
           console.log(`  ✅ 对话数量: ${count}`);
           
           if (count === 0) {
-            console.log('  💡 提示: 尚未创建对话，请先访问 /studio-v2 并生成图片');
+            console.log('  💡 提示: 尚未创建对话，请先访问 /studio 并生成图片');
           }
           
           db.close();

@@ -14,40 +14,27 @@ export interface PublishDialogProps {
 }
 
 export function PublishDialog({ open, message, onClose, onSuccess }: PublishDialogProps) {
-  const isBlob = useMemo(() => (message?.imageUrl ?? '').startsWith('blob:'), [message?.imageUrl]);
-
   const [title, setTitle] = useState<string>(() => (message?.content ?? '').slice(0, 40) || 'AI 作品');
-  const [imageUrl, setImageUrl] = useState<string>(() => message?.imageUrl ?? '');
   const [tagsText, setTagsText] = useState<string>('');
   const [isPublic, setIsPublic] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [promptExpanded, setPromptExpanded] = useState(false);
 
   React.useEffect(() => {
     if (open && message) {
       setTitle((message.content || '').slice(0, 40) || 'AI 作品');
-      setImageUrl(message.imageUrl || '');
       setTagsText('');
       setIsPublic(true);
       setSubmitting(false);
-      setUploading(false);
+      setPromptExpanded(false);
     }
   }, [open, message]);
 
-  const effectiveImageUrl = imageUrl.trim();
-
-  // 上传 blob 到 R2
-  const handleUploadBlob = async () => {
-    if (!message?.imageUrl || !message.imageUrl.startsWith('blob:')) {
-      toast.error('当前不是 blob:// 地址');
-      return;
-    }
-
+  // 自动上传 blob 到 R2
+  const uploadBlobToR2 = async (blobUrl: string): Promise<string> => {
     try {
-      setUploading(true);
-
       // 从 blob URL 获取 Blob
-      const response = await fetch(message.imageUrl);
+      const response = await fetch(blobUrl);
       const blob = await response.blob();
 
       // 上传到 R2
@@ -65,46 +52,34 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
       }
 
       const { url } = await uploadResp.json();
-      setImageUrl(url);
-      toast.success('上传成功！');
+      return url;
     } catch (err: any) {
       console.error('[PublishDialog] upload error', err);
-      toast.error(err?.message || '上传失败');
-    } finally {
-      setUploading(false);
+      throw new Error(err?.message || '图片上传失败');
     }
   };
 
   const handleSubmit = async () => {
     if (!message) return;
 
-    if (!effectiveImageUrl) {
-      toast.error('请填写图片地址');
-      return;
-    }
+    let finalImageUrl = message.imageUrl || '';
     
-    // 如果是 blob 地址，自动上传到云存储
-    if (effectiveImageUrl.startsWith('blob:')) {
-      toast.loading('正在上传图片到云存储...');
-      try {
-        await handleUploadBlob();
-        // 上传成功后会自动更新 imageUrl，等待状态更新
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (err: any) {
-        toast.error(err?.message || '上传失败，请重试');
-        return;
-      }
-    }
-    
-    // 再次检查 imageUrl 是否有效
-    const finalImageUrl = imageUrl.trim();
-    if (!finalImageUrl || finalImageUrl.startsWith('blob:')) {
-      toast.error('图片上传未完成，请重试');
-      return;
-    }
-
     try {
       setSubmitting(true);
+      
+      // 如果是 blob 地址，自动上传到云存储
+      if (finalImageUrl.startsWith('blob:')) {
+        toast.loading('正在上传图片到云存储...');
+        finalImageUrl = await uploadBlobToR2(finalImageUrl);
+        toast.dismiss();
+        toast.success('图片上传成功');
+      }
+      
+      if (!finalImageUrl || finalImageUrl.startsWith('blob:')) {
+        toast.error('图片地址无效');
+        return;
+      }
+
       const tags = tagsText
         .split(',')
         .map((t) => t.trim())
@@ -175,61 +150,67 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
         </div>
 
         {/* Body */}
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
-          {/* 预览 */}
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-h-[70vh] overflow-y-auto">
+          {/* 示例图 */}
           {message.imageUrl && (
-            <div className="rounded-xl overflow-hidden border border-default">
+            <div className="rounded-xl overflow-hidden border border-default shadow-sm">
               <img src={message.imageUrl} alt={title} className="w-full max-h-80 object-contain bg-black/5" />
             </div>
           )}
 
-          {/* 提示：blob URL 不可发布 */}
-          {isBlob && (
-            <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-3 sm:p-4 space-y-3">
-              <div className="text-orange-600 text-sm">
-                当前图片地址为本地 blob://，需要上传到云存储后才能发布。
-              </div>
-              <button
-                onClick={handleUploadBlob}
-                disabled={uploading}
-                className="w-full min-h-[44px] rounded-lg bg-orange-600 text-white text-sm font-medium shadow hover:bg-orange-500 disabled:opacity-60 touch-manipulation flex items-center justify-center gap-2"
-              >
-                {uploading ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>上传中...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span>一键上传到云存储</span>
-                  </>
-                )}
-              </button>
+          {/* 模型信息 */}
+          <div className="rounded-xl border border-default bg-surface-2 p-3 sm:p-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <span className="font-medium">使用模型：</span>
+              <span className="text-foreground font-semibold">{message.generationParams?.modelName || message.generationParams?.model || '未知'}</span>
             </div>
-          )}
+            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              <span>尺寸：{message.generationParams?.size || '1024x1024'}</span>
+              <span>模式：{message.generationParams?.mode === 'img2img' ? '图生图' : '文生图'}</span>
+            </div>
+          </div>
 
-          {/* 图片地址 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">图片地址（URL）</label>
-            <input
-              type="url"
-              inputMode="url"
-              className="w-full rounded-xl border border-default bg-surface-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="https://example.com/your-image.png"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-            />
+          {/* Prompt 折叠区 */}
+          <div className="rounded-xl border border-default bg-surface-2 overflow-hidden">
+            <button
+              onClick={() => setPromptExpanded(!promptExpanded)}
+              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-surface-3 transition-colors"
+            >
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
+                <span>生成提示词</span>
+              </div>
+              <svg 
+                className={`w-5 h-5 transition-transform ${promptExpanded ? 'rotate-180' : ''}`}
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {promptExpanded && (
+              <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-0">
+                <div className="text-sm text-foreground bg-surface-3 rounded-lg p-3 max-h-48 overflow-y-auto">
+                  {message.editChain?.currentFullPrompt || message.editChain?.fullPrompt || message.content || '无提示词'}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 标题 */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">标题</label>
+            <label className="text-sm font-medium flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              标题
+            </label>
             <input
               className="w-full rounded-xl border border-default bg-surface-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="给你的作品取个名字"
@@ -240,7 +221,12 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
 
           {/* 标签 */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">标签（用英文逗号分隔）</label>
+            <label className="text-sm font-medium flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              标签（用英文逗号分隔）
+            </label>
             <input
               className="w-full rounded-xl border border-default bg-surface-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="portrait, cyberpunk, neon"
@@ -271,16 +257,23 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
         <div className="flex gap-3 px-4 sm:px-6 py-4 border-t border-default">
           <button
             onClick={onClose}
-            className="flex-1 min-h-[48px] rounded-xl border border-default bg-surface-2 text-foreground text-base font-medium touch-manipulation"
+            disabled={submitting}
+            className="flex-1 min-h-[48px] rounded-xl border border-default bg-surface-2 text-foreground text-base font-medium touch-manipulation disabled:opacity-60"
           >
             取消
           </button>
           <button
             onClick={handleSubmit}
-            disabled={submitting || uploading}
-            className="flex-1 min-h-[48px] rounded-xl bg-orange-600 text-white text-base font-semibold shadow hover:bg-orange-500 disabled:opacity-60 touch-manipulation"
+            disabled={submitting}
+            className="flex-1 min-h-[48px] rounded-xl bg-orange-600 text-white text-base font-semibold shadow hover:bg-orange-500 disabled:opacity-60 touch-manipulation flex items-center justify-center gap-2"
           >
-            {submitting ? '发布中...' : '发布'}
+            {submitting && (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
+            <span>{submitting ? '发布中...' : '发布'}</span>
           </button>
         </div>
       </div>

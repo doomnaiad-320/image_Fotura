@@ -236,7 +236,7 @@ export function ConversationSidebar({
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    经典工作台
+                    工作台
                   </Link>
                   
                   <Link
@@ -279,7 +279,7 @@ export function ConversationSidebar({
             </>
           ) : (
             <Link
-              href="/auth/signin?redirect=/studio-v2"
+              href="/auth/signin?redirect=/studio"
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-orange-500 text-primary-foreground font-medium hover:bg-orange-600 transition-colors"
             >
               登录使用

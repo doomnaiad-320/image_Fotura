@@ -21,6 +21,7 @@ model User {
   transactions    CreditTransaction[]
   auditLogs       AuditLog[]
   assets          Asset[]
+  reuseRecords    ReuseRecord[]       // 复用记录
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   sessions        Session[]
@@ -56,6 +57,10 @@ model Asset {
   updatedAt       DateTime    @updatedAt
   favorites       Favorite[]
   user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // 复用关系
+  sourceWorks     WorkRelation[] @relation("SourceWork")
+  derivativeWorks WorkRelation[] @relation("DerivativeWork")
+  reuseRecords    ReuseRecord[]
 
   @@index([userId])
   @@index([isPublic])
@@ -122,6 +127,9 @@ model CreditTransaction {
   reason        String
   status        String @default("pending")
   metadata      String              @default("{}")
+  // 复用相关字段
+  refWorkId     String?             // 关联的作品 ID
+  refUserId     String?             // 关联的用户 ID（B用户）
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
@@ -131,6 +139,7 @@ model CreditTransaction {
 
   @@index([userId])
   @@index([requestId])
+  @@index([refWorkId])
 }
 
 model AuditLog {
@@ -207,4 +216,43 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// 全局设置表
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 作品来源关系表（内部使用，前端不展示）
+model WorkRelation {
+  id              String   @id @default(cuid())
+  sourceWorkId    String
+  derivativeWorkId String
+  createdAt       DateTime @default(now())
+
+  sourceWork      Asset @relation("SourceWork", fields: [sourceWorkId], references: [id], onDelete: Cascade)
+  derivativeWork  Asset @relation("DerivativeWork", fields: [derivativeWorkId], references: [id], onDelete: Cascade)
+
+  @@index([sourceWorkId])
+  @@index([derivativeWorkId])
+}
+
+// 复用记录表（防止重复奖励）
+model ReuseRecord {
+  id              String   @id @default(cuid())
+  sourceWorkId    String
+  reuserId        String
+  rewardGranted   Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  sourceWork Asset @relation(fields: [sourceWorkId], references: [id], onDelete: Cascade)
+  reuser     User  @relation(fields: [reuserId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceWorkId, reuserId])
+  @@index([sourceWorkId])
+  @@index([reuserId])
 }
