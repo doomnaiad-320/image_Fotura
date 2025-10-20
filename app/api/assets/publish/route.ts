@@ -16,7 +16,8 @@ const publishSchema = z.object({
   mode: z.enum(["txt2img", "img2img"]),
   tags: z.array(z.string()).optional().default([]),
   isPublic: z.boolean().optional().default(true),
-  title: z.string().optional()
+  title: z.string().optional(),
+  reusePoints: z.number().int().min(0).max(10000).optional().default(50)
 });
 
 function parseAspectRatio(size: string): number {
@@ -72,7 +73,8 @@ export async function POST(request: Request) {
         size: data.size,
         mode: data.mode,
         editChain: data.editChain ? JSON.stringify(data.editChain) : "{}",
-        isPublic: data.isPublic
+        isPublic: data.isPublic,
+        reusePoints: data.reusePoints
       }
     });
 

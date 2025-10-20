@@ -17,6 +17,7 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
   const [title, setTitle] = useState<string>(() => (message?.content ?? '').slice(0, 40) || 'AI 作品');
   const [tagsText, setTagsText] = useState<string>('');
   const [isPublic, setIsPublic] = useState<boolean>(true);
+  const [reusePoints, setReusePoints] = useState<number>(50);
   const [submitting, setSubmitting] = useState(false);
   const [promptExpanded, setPromptExpanded] = useState(false);
 
@@ -25,6 +26,7 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
       setTitle((message.content || '').slice(0, 40) || 'AI 作品');
       setTagsText('');
       setIsPublic(true);
+      setReusePoints(50);
       setSubmitting(false);
       setPromptExpanded(false);
     }
@@ -100,7 +102,8 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
         size: gen?.size || '1024x1024',
         mode: gen?.mode || 'txt2img',
         tags,
-        isPublic
+        isPublic,
+        reusePoints
       };
 
       const resp = await httpFetch<PublishResponse>(
@@ -233,6 +236,32 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
               value={tagsText}
               onChange={(e) => setTagsText(e.target.value)}
             />
+          </div>
+
+          {/* 复用价格设置 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              复用所需积分
+            </label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min="0"
+                max="1000"
+                step="10"
+                className="flex-1 rounded-xl border border-default bg-surface-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="设置为 0 表示免费复用"
+                value={reusePoints}
+                onChange={(e) => setReusePoints(Math.max(0, parseInt(e.target.value) || 0))}
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">积分</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              设置为 0 时，其他用户可免费查看和复用 Prompt；设置积分后，需要支付积分才能复用
+            </p>
           </div>
 
           {/* 是否公开 */}

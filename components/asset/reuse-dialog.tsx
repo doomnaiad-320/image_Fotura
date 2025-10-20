@@ -81,9 +81,9 @@ export function ReuseDialog({
   const isInsufficientCredits = userCredits < reusePoints;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-scrim">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-scrim">
       <div
-        className="w-full sm:max-w-md bg-surface rounded-t-2xl sm:rounded-2xl border border-default shadow-2xl"
+        className="w-full max-w-md bg-surface rounded-2xl border border-default shadow-2xl"
         role="dialog"
         aria-modal="true"
       >

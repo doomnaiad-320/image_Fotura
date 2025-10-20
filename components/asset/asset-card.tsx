@@ -115,6 +115,7 @@ className="rounded-full border border-default px-3 py-1 text-[11px] uppercase tr
             assetTitle={asset.title}
             isAuthenticated={isAuthenticated ?? false}
             userCredits={userCredits}
+            reusePoints={asset.reusePoints}
           />
         </div>
       </div>

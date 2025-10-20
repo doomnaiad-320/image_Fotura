@@ -47,6 +47,11 @@ export default async function AssetDetailPage({ params }: { params: { id: string
         select: {
           userId: true
         }
+      },
+      reuseRecords: {
+        select: {
+          reuserId: true
+        }
       }
     }
   });
@@ -59,6 +64,17 @@ export default async function AssetDetailPage({ params }: { params: { id: string
   const isFavorited = currentUser
     ? asset.favorites.some((f) => f.userId === currentUser.id)
     : false;
+  
+  // 检查当前用户是否已复用
+  const hasReused = currentUser
+    ? asset.reuseRecords.some((r) => r.reuserId === currentUser.id)
+    : false;
+  
+  // 是否作者本人
+  const isAuthor = currentUser?.id === asset.userId;
+  
+  // Prompt 可见性：作者、免费作品、或已复用
+  const promptVisible = isAuthor || asset.reusePoints === 0 || hasReused;
 
   const tags = Array.isArray(asset.tags)
     ? (asset.tags as string[])
@@ -120,9 +136,30 @@ export default async function AssetDetailPage({ params }: { params: { id: string
           {asset.prompt && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">提示词 (Prompt)</h3>
-              <p className="rounded-xl border border-default bg-surface-2 p-4 text-sm leading-relaxed">
-                {asset.prompt}
-              </p>
+              {promptVisible ? (
+                <p className="rounded-xl border border-default bg-surface-2 p-4 text-sm leading-relaxed">
+                  {asset.prompt}
+                </p>
+              ) : (
+                <div className="rounded-xl border border-default bg-surface-2 p-4 relative">
+                  <p className="text-sm leading-relaxed blur-sm select-none">
+                    {asset.prompt}
+                  </p>
+                  <div className="absolute inset-0 flex items-center justify-center bg-surface-2/80 backdrop-blur-[2px] rounded-xl">
+                    <div className="text-center space-y-2">
+                      <svg className="w-8 h-8 mx-auto text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <p className="text-sm font-medium text-foreground">
+                        需要复用后查看
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        复用该作品需 {asset.reusePoints} 积分
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -219,6 +256,7 @@ export default async function AssetDetailPage({ params }: { params: { id: string
                 assetTitle={asset.title}
                 isAuthenticated={Boolean(currentUser)}
                 userCredits={currentUser?.credits || 0}
+                reusePoints={asset.reusePoints ?? 50}
               />
             )}
           </div>

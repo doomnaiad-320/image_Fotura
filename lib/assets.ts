@@ -35,6 +35,7 @@ export type AssetListItem = {
   modelName?: string | null;
   size?: string | null;
   mode?: string | null;
+  reusePoints: number;
 };
 
 export type AssetListResponse = {
@@ -165,7 +166,8 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
       model: asset.model,
       modelName: asset.modelName,
       size: asset.size,
-      mode: asset.mode
+      mode: asset.mode,
+      reusePoints: asset.reusePoints ?? 50
     };
   });
 

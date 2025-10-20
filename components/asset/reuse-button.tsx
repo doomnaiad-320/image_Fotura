@@ -9,35 +9,19 @@ export interface ReuseButtonProps {
   assetTitle: string;
   isAuthenticated: boolean;
   userCredits?: number;
+  reusePoints?: number;
 }
 
 export function ReuseButton({
   assetId,
   assetTitle,
   isAuthenticated,
-  userCredits = 0
+  userCredits = 0,
+  reusePoints = 50
 }: ReuseButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [reusePoints, setReusePoints] = useState(50); // 默认值
 
-  console.log('[ReuseButton] Rendered:', { assetId, assetTitle, isAuthenticated, userCredits });
-
-  // 获取复用积分配置
-  useEffect(() => {
-    async function fetchReusePoints() {
-      try {
-        const response = await fetch('/api/settings/reuse-points');
-        if (response.ok) {
-          const data = await response.json();
-          setReusePoints(data.current || 50);
-        }
-      } catch (error) {
-        console.error('[ReuseButton] fetch settings error:', error);
-      }
-    }
-
-    fetchReusePoints();
-  }, []);
+  console.log('[ReuseButton] Rendered:', { assetId, assetTitle, isAuthenticated, userCredits, reusePoints });
 
   const handleClick = () => {
     console.log('[ReuseButton] Button clicked');

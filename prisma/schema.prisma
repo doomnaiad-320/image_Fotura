@@ -53,6 +53,7 @@ model Asset {
   mode            String?
   editChain       String?     @default("{}")
   isPublic        Boolean     @default(true)
+  reusePoints     Int         @default(50)    // 复用所需积分，0表示免费
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   favorites       Favorite[]
