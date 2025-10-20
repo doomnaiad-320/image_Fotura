@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,11 @@ export function ReuseDialog({
 }: ReuseDialogProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -76,12 +82,12 @@ export function ReuseDialog({
     }
   };
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const isInsufficientCredits = userCredits < reusePoints;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-scrim">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-scrim">
       <div
         className="w-full max-w-md bg-surface rounded-2xl border border-default shadow-2xl"
         role="dialog"
@@ -185,7 +191,8 @@ export function ReuseDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
