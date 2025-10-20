@@ -335,7 +335,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   }, [dbSupported, currentConversationId, selectedModel]);
 
   // 处理发送消息
-  const handleSend = useCallback(async (prompt: string) => {
+  const handleSend = useCallback(async (prompt: string, uploadedImages?: File[]) => {
     if (!ensureLogin()) return;
     
     if (!selectedModel) {
@@ -343,11 +343,14 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       return;
     }
 
-    // 自动持续编辑：找到最后一条 AI 回复作为父消息
+    // 判断是否为图生图模式
+    // 1. 用户主动上传了图片 -> 强制图生图
+    // 2. 自动持续编辑：找到最后一条 AI 回复作为父消息
     let parentMsg = null;
     let isEditMode = false;
+    const hasUploadedImages = uploadedImages && uploadedImages.length > 0;
     
-    if (messages.length > 0) {
+    if (!hasUploadedImages && messages.length > 0) {
       // 从后往前找最后一条 assistant 消息
       for (let i = messages.length - 1; i >= 0; i--) {
         if (messages[i].role === 'assistant' && messages[i].imageUrl) {
@@ -356,6 +359,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           break;
         }
       }
+    } else if (hasUploadedImages) {
+      isEditMode = true;
     }
 
     // 1. 添加用户消息
@@ -398,24 +403,37 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       let imageUrl: string;
       let editChain: ConversationMessage['editChain'];
 
-      if (isEditMode && parentMsg?.imageUrl) {
+      if (isEditMode && (parentMsg?.imageUrl || hasUploadedImages)) {
         // 图生图模式
-        // 获取原始 Prompt（父消息的最终 Prompt）
-        const originalPrompt = parentMsg.editChain
+        // 获取原始 Prompt（如果有父消息）
+        const originalPrompt = parentMsg?.editChain
           ? parentMsg.editChain.currentFullPrompt || parentMsg.editChain.fullPrompt
-          : parentMsg.content;
+          : (parentMsg?.content || '');
 
         // 调用图像编辑 API
         const formData = new FormData();
         formData.append('model', selectedModel);
         formData.append('prompt', prompt); // 用户输入的修改指令
-        formData.append('originalPrompt', originalPrompt); // 原始完整 Prompt
+        if (originalPrompt) {
+          formData.append('originalPrompt', originalPrompt); // 原始完整 Prompt（如果有）
+        }
         formData.append('size', '1024x1024');
         formData.append('n', '1');
 
-        // 获取父图片
-        const parentBlob = await fetch(parentMsg.imageUrl).then(r => r.blob());
-        formData.append('image', parentBlob);
+        // 获取图片：优先使用上传的图片，否则使用父消息的图片
+        if (hasUploadedImages && uploadedImages!.length > 0) {
+          // 如果上传了多张图，只使用第一张作为主图
+          // TODO: 未来可以支持多图融合或批量处理
+          formData.append('image', uploadedImages[0]);
+          
+          // 如果有多张图，提示用户
+          if (uploadedImages.length > 1) {
+            toast(`已上传 ${uploadedImages.length} 张图片，当前使用第一张进行编辑`, { icon: 'ℹ️' });
+          }
+        } else if (parentMsg?.imageUrl) {
+          const parentBlob = await fetch(parentMsg.imageUrl).then(r => r.blob());
+          formData.append('image', parentBlob);
+        }
 
         const response = await httpFetch<{ 
           data: { url?: string; b64_json?: string }[]; 
@@ -438,7 +456,12 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         
         // 使用 API 返回的生成 Prompt 创建编辑链
         const generatedPrompt = response.generatedPrompt || prompt;
-        editChain = createEditChain(parentMsg, prompt, generatedPrompt, assistantMsgId);
+        
+        // 只有当存在父消息时才创建编辑链
+        if (parentMsg) {
+          editChain = createEditChain(parentMsg, prompt, generatedPrompt, assistantMsgId);
+        }
+        // 如果是上传图片的全新图生图，不创建编辑链（因为没有父消息）
       } else {
         // 文生图模式
         const response = await httpFetch<{ data: { url?: string; b64_json?: string }[] }>(

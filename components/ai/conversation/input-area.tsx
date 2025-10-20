@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 
 interface InputAreaProps {
-  onSend: (prompt: string) => void;
+  onSend: (prompt: string, uploadedImages?: File[]) => void;
   disabled?: boolean;
   placeholder?: string;
   inheritedPrompt?: string;
@@ -42,7 +42,10 @@ export function InputArea({
   const [isFocused, setIsFocused] = useState(false);
   const [customHeight, setCustomHeight] = useState(48);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const dragStartY = useRef<number>(0);
   const dragStartHeight = useRef<number>(48);
 
@@ -77,8 +80,10 @@ export function InputArea({
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || disabled) return;
 
-    onSend(trimmedPrompt);
+    onSend(trimmedPrompt, uploadedImages);
     setPrompt('');
+    setUploadedImages([]);
+    setImagePreviewUrls([]);
     
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -140,6 +145,44 @@ export function InputArea({
   }, [isDragging, handleDragMove, handleDragEnd]);
 
   const sizeOptions = SIZE_PRESETS[aspectRatio] || [];
+
+  // 图片上传处理（支持多选）
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) return;
+
+    // 添加新图片到已上传列表
+    setUploadedImages(prev => [...prev, ...imageFiles]);
+    
+    // 为每个新图片生成预览 URL
+    imageFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviewUrls(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // 重置 input 以允许重复选择
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearAllImages = () => {
+    setUploadedImages([]);
+    setImagePreviewUrls([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="relative">
@@ -244,10 +287,79 @@ export function InputArea({
             className="w-full resize-none bg-transparent px-4 sm:px-5 pt-7 pb-3 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
           />
 
+          {/* 图片预览（多图片） */}
+          {imagePreviewUrls.length > 0 && (
+            <div className="px-4 sm:px-5 pb-2 pt-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                {imagePreviewUrls.map((url, index) => (
+                  <div key={index} className="relative inline-block rounded-lg overflow-hidden border border-default group">
+                    <img 
+                      src={url} 
+                      alt={`上传的图片 ${index + 1}`} 
+                      className="h-20 w-20 object-cover"
+                    />
+                    <button
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-black/70 backdrop-blur-sm rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="移除图片"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    {/* 图片序号标记 */}
+                    <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/70 backdrop-blur-sm rounded text-[10px] text-white font-medium">
+                      {index + 1}
+                    </div>
+                  </div>
+                ))}
+                {/* 清除所有图片按钮 */}
+                {imagePreviewUrls.length > 1 && (
+                  <button
+                    onClick={handleClearAllImages}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                    title="清除所有图片"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    清空
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* 底部工具栏 */}
           <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-3 pt-1">
             {/* 左侧工具 */}
             <div className="flex items-center gap-2">
+              {/* 图片上传按钮（支持多选） */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  uploadedImages.length > 0
+                    ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                    : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
+                }`}
+                title="上传图片（可多选）"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="hidden sm:inline">
+                  图片{uploadedImages.length > 0 && ` (${uploadedImages.length})`}
+                </span>
+              </button>
+
               {/* 高级选项按钮 */}
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
