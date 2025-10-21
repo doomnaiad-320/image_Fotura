@@ -11,7 +11,7 @@ interface StorageStats {
   usagePercentage: number;
 }
 
-export function LocalStorageManager() {
+export function LocalStorageManager({ compact = false }: { compact?: boolean }) {
   const [stats, setStats] = useState<StorageStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -123,15 +123,17 @@ export function LocalStorageManager() {
   return (
     <div className="space-y-6">
       {/* 标题和说明 */}
-      <div className="border-b pb-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Database className="w-6 h-6" />
-          本地存储管理
-        </h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          所有生成的图片都存储在您的浏览器本地，不会上传到服务器。您可以随时清理或导出数据。
-        </p>
-      </div>
+      {!compact && (
+        <div className="border-b pb-4">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Database className="w-6 h-6" />
+            本地存储管理
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            所有生成的图片都存储在您的浏览器本地，不会上传到服务器。您可以随时清理或导出数据。
+          </p>
+        </div>
+      )}
 
       {/* 统计信息卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -242,15 +244,17 @@ export function LocalStorageManager() {
       </div>
 
       {/* 提示信息 */}
-      <div className="text-xs text-muted-foreground border-t pt-4">
-        <p>💡 提示：</p>
-        <ul className="list-disc list-inside space-y-1 mt-2">
-          <li>本地数据存储在浏览器的 IndexedDB 中</li>
-          <li>清理浏览器缓存或更换设备会丢失数据</li>
-          <li>建议定期导出重要图片以防数据丢失</li>
-          <li>收藏的图片不会被自动清理</li>
-        </ul>
-      </div>
+      {!compact && (
+        <div className="text-xs text-muted-foreground border-t pt-4">
+          <p>💡 提示：</p>
+          <ul className="list-disc list-inside space-y-1 mt-2">
+            <li>本地数据存储在浏览器的 IndexedDB 中</li>
+            <li>清理浏览器缓存或更换设备会丢失数据</li>
+            <li>建议定期导出重要图片以防数据丢失</li>
+            <li>收藏的图片不会被自动清理</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,48 +21,85 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const skip = (page - 1) * limit;
 
-    // 查询用户的消费记录
-    const [transactions, total] = await Promise.all([
+    const [pageItems, total, newerItems] = await Promise.all([
       prisma.creditTransaction.findMany({
-        where: {
-          userId: user.id,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
         take: limit,
-        skip: skip,
+        skip,
         select: {
           id: true,
-          type: true,
-          amount: true,
-          balanceBefore: true,
-          balanceAfter: true,
+          delta: true,
           reason: true,
           status: true,
           createdAt: true,
           metadata: true,
         },
       }),
-      prisma.creditTransaction.count({
-        where: {
-          userId: user.id,
-        },
-      }),
+      prisma.creditTransaction.count({ where: { userId: user.id } }),
+      skip > 0
+        ? prisma.creditTransaction.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: "desc" },
+            take: skip,
+            select: { delta: true },
+          })
+        : Promise.resolve([] as { delta: number }[]),
     ]);
 
-    // 格式化交易记录
-    const formattedTransactions = transactions.map((t) => ({
-      id: t.id,
-      type: t.type,
-      amount: t.amount,
-      balanceBefore: t.balanceBefore,
-      balanceAfter: t.balanceAfter,
-      reason: t.reason,
-      status: t.status,
-      createdAt: t.createdAt.toISOString(),
-      metadata: t.metadata || {},
-    }));
+    // 计算当前页起始余额（为本页第一条记录的“交易后余额”）
+    const sumNewerDelta = newerItems.reduce((s, x) => s + x.delta, 0);
+    let runningAfter = user.credits - sumNewerDelta;
+
+    function mapReasonToZh(reason?: string | null) {
+      if (!reason) return "-";
+      const r = reason.toLowerCase();
+      if (r === "image.edit.precharge") return "图片编辑预扣";
+      if (r === "image.generate.precharge") return "图片生成预扣";
+      if (r === "chat.precharge") return "对话预扣";
+      return reason; // 其他保持原文（多数已是中文）
+    }
+
+    const formattedTransactions = pageItems.map((t) => {
+      const uiType =
+        t.status === "pending"
+          ? "precharge"
+          : t.status === "refunded"
+          ? "refund"
+          : t.delta < 0
+          ? "debit"
+          : "credit";
+
+      const uiStatus =
+        t.status === "pending"
+          ? "pending"
+          : t.status === "success" || t.status === "refunded"
+          ? "completed"
+          : "cancelled"; // 失败归为取消
+
+      const balanceAfter = runningAfter;
+      const balanceBefore = balanceAfter - t.delta; // delta 为负表示扣减
+      runningAfter = balanceBefore; // 为下一条（更老）记录做准备
+
+      let metadata: any = {};
+      try {
+        metadata = t.metadata ? JSON.parse(String(t.metadata)) : {};
+      } catch {
+        metadata = {};
+      }
+
+      return {
+        id: t.id,
+        type: uiType,
+        amount: Math.abs(t.delta),
+        balanceBefore,
+        balanceAfter,
+        reason: mapReasonToZh(t.reason),
+        status: uiStatus,
+        createdAt: t.createdAt.toISOString(),
+        metadata,
+      };
+    });
 
     return NextResponse.json({
       transactions: formattedTransactions,
