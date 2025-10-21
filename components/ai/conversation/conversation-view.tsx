@@ -42,6 +42,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const { addHistory } = useLocalHistory();
   const dbSupported = isConversationDBSupported();
 
+
+
   // 获取积分余额
   const { data: balance, mutate: refreshBalance } = useSWR(
     isAuthenticated ? '/api/credits/balance' : null,
@@ -287,9 +289,14 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       const allConvs = await db.listConversations(50);
       setConversations(allConvs);
       
-      // 如果删除的是当前对话，创建新对话
+      // 如果删除的是当前对话：优先切换到最近一条；若为空再新建
       if (conversationId === currentConversationId) {
-        await createNewConversation();
+        if (allConvs.length > 0) {
+          await handleSelectConversation(allConvs[0].id);
+        } else {
+          // 仅在没有任何对话时才新建
+          await createNewConversation();
+        }
       }
       
       toast.success('已删除对话');
@@ -297,7 +304,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       console.error('[ConversationView] 删除对话失败:', error);
       toast.error('删除对话失败');
     }
-  }, [dbSupported, currentConversationId, createNewConversation]);
+  }, [dbSupported, currentConversationId, createNewConversation, handleSelectConversation]);
 
   // 保存消息到 IndexedDB
   const saveMessageToDB = useCallback(async (message: ConversationMessage) => {
@@ -658,7 +665,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   }
 
   return (
-    <div className="bg-app min-h-screen">
+    <div className="bg-app h-full">
       {/* 侧边栏（固定，桌面常显，移动遮罩抽屉） */}
       <ConversationSidebar
         conversations={conversations}
@@ -671,34 +678,30 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         user={user ? { ...user, credits: balance?.credits ?? user.credits } : undefined}
       />
 
-      {/* 主内容区：与 ChatGPT 一样，桌面偏移左侧边栏宽度 */}
-      <div className="flex flex-col h-screen lg:ml-72 min-h-0 overflow-hidden">
+      {/* 主内容区：全高（由 studio 布局控制视口高度） */}
+      <div className="flex flex-col lg:ml-72 h-full min-h-0 overflow-hidden">
         {/* 顶部工具栏 */}
-        <div className="border-b border-default shrink-0">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center gap-3 py-3">
-              {/* 移动端菜单按钮 */}
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden p-2 hover:bg-surface-2 rounded-lg transition-colors"
-                aria-label="打开侧边栏"
-              >
-                <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+<div className="border-b border-default shrink-0 flex items-center gap-3 py-3 px-4 sm:px-6">
+          {/* 移动端菜单按钮 */}
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="lg:hidden p-2 hover:bg-surface-2 rounded-lg transition-colors"
+            aria-label="打开侧边栏"
+          >
+            <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
 
-              <ConversationHeader
-                models={models}
-                selectedModel={selectedModel}
-                onModelChange={setSelectedModel}
-                credits={balance?.credits}
-              />
-            </div>
-          </div>
+          <ConversationHeader
+            models={models}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            credits={balance?.credits}
+          />
         </div>
 
-        {/* 消息列表 */}
+        {/* 消息列表（唯一滚动容器） */}
         <div
           ref={scrollRef}
           className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 pb-0 no-scrollbar"
@@ -711,8 +714,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           />
         </div>
 
-        {/* 输入区域 */}
-        <div className="shrink-0">
+        {/* 输入区域：吸附底部，保持可见（去边框） */}
+        <div className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <InputArea
               onSend={handleSend}
