@@ -5,9 +5,7 @@ import { UserMenu } from "@/components/navigation/user-menu";
 
 const navLinks = [
   { href: "/", label: "首页" },
-  { href: "/explore", label: "探索" },
-  { href: "/studio", label: "工作台" },
-  { href: "/mobile", label: "移动端" }
+  { href: "/studio", label: "工作台" }
 ];
 
 export async function MainNavigation() {

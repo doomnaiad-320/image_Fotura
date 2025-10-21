@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReuseButton } from "@/components/asset/reuse-button";
+import { FavoriteButton } from "@/components/asset/favorite-button";
 
 export const dynamic = "force-dynamic";
 
@@ -243,12 +244,12 @@ export default async function AssetDetailPage({ params }: { params: { id: string
 
           {/* 操作按钮 */}
           <div className="flex gap-3 pt-4">
-            <Button
-              variant={isFavorited ? "primary" : "secondary"}
-              className="flex-1"
-            >
-              {isFavorited ? "已收藏" : "收藏"}
-            </Button>
+            {/* 收藏按钮 */}
+            <FavoriteButton
+              assetId={asset.id}
+              initialFavorited={isFavorited}
+              isAuthenticated={Boolean(currentUser)}
+            />
             {/* 复用按钮 - 仅非作者可见 */}
             {(!currentUser || currentUser.id !== asset.userId) && (
               <ReuseButton

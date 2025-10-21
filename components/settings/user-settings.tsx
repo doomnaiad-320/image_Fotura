@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Settings, Database, TrendingDown, User } from 'lucide-react';
 import { LocalStorageManager } from '@/components/storage/local-storage-manager';
 import { ConsumptionHistory } from './consumption-history';
 import { Button } from '@/components/ui/button';
 import { AppearanceSelector } from './appearance-selector';
 import { TopUpPanel } from './topup';
+import { FavoritesPanel } from './favorites-panel';
+import { useSearchParams } from 'next/navigation';
 
-type TabKey = 'appearance' | 'storage' | 'consumption' | 'recharge';
+type TabKey = 'appearance' | 'storage' | 'consumption' | 'recharge' | 'favorites';
 
 interface Tab {
   key: TabKey;
@@ -18,14 +20,24 @@ interface Tab {
 }
 
 export function UserSettings() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabKey>('storage');
 
   const tabs: Tab[] = [
     { key: 'appearance', label: '外观', icon: null, description: '选择页面背景风格' },
     { key: 'storage', label: '本地存储', icon: null, description: '管理本地图片和历史记录' },
-    { key: 'consumption', label: '消费历史', icon: null, description: '查看豆的消费和充值记录' },
+    { key: 'consumption', label: '日志', icon: null, description: '查看豆的消费和充值记录' },
     { key: 'recharge', label: '充值', icon: null, description: '购买豆，支持多种支付方式' },
+    { key: 'favorites', label: '我的收藏', icon: null, description: '查看已收藏的作品' },
   ];
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const keys = tabs.map(t => t.key);
+    if (tab && keys.includes(tab as TabKey)) {
+      setActiveTab(tab as TabKey);
+    }
+  }, [searchParams]);
 
   return (
     <div className="space-y-6">
@@ -78,6 +90,12 @@ export function UserSettings() {
           {activeTab === 'recharge' && (
             <div>
               <TopUpPanel />
+            </div>
+          )}
+
+          {activeTab === 'favorites' && (
+            <div>
+              <FavoritesPanel />
             </div>
           )}
         </section>

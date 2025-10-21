@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AssetMasonry } from "@/components/asset/asset-masonry";
+import { AssetFeed } from "@/components/asset/asset-feed";
 import { Button } from "@/components/ui/button";
 import { getAssets } from "@/lib/assets";
 import { getCurrentUser } from "@/lib/auth";
@@ -73,7 +73,13 @@ className="space-y-3 rounded-3xl border border-default bg-surface p-5"
             即将支持更多筛选
           </Button>
         </div>
-        <AssetMasonry assets={assetResult.items} isAuthenticated={Boolean(user)} />
+        <AssetFeed
+          initialItems={assetResult.items}
+          initialCursor={assetResult.nextCursor}
+          initialState={{ type: "all", sort: "new" }}
+          isAuthenticated={Boolean(user)}
+          userCredits={user?.credits}
+        />
       </section>
     </div>
   );
