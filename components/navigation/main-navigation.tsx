@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getCurrentUser } from "@/lib/auth";
 import { UserMenu } from "@/components/navigation/user-menu";
+import { ThemeToggle } from "@/components/navigation/theme-toggle";
 
 const navLinks = [
   { href: "/", label: "首页" },
@@ -42,6 +43,7 @@ className="text-foreground transition hover:text-muted-foreground"
           ))}
         </div>
         <div className="flex items-center gap-3 text-sm">
+          <ThemeToggle />
           {user ? (
             <UserMenu user={user} />
           ) : (

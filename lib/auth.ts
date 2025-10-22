@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { getRegistrationBonusCredits } from "@/lib/settings";
 
 const credentialsSchema = z.object({
   email: z.string().email({ message: "邮箱格式不正确" }),
@@ -157,6 +158,9 @@ export async function registerUser({
   const passwordHash = await bcrypt.hash(password, 10);
 
   const isFirstUser = (await prisma.user.count()) === 0;
+  
+  // 获取配置的注册赠送积分
+  const bonusCredits = isFirstUser ? 100_000 : await getRegistrationBonusCredits();
 
   return prisma.user.create({
     data: {
@@ -164,7 +168,7 @@ export async function registerUser({
       name,
       passwordHash,
       role: isFirstUser ? "admin" : "user",
-      credits: isFirstUser ? 100_000 : 5_000
+      credits: bonusCredits
     }
   });
 }

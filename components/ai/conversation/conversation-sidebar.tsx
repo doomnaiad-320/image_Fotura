@@ -12,6 +12,7 @@ interface ConversationSidebarProps {
   onSelectConversation: (id: string) => void;
   onNewConversation: () => void;
   onDeleteConversation: (id: string) => void;
+  onRenameConversation?: (id: string, title: string) => void;
   isOpen: boolean;
   onToggle: () => void;
   user?: CurrentUser;
@@ -33,12 +34,29 @@ export function ConversationSidebar({
   onSelectConversation,
   onNewConversation,
   onDeleteConversation,
+  onRenameConversation,
   isOpen,
   onToggle,
   user
 }: ConversationSidebarProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState<string>('');
+
+  const startEdit = (conv: Conversation) => {
+    setEditingId(conv.id);
+    setEditTitle(conv.title);
+  };
+
+  const commitEdit = () => {
+    if (!editingId) return;
+    const title = editTitle.trim();
+    if (title && onRenameConversation) {
+      onRenameConversation(editingId, title);
+    }
+    setEditingId(null);
+  };
 
   return (
     <>
@@ -136,32 +154,62 @@ export function ConversationSidebar({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
 
-                    {/* 内容 */}
+                    {/* 内容/重命名 */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{conv.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs opacity-60">
-                        <span>{conv.imageCount || 0} 张图片</span>
-                        <span>•</span>
-                        <span>{new Date(conv.updatedAt).toLocaleDateString()}</span>
-                      </div>
+                      {editingId === conv.id ? (
+                        <input
+                          autoFocus
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') commitEdit();
+                            if (e.key === 'Escape') setEditingId(null);
+                          }}
+                          onBlur={commitEdit}
+                          className="w-full text-sm rounded-md bg-surface-2 border border-default px-2 py-1 text-foreground"
+                        />
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium truncate">{conv.title}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs opacity-60">
+                            <span>{conv.imageCount || 0} 张图片</span>
+                            <span>•</span>
+                            <span>{new Date(conv.updatedAt).toLocaleDateString()}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    {/* 删除按钮 */}
+                    {/* 操作按钮 */}
                     {(isHovered || isActive) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`确定删除对话"${conv.title}"吗？`)) {
-                            onDeleteConversation(conv.id);
-                          }
-                        }}
-                        className="flex-shrink-0 p-1.5 rounded-md hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition-colors"
-                        aria-label="删除对话"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {/* 重命名 */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); startEdit(conv); }}
+                          className="flex-shrink-0 p-1.5 rounded-md hover:bg-surface-3 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="重命名对话"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                        {/* 删除按钮 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`确定删除对话"${conv.title}"吗？`)) {
+                              onDeleteConversation(conv.id);
+                            }
+                          }}
+                          className="flex-shrink-0 p-1.5 rounded-md hover:bg-red-500/20 text-muted-foreground hover:text-red-400 transition-colors"
+                          aria-label="删除对话"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1 1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     )}
                   </div>
                 );

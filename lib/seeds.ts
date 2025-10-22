@@ -75,7 +75,8 @@ export async function runSeed(
     prisma.auditLog.deleteMany(),
     prisma.session.deleteMany(),
     prisma.account.deleteMany(),
-    prisma.user.deleteMany()
+    prisma.user.deleteMany(),
+    prisma.settings.deleteMany()
   ]);
 
   const adminPassword = options.adminPassword ?? "Admin123!@#";
@@ -183,6 +184,14 @@ export async function runSeed(
       }
     });
   }
+
+  // 初始化系统设置
+  await prisma.settings.create({
+    data: {
+      key: "registration_bonus_credits",
+      value: "5000"
+    }
+  });
 
   return { admin, user: regularUser, models };
 }

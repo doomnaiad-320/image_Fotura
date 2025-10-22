@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Asset" ADD COLUMN "isDeleted" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Asset" ADD COLUMN "deletedAt" DATETIME;

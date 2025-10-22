@@ -65,7 +65,8 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
 
   // 基础查询条件
   const baseWhere: Prisma.AssetWhereInput = {
-    isPublic: true
+    isPublic: true,
+    isDeleted: false
   };
 
   if (type !== "all") {

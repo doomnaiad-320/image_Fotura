@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import MessageItem from './message-item';
 import type { ConversationMessage } from '@/types/conversation';
 
@@ -9,13 +9,17 @@ interface MessageListProps {
   onUseAsInput: (messageId: string) => void;
   onPublish: (messageId: string) => void;
   onTimelineNodeClick?: (messageId: string, nodeId: string) => void;
+  onRetry?: (messageId: string) => void;
+  onCancel?: (messageId: string) => void;
 }
 
 export function MessageList({
   messages,
   onUseAsInput,
   onPublish,
-  onTimelineNodeClick
+  onTimelineNodeClick,
+  onRetry,
+  onCancel
 }: MessageListProps) {
   if (messages.length === 0) {
     return (
@@ -53,9 +57,26 @@ export function MessageList({
     );
   }
 
+  const [showAll, setShowAll] = useState(false);
+  const MAX = 100;
+  const visibleMessages = useMemo(() => (
+    showAll ? messages : messages.slice(Math.max(0, messages.length - MAX))
+  ), [messages, showAll]);
+  const hiddenCount = messages.length - visibleMessages.length;
+
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 sm:px-6">
-      {messages.map((message) => (
+      {hiddenCount > 0 && !showAll && (
+        <div className="sticky top-0 z-10 -mt-2 pt-2">
+          <button
+            onClick={() => setShowAll(true)}
+            className="mx-auto block text-xs px-3 py-1.5 rounded-full bg-surface-2 border border-default text-muted-foreground hover:text-foreground"
+          >
+            展开更早消息（{hiddenCount}）
+          </button>
+        </div>
+      )}
+      {visibleMessages.map((message) => (
         <MessageItem
           key={message.id}
           message={message}
@@ -66,6 +87,8 @@ export function MessageList({
               ? (nodeId) => onTimelineNodeClick(message.id, nodeId)
               : undefined
           }
+          onRetry={onRetry ? () => onRetry(message.id) : undefined}
+          onCancel={onCancel ? () => onCancel(message.id) : undefined}
         />
       ))}
     </div>

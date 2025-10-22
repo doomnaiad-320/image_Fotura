@@ -39,6 +39,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const [isPublishOpen, setIsPublishOpen] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
   const { addHistory } = useLocalHistory();
   const dbSupported = isConversationDBSupported();
 
@@ -178,10 +179,13 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     }
   }, [dbSupported, isLoadingConversation]);
 
-  // 自动滚动到底部
+  // 自动滚动到底部（仅在接近底部时）
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
+    if (distance < 200) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [messages]);
 
@@ -306,6 +310,21 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     }
   }, [dbSupported, currentConversationId, createNewConversation, handleSelectConversation]);
 
+  // 重命名对话
+  const handleRenameConversation = useCallback(async (conversationId: string, title: string) => {
+    if (!dbSupported) return;
+    try {
+      const db = await getConversationDB();
+      await db.updateConversation(conversationId, { title });
+      const allConvs = await db.listConversations(50);
+      setConversations(allConvs);
+      toast.success('已重命名对话');
+    } catch (error) {
+      console.error('[ConversationView] 重命名对话失败:', error);
+      toast.error('重命名失败');
+    }
+  }, [dbSupported]);
+
   // 保存消息到 IndexedDB
   const saveMessageToDB = useCallback(async (message: ConversationMessage) => {
     if (!dbSupported) return;
@@ -342,13 +361,20 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   }, [dbSupported, currentConversationId, selectedModel]);
 
   // 处理发送消息
-  const handleSend = useCallback(async (prompt: string, uploadedImages?: File[]) => {
+  const handleSend = useCallback(async (
+    prompt: string,
+    uploadedImages?: File[],
+    options?: { size?: string; aspectRatio?: string }
+  ) => {
     if (!ensureLogin()) return;
     
     if (!selectedModel) {
       toast.error('请先选择模型');
       return;
     }
+
+    const finalSize = options?.size || '1024x1024';
+    const finalAspect = options?.aspectRatio || '1:1';
 
     // 判断是否为图生图模式
     // 1. 用户主动上传了图片 -> 强制图生图
@@ -395,9 +421,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       generationParams: {
         model: selectedModel,
         modelName: models.find(m => m.slug === selectedModel)?.displayName || selectedModel,
-        size: '1024x1024', // 从 InputArea 传递
+        size: finalSize,
         mode: isEditMode ? 'img2img' : 'txt2img',
-        aspectRatio: '1:1'
+        aspectRatio: finalAspect
       }
     };
     setMessages(prev => [...prev, assistantMsg]);
@@ -409,6 +435,10 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     try {
       let imageUrl: string;
       let editChain: ConversationMessage['editChain'];
+
+      // 创建可取消的控制器
+      const controller = new AbortController();
+      abortControllersRef.current.set(assistantMsgId, controller);
 
       if (isEditMode && (parentMsg?.imageUrl || hasUploadedImages)) {
         // 图生图模式
@@ -424,7 +454,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         if (originalPrompt) {
           formData.append('originalPrompt', originalPrompt); // 原始完整 Prompt（如果有）
         }
-        formData.append('size', '1024x1024');
+        formData.append('size', finalSize);
         formData.append('n', '1');
 
         // 获取图片：优先使用上传的图片，否则使用父消息的图片
@@ -450,7 +480,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           '/api/ai/images/edits',
           {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: controller.signal
           }
         );
 
@@ -478,10 +509,11 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             body: JSON.stringify({
               model: selectedModel,
               prompt: prompt,
-              size: '1024x1024',
+              size: finalSize,
               n: 1,
               response_format: 'url'
-            })
+            }),
+            signal: controller.signal
           }
         );
 
@@ -505,7 +537,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           model: selectedModel,
           modelName: models.find(m => m.slug === selectedModel)?.displayName,
           mode: isEditMode ? 'img2img' : 'txt2img',
-          size: '1024x1024'
+          size: finalSize
         }
       );
 
@@ -515,7 +547,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         imageUrl: localUrl,
         imageId: historyId,
         editChain,
-        isGenerating: false
+        isGenerating: false,
+        error: undefined
       };
       
       setMessages(prev => prev.map(m =>
@@ -532,18 +565,27 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     } catch (error) {
       console.error('[ConversationView] 生成失败:', error);
       
-      // 更新错误状态
+      const isAbort = (error as any)?.name === 'AbortError';
+
+      // 更新错误/取消状态
       setMessages(prev => prev.map(m =>
         m.id === assistantMsgId
           ? {
               ...m,
               isGenerating: false,
-              error: error instanceof Error ? error.message : '生成失败'
+              error: isAbort ? '已取消' : (error instanceof Error ? error.message : '生成失败')
             }
           : m
       ));
       
-      toast.error(error instanceof Error ? error.message : '生成失败');
+      if (isAbort) {
+        toast('已取消生成');
+      } else {
+        toast.error(error instanceof Error ? error.message : '生成失败');
+      }
+    } finally {
+      // 清理控制器
+      abortControllersRef.current.delete(assistantMsgId);
     }
   }, [
     ensureLogin,
@@ -588,6 +630,21 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     setPublishTarget(message);
     setIsPublishOpen(true);
   }, [messages]);
+
+  // 重试失败生成
+  const handleRetry = useCallback(async (messageId: string) => {
+    const target = messages.find(m => m.id === messageId);
+    if (!target) return;
+    if (!selectedModel) {
+      toast.error('请先选择模型');
+      return;
+    }
+    const opts = {
+      size: target.generationParams?.size,
+      aspectRatio: target.generationParams?.aspectRatio
+    };
+    await handleSend(target.content, undefined, opts);
+  }, [messages, selectedModel, handleSend]);
 
   // 处理时间轴节点点击
   const handleTimelineNodeClick = useCallback((messageId: string, nodeId: string) => {
@@ -640,14 +697,26 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     setParentMessageId(targetMessage.id);
     setInheritedPrompt(targetPrompt);
     
-    // 滚动到输入区
+    // 高亮目标消息并滚动
+    try {
+      const el = document.getElementById(`msg-${targetMessage.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2','ring-blue-500/60','rounded-2xl');
+        setTimeout(() => {
+          el.classList.remove('ring-2','ring-blue-500/60');
+        }, 1200);
+      }
+    } catch {}
+
+    // 稍后滚动到输入区并聚焦
     setTimeout(() => {
       const inputArea = document.querySelector('textarea');
       if (inputArea) {
-        inputArea.focus();
+        (inputArea as HTMLTextAreaElement).focus();
         inputArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 100);
+    }, 600);
     
     toast.success(`已回退到节点，可以继续编辑`);
   }, [messages]);
@@ -673,6 +742,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         onSelectConversation={handleSelectConversation}
         onNewConversation={createNewConversation}
         onDeleteConversation={handleDeleteConversation}
+        onRenameConversation={handleRenameConversation}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         user={user ? { ...user, credits: balance?.credits ?? user.credits } : undefined}
@@ -711,11 +781,25 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             onUseAsInput={handleUseAsInput}
             onPublish={handlePublish}
             onTimelineNodeClick={handleTimelineNodeClick}
+            onRetry={(messageId) => {
+              handleRetry(messageId);
+            }}
+            onCancel={(messageId) => {
+              const ctrl = abortControllersRef.current.get(messageId);
+              // 允许传入的是任意消息ID，但我们存的是助手消息ID；这里直接尝试按该ID取，若为空，再找生成中的助手消息
+              if (!ctrl) {
+                const generating = messages.find(m => m.id === messageId && m.isGenerating);
+                const altCtrl = generating ? abortControllersRef.current.get(generating.id) : undefined;
+                (altCtrl || ctrl)?.abort();
+                return;
+              }
+              ctrl.abort();
+            }}
           />
         </div>
 
         {/* 输入区域：吸附底部，保持可见（去边框） */}
-        <div className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80">
+        <div className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <InputArea
               onSend={handleSend}

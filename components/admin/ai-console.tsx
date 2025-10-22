@@ -5,6 +5,9 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import useSWR from "swr";
+import { PublishedGrid } from "@/components/asset/published-grid";
+import { ReusedThumbGrid } from "@/components/asset/reused-thumb-grid";
+import { FavoritesThumbGrid } from "@/components/asset/favorites-thumb-grid";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -133,14 +136,15 @@ type ImageLogView = {
   } | null;
 };
 
-type TabKey = "providers" | "users" | "logs" | "imageLogs";
+type TabKey = "providers" | "users" | "logs" | "imageLogs" | "me";
 
 export function AdminAIConsole({ initialProviders, initialModels }: Props) {
   const tabs: { key: TabKey; label: string }[] = [
     { key: "providers", label: "Provider 管理" },
     { key: "users", label: "用户管理" },
     { key: "logs", label: "操作日志" },
-    { key: "imageLogs", label: "生成日志" }
+    { key: "imageLogs", label: "生成日志" },
+    { key: "me", label: "个人主页" }
   ];
 
   const [activeTab, setActiveTab] = useState<TabKey>("providers");
@@ -318,6 +322,11 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
   const users: UserView[] = usersData?.users ?? [];
   const logs: LogView[] = logsData?.logs ?? [];
   const imageLogs: ImageLogView[] = imageLogsData?.logs ?? [];
+
+  // 个人主页数据
+  const { data: meData, mutate: mutateMe } = useSWR("/api/me/overview", fetcher, {
+    fallbackData: { published: [], reused: [], favorites: [] }
+  });
 
   const resetForm = () => {
     form.reset({
@@ -1098,6 +1107,31 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
       {activeTab === "users" && usersTab}
       {activeTab === "logs" && logsTab}
       {activeTab === "imageLogs" && imageLogsTab}
+
+      {activeTab === "me" && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">个人主页</h2>
+            <Button variant="secondary" size="sm" onClick={() => mutateMe()}>
+              刷新
+            </Button>
+          </div>
+          <div className="grid gap-6 xl:grid-cols-3">
+            <section className="space-y-3 xl:col-span-1">
+              <h3 className="text-sm text-gray-400">已发布</h3>
+              <PublishedGrid initialItems={(meData?.published ?? []) as any} isAuthenticated={true} />
+            </section>
+            <section className="space-y-3 xl:col-span-1">
+              <h3 className="text-sm text-gray-400">已复用</h3>
+              <ReusedThumbGrid initialItems={(meData?.reused ?? []) as any} isAuthenticated={true} />
+            </section>
+            <section className="space-y-3 xl:col-span-1">
+              <h3 className="text-sm text-gray-400">收藏</h3>
+              <FavoritesThumbGrid initialItems={(meData?.favorites ?? []) as any} isAuthenticated={true} />
+            </section>
+          </div>
+        </div>
+      )}
 
       {creditModal.open && creditModal.user && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">

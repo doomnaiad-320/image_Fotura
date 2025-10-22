@@ -73,6 +73,12 @@ export default async function AssetDetailPage({ params }: { params: { id: string
   
   // 是否作者本人
   const isAuthor = currentUser?.id === asset.userId;
+
+  // 若作品被软删除，仅作者与已复用用户可访问
+  // @ts-expect-error prisma types generated after migration
+  if ((asset as any).isDeleted && !isAuthor && !hasReused) {
+    notFound();
+  }
   
   // Prompt 可见性：作者、免费作品、或已复用
   const promptVisible = isAuthor || asset.reusePoints === 0 || hasReused;
@@ -124,7 +130,11 @@ export default async function AssetDetailPage({ params }: { params: { id: string
               <Badge className="border-default bg-surface-2 text-foreground">
                 {asset.type === "video" ? "视频" : "图片"}
               </Badge>
-              {asset.isPublic ? (
+              {/* 状态徽章：公开/私密/已删除 */}
+              {/* @ts-expect-error prisma types generated after migration */}
+              {(asset as any).isDeleted ? (
+                <Badge variant="destructive">已删除</Badge>
+              ) : asset.isPublic ? (
                 <Badge variant="outline">公开</Badge>
               ) : (
                 <Badge variant="secondary">私密</Badge>

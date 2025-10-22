@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 
 interface InputAreaProps {
-  onSend: (prompt: string, uploadedImages?: File[]) => void;
+  onSend: (prompt: string, uploadedImages?: File[], options?: { size?: string; aspectRatio?: string }) => void;
   disabled?: boolean;
   placeholder?: string;
   inheritedPrompt?: string;
@@ -44,6 +44,7 @@ export function InputArea({
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [isDropActive, setIsDropActive] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragStartY = useRef<number>(0);
@@ -80,7 +81,7 @@ export function InputArea({
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || disabled) return;
 
-    onSend(trimmedPrompt, uploadedImages);
+    onSend(trimmedPrompt, uploadedImages, { size: selectedSize, aspectRatio });
     setPrompt('');
     setUploadedImages([]);
     setImagePreviewUrls([]);
@@ -91,7 +92,8 @@ export function InputArea({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    // 使用 Shift + Enter 发送；Enter 换行
+    if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
@@ -146,17 +148,10 @@ export function InputArea({
 
   const sizeOptions = SIZE_PRESETS[aspectRatio] || [];
 
-  // 图片上传处理（支持多选）
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const addImages = (files: File[]) => {
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    
     if (imageFiles.length === 0) return;
-
-    // 添加新图片到已上传列表
     setUploadedImages(prev => [...prev, ...imageFiles]);
-    
-    // 为每个新图片生成预览 URL
     imageFiles.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -164,7 +159,12 @@ export function InputArea({
       };
       reader.readAsDataURL(file);
     });
-    
+  };
+
+  // 图片上传处理（支持多选）
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    addImages(files);
     // 重置 input 以允许重复选择
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -184,8 +184,44 @@ export function InputArea({
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const files: File[] = [];
+    for (const item of items) {
+      if (item.kind === 'file') {
+        const f = item.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length > 0) {
+      e.preventDefault();
+      addImages(files);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDropActive(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length) addImages(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isDropActive) setIsDropActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget === e.target) setIsDropActive(false);
+  };
+
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragLeave={handleDragLeave}
+    >
       {/* 渐变遮罩层 */}
       <div className="absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-app to-transparent pointer-events-none"></div>
       
@@ -278,9 +314,17 @@ export function InputArea({
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
+            onFocus={() => {
+              setIsFocused(true);
+              // 移动端键盘弹起时，确保输入框在可视区域内
+              setTimeout(() => {
+                textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }, 50);
+            }}
+            onPaste={handlePaste}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
+            aria-label="输入提示词"
             disabled={disabled}
             rows={1}
             style={{ height: `${customHeight}px`, minHeight: '48px', maxHeight: '600px' }}
@@ -386,7 +430,7 @@ export function InputArea({
             <div className="flex items-center gap-3">
               {/* 快捷键提示 */}
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
-                <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-default font-mono text-[10px] text-foreground">⌘</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-default font-mono text-[10px] text-foreground">⇧</kbd>
                 <span>+</span>
                 <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-default font-mono text-[10px] text-foreground">↵</kbd>
               </div>
@@ -456,6 +500,16 @@ export function InputArea({
           )}
         </div>
       </div>
+
+      {/* 拖拽上传遮罩 */}
+      {isDropActive && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-dashed border-orange-500/60 bg-orange-500/10" />
+          <div className="pointer-events-none relative px-4 py-2 rounded-full bg-orange-600 text-white text-sm shadow-xl">
+            释放以上传图片
+          </div>
+        </div>
+      )}
     </div>
   );
 }

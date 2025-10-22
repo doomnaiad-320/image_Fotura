@@ -1,11 +1,10 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 
 import type { CurrentUser } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useBgTheme } from "@/components/theme/background-provider";
 
 type Props = {
@@ -13,67 +12,94 @@ type Props = {
 };
 
 export function UserMenu({ user }: Props) {
-  const { theme, setTheme } = useBgTheme();
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, []);
+
+  const initial = (user.email?.[0] ?? "U").toUpperCase();
 
   return (
-    <div className="flex items-center gap-3">
-      <Badge className="bg-white/10 text-xs uppercase tracking-[0.2em] text-white">
-        {user.credits} 豆
-      </Badge>
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full border border-default bg-surface px-3 py-1.5 hover:bg-surface-2"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white text-sm font-semibold">
+          {initial}
+        </span>
+        <span className="hidden text-sm text-muted-foreground sm:block">{user.email}</span>
+        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/90">
+          {user.credits} 豆
+        </span>
+        <svg className={`h-4 w-4 text-muted-foreground transition ${open ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-      {/* Theme dropdown via icon */}
-      <div className="relative">
-        <button
-          className="rounded-full border border-default p-1.5 text-foreground hover:bg-surface-2"
-          aria-label="切换主题"
-          title="切换主题"
-          onClick={(e) => {
-            const menu = (e.currentTarget.nextSibling as HTMLElement)!
-            menu.classList.toggle('hidden');
-          }}
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-default bg-surface p-1 shadow-xl"
         >
-          {/* simple icon */}
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 2a7 7 0 110 14 7 7 0 010-14z" />
-          </svg>
-        </button>
-        <div className="absolute right-0 z-50 mt-2 w-32 overflow-hidden rounded-md border border-default bg-surface shadow hidden" role="menu">
-          <button
-            className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-2 ${theme==='dark' ? 'opacity-100' : 'opacity-80'}`}
-            onClick={(e)=>{ setTheme('dark'); (e.currentTarget.parentElement as HTMLElement).classList.add('hidden'); }}
+          <div className="px-3 py-2 text-xs text-muted-foreground">
+            {user.email}
+          </div>
+          <Link
+            href="/me"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            onClick={() => setOpen(false)}
           >
-            Dark
-          </button>
-          <button
-            className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-2 ${theme==='light' ? 'opacity-100' : 'opacity-80'}`}
-            onClick={(e)=>{ setTheme('light'); (e.currentTarget.parentElement as HTMLElement).classList.add('hidden'); }}
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            个人主页
+          </Link>
+          <Link
+            href="/settings"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            onClick={() => setOpen(false)}
           >
-            Light
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            设置
+          </Link>
+          <Link
+            href="/studio"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            onClick={() => setOpen(false)}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            工作台
+          </Link>
+          {user.role === "admin" && (
+            <Link
+              href="/admin/ai"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+              onClick={() => setOpen(false)}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+              管理后台
+            </Link>
+          )}
+          <div className="my-1 h-px bg-default" />
+          <button
+            onClick={() => { setOpen(false); signOut({ callbackUrl: "/" }); }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-500 hover:bg-red-500/10"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            退出登录
           </button>
         </div>
-      </div>
-
-      <Link
-        href="/settings"
-        className="rounded-full border border-default px-4 py-1 text-xs uppercase tracking-[0.2em] text-foreground transition hover:bg-surface-2"
-      >
-        控制台
-      </Link>
-      {user.role === "admin" && (
-        <Link
-          href="/admin/ai"
-          className="rounded-full border border-default px-4 py-1 text-xs uppercase tracking-[0.2em] text-foreground transition hover:bg-surface-2"
-        >
-          管理后台
-        </Link>
       )}
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => signOut({ callbackUrl: "/" })}
-      >
-        退出
-      </Button>
     </div>
   );
 }

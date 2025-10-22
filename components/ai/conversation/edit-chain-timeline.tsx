@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { EditChain } from '@/types/conversation';
 import { getChainTimeline } from '@/lib/ai/prompt-chain';
 
@@ -13,6 +13,15 @@ interface EditChainTimelineProps {
 export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: EditChainTimelineProps) {
   const timeline = getChainTimeline(editChain);
   const [confirmingNodeId, setConfirmingNodeId] = useState<string | null>(null);
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let t: any;
+    if (activeNodeId) {
+      t = setTimeout(() => setActiveNodeId(null), 1500);
+    }
+    return () => t && clearTimeout(t);
+  }, [activeNodeId]);
 
   if (timeline.length <= 1) {
     // 只有基础节点，不显示时间轴
@@ -33,6 +42,7 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
 
   const confirmRollback = () => {
     if (confirmingNodeId && onNodeClick) {
+      setActiveNodeId(confirmingNodeId);
       onNodeClick(confirmingNodeId);
       setConfirmingNodeId(null);
     }
@@ -81,18 +91,19 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
 
       {/* 水平时间轴 - 隐藏滚动条 */}
       <div 
-        className="flex items-center gap-2 overflow-x-auto pb-2" 
+        className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar" 
         style={{ 
           scrollbarWidth: 'none', 
           msOverflowStyle: 'none' 
         }}
       >
-        <style jsx>{`
-          div::-webkit-scrollbar {
-            display: none;
-          }
+        <style>{`
+          .hide-scrollbar::-webkit-scrollbar { display: none; }
         `}</style>
-        {timeline.map((node, index) => (
+        {timeline.map((node, index) => {
+          const activeId = currentNodeId ?? activeNodeId;
+          const isActive = node.id === activeId;
+          return (
           <React.Fragment key={node.id}>
             {/* 节点 */}
             <button
@@ -106,13 +117,13 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
               {/* 节点圆圈 - 减小尺寸 */}
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-200 ${
-                  node.id === currentNodeId
-? 'bg-green-500 border-green-400 text-on-accent ring-2 ring-green-500/30 animate-pulse'
+                  isActive
+                    ? 'bg-green-500 border-green-400 text-on-accent ring-2 ring-green-500/30 animate-pulse'
                     : node.isBase
-? 'bg-blue-500 border-blue-400 text-on-accent'
-                    : index === timeline.length - 1
-? 'bg-orange-500 border-orange-400 text-on-accent ring-2 ring-orange-500/30'
-                    : 'bg-surface-2 border-default text-foreground/80'
+                      ? 'bg-blue-500 border-blue-400 text-on-accent'
+                      : index === timeline.length - 1
+                        ? 'bg-orange-500 border-orange-400 text-on-accent ring-2 ring-orange-500/30'
+                        : 'bg-surface-2 border-default text-foreground/80'
                 } ${
                   onNodeClick && index < timeline.length - 1
                     ? 'group-hover:scale-110 group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-500/50 group-hover:border-blue-400'
@@ -162,7 +173,8 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
               <div className="flex-shrink-0 h-0.5 w-8 bg-gradient-to-r from-default to-default"></div>
             )}
           </React.Fragment>
-        ))}
+          );
+        })}
       </div>
 
       

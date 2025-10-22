@@ -2,37 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
-// 获取复用积分配置
-async function getReusePointsConfig() {
-  const settings = await prisma.settings.findMany({
-    where: {
-      key: {
-        in: ['reuse_points_min', 'reuse_points_max', 'reuse_points_current']
-      }
-    }
-  });
-
-  const config = {
-    min: 10,
-    max: 100,
-    current: 50
-  };
-
-  settings.forEach((setting) => {
-    const value = parseInt(setting.value, 10);
-    if (setting.key === 'reuse_points_min') {
-      config.min = value;
-    } else if (setting.key === 'reuse_points_max') {
-      config.max = value;
-    } else if (setting.key === 'reuse_points_current') {
-      config.current = value;
-    }
-  });
-
-  return config;
-}
-
-// POST /api/assets/:id/reuse - 点击复用
+// POST /api/assets/:id/reuse - 点击复用（按作品ID一次购买，后续免费）
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -56,11 +26,7 @@ export async function POST(
       where: { id: assetId },
       include: {
         user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+          select: { id: true, name: true, email: true }
         }
       }
     });
@@ -72,13 +38,6 @@ export async function POST(
       );
     }
 
-    if (!asset.isPublic) {
-      return NextResponse.json(
-        { error: '作品未公开' },
-        { status: 403 }
-      );
-    }
-
     // 3. 不能复用自己的作品
     if (asset.userId === userId) {
       return NextResponse.json(
@@ -87,10 +46,48 @@ export async function POST(
       );
     }
 
-    // 4. 使用作品的 reusePoints，如果为 0 则免费
+    // 4. 如果已复用（已购买），直接返回免费复用
+    const existingRecord = await prisma.reuseRecord.findUnique({
+      where: {
+        sourceWorkId_reuserId: {
+          sourceWorkId: assetId,
+          reuserId: userId
+        }
+      }
+    });
+
+    const prefillData = {
+      prompt: asset.prompt || '',
+      model: asset.model || '',
+      modelName: asset.modelName || '',
+      size: asset.size || '1024x1024',
+      mode: asset.mode || 'txt2img',
+      editChain: asset.editChain ? JSON.parse(asset.editChain) : {}
+    };
+
+    if (existingRecord) {
+      return NextResponse.json({
+        success: true,
+        charged: 0,
+        rewardGranted: false,
+        prefillData,
+        message: '您已拥有该作品，复用免费'
+      });
+    }
+
+    // 5. 未购买情况下：仅公开作品可复用
+    // @ts-expect-error prisma types generated after migration
+    if (!asset.isPublic || (asset as any).isDeleted) {
+      return NextResponse.json(
+        { error: '作品未公开' },
+        { status: 403 }
+      );
+    }
+
+    // 6. 使用作品的 reusePoints（首次复用按作品定价扣费；0 表示免费）
     const chargeAmount = asset.reusePoints ?? 50;
 
-    // 5. 检查用户余额（仅当需要扣费时）
+    // 6. 若需要扣费则校验余额
     if (chargeAmount > 0) {
       const currentUser = await prisma.user.findUnique({
         where: { id: userId },
@@ -109,23 +106,17 @@ export async function POST(
       }
     }
 
-    // 6. 事务处理：扣费 + 奖励判定
+    // 7. 事务处理：扣费 +（首次）奖励 + 写入复用记录
     const result = await prisma.$transaction(async (tx) => {
       let rewardGranted = false;
 
-      // 仅当 chargeAmount > 0 时才进行扣费和奖励
       if (chargeAmount > 0) {
-        // a. 扣除用户 B 的积分
+        // a) 扣除购买者积分
         await tx.user.update({
           where: { id: userId },
-          data: {
-            credits: {
-              decrement: chargeAmount
-            }
-          }
+          data: { credits: { decrement: chargeAmount } }
         });
 
-        // 记录扣费交易
         await tx.creditTransaction.create({
           data: {
             userId,
@@ -134,36 +125,17 @@ export async function POST(
             status: 'success',
             refWorkId: assetId,
             refUserId: asset.userId || undefined,
-            metadata: JSON.stringify({
-              sourceWorkId: assetId,
-              sourceWorkTitle: asset.title
-            })
+            metadata: JSON.stringify({ sourceWorkId: assetId, sourceWorkTitle: asset.title })
           }
         });
 
-        // b. 查询是否已存在复用记录
-        const existingRecord = await tx.reuseRecord.findUnique({
-          where: {
-            sourceWorkId_reuserId: {
-              sourceWorkId: assetId,
-              reuserId: userId
-            }
-          }
-        });
-
-        // c. 如果不存在记录且作品有作者，给作者奖励
-        if (!existingRecord && asset.userId) {
-          // 给作者 A 增加积分
+        // b) 首次复用给作者奖励（如果存在作者）
+        if (asset.userId) {
           await tx.user.update({
             where: { id: asset.userId },
-            data: {
-              credits: {
-                increment: chargeAmount
-              }
-            }
+            data: { credits: { increment: chargeAmount } }
           });
 
-          // 记录奖励交易
           await tx.creditTransaction.create({
             data: {
               userId: asset.userId,
@@ -184,36 +156,17 @@ export async function POST(
         }
       }
 
-      // d. 创建或更新复用记录（无论是否扣费）
-      await tx.reuseRecord.upsert({
-        where: {
-          sourceWorkId_reuserId: {
-            sourceWorkId: assetId,
-            reuserId: userId
-          }
-        },
-        create: {
+      // c) 创建复用记录（首次购买即归属）
+      await tx.reuseRecord.create({
+        data: {
           sourceWorkId: assetId,
           reuserId: userId,
           rewardGranted
-        },
-        update: {
-          // 重复复用不更新 rewardGranted
         }
       });
 
       return { rewardGranted };
     });
-
-    // 7. 构建预填数据
-    const prefillData = {
-      prompt: asset.prompt || '',
-      model: asset.model || '',
-      modelName: asset.modelName || '',
-      size: asset.size || '1024x1024',
-      mode: asset.mode || 'txt2img',
-      editChain: asset.editChain ? JSON.parse(asset.editChain) : {}
-    };
 
     // 8. 返回响应
     let message = '复用成功！';
