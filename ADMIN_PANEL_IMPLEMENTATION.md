@@ -142,9 +142,10 @@ npm run seed:reset
 
 2. 访问管理后台：
    - 主页: `http://localhost:3000/admin`
-   - 系统设置: `http://localhost:3000/admin/settings`
-   - 用户管理: `http://localhost:3000/admin/users`
    - AI 管理: `http://localhost:3000/admin/ai`
+   - 用户管理: `http://localhost:3000/admin/users`
+   - 积分日志: `http://localhost:3000/admin/logs`
+   - 系统设置: `http://localhost:3000/admin/settings`
 
 ### 修改注册赠送积分
 
@@ -249,10 +250,11 @@ try {
 - LayoutDashboard - 概览
 - Brain - AI 管理
 - Users - 用户管理
+- Receipt - 积分日志
 - Settings - 系统设置
-- ImageIcon - 资产管理
-- FileText - 操作日志
 - CoinsIcon - 积分
+- TrendingUp/TrendingDown - 积分变动
+- CheckCircle/Clock/AlertCircle/RefreshCw - 交易状态
 - Search - 搜索
 
 ## 扩展建议
@@ -279,19 +281,20 @@ export const SETTINGS_KEYS = {
 - 批量操作
 - 用户活动日志查看
 
-### 资产管理页面
+### 操作审计日志（未实现）
 
-已在导航中预留 `/admin/assets` 路由，可实现：
-- 资产列表查看
-- 资产审核/删除
-- 资产统计分析
-
-### 操作日志页面
-
-已在导航中预留 `/admin/logs` 路由，可实现：
-- 查看 `AuditLog` 表数据
-- 筛选和搜索
+可以创建 `/admin/audit-logs` 页面，实现：
+- 查看 `AuditLog` 表数据（用户行为审计）
+- 筛选和搜索（按用户、操作类型、时间范围）
 - 导出日志
+
+### 积分日志增强
+
+当前已实现基础功能，可进一步添加：
+- 按用户筛选（点击用户名快速筛选该用户的所有交易）
+- 按时间范围筛选
+- 导出为 CSV 或 Excel
+- 交易详情弹窗（显示完整的 metadata）
 
 ## 测试建议
 
@@ -327,10 +330,12 @@ export const SETTINGS_KEYS = {
 ### 新增文件
 - `lib/settings.ts` - 设置服务层
 - `app/api/admin/settings/route.ts` - 设置 API
+- `app/api/admin/credit-logs/route.ts` - 积分日志 API
 - `app/(web)/admin/layout.tsx` - 管理后台布局
 - `app/(web)/admin/page.tsx` - 管理概览页
 - `app/(web)/admin/settings/page.tsx` - 系统设置页
 - `app/(web)/admin/users/page.tsx` - 用户管理页
+- `app/(web)/admin/logs/page.tsx` - 积分日志页
 - `ADMIN_PANEL_IMPLEMENTATION.md` - 本文档
 
 ### 修改文件

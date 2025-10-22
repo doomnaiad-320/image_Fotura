@@ -6,8 +6,7 @@ import {
   Users, 
   Settings, 
   Database,
-  FileText,
-  ImageIcon
+  Receipt
 } from "lucide-react";
 
 import { ensureAdmin } from "@/lib/ai/guards";
@@ -32,19 +31,14 @@ const navItems = [
     icon: Users,
   },
   {
-    name: "资产管理",
-    href: "/admin/assets",
-    icon: ImageIcon,
+    name: "积分日志",
+    href: "/admin/logs",
+    icon: Receipt,
   },
   {
     name: "系统设置",
     href: "/admin/settings",
     icon: Settings,
-  },
-  {
-    name: "操作日志",
-    href: "/admin/logs",
-    icon: FileText,
   },
 ];
 
