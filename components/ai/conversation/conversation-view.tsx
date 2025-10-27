@@ -8,6 +8,7 @@ import ConversationHeader from './conversation-header';
 import ConversationSidebar from './conversation-sidebar';
 import MessageList from './message-list';
 import InputArea from './input-area';
+import PromptFusionDialog from './prompt-fusion-dialog';
 import type { ConversationMessage, Conversation, PublishResponse } from '@/types/conversation';
 import type { ModelOption } from '../playground';
 import { httpFetch } from '@/lib/http';
@@ -37,6 +38,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [publishTarget, setPublishTarget] = useState<ConversationMessage | null>(null);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
+  const [isFusionOpen, setIsFusionOpen] = useState(false);
+  const [fusionBasePrompt, setFusionBasePrompt] = useState<string>("");
+  const [fusionAsset, setFusionAsset] = useState<{ id: string; title: string; coverUrl?: string; size?: string } | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -54,7 +58,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
   // 检查复用预填数据
   useEffect(() => {
-    const checkReusePrefill = () => {
+    const checkReusePrefill = async () => {
       try {
         const prefillDataStr = localStorage.getItem('reuse_prefill_data');
         if (prefillDataStr) {
@@ -68,9 +72,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             // 显示提示
             toast.success(`已加载复用作品：${prefillData.assetTitle || '无标题'}`);
             
-            // 将 prompt 设置为继承提示词
+            // 仅用于融合，不预填输入区，避免用户再次点击发送产生重复生成
             if (prefillData.prompt) {
-              setInheritedPrompt(prefillData.prompt);
+              setFusionBasePrompt(prefillData.prompt);
             }
             
             // 如果有模型信息，尝试设置
@@ -80,6 +84,15 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                 setSelectedModel(prefillData.modelSlug);
               }
             }
+
+            // 设置融合弹窗数据并打开
+            setFusionAsset({
+              id: prefillData.assetId,
+              title: prefillData.assetTitle,
+              coverUrl: prefillData.coverUrl,
+              size: prefillData.size
+            });
+            setIsFusionOpen(true);
           }
           
           // 清除已使用的数据
@@ -91,7 +104,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     };
     
     // 延迟执行，确保在对话恢复后
-    setTimeout(checkReusePrefill, 500);
+    setTimeout(async () => {
+      await checkReusePrefill();
+    }, 500);
   }, [models]);
 
   // 初始化：恢复最后的对话
@@ -200,33 +215,33 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
   // 创建新对话
   const createNewConversation = useCallback(async () => {
-    if (!dbSupported) return;
-
     try {
       const newConvId = `conv-${Date.now()}`;
-      const db = await getConversationDB();
-      
-      const newConv: Conversation = {
-        id: newConvId,
-        title: '新对话',
-        messageIds: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        lastActiveModel: selectedModel || undefined,
-        messageCount: 0,
-        imageCount: 0
-      };
-      
-      await db.createConversation(newConv);
+
+      // 无论是否支持 IndexedDB，先更新内存状态，确保马上有一个全新会话
       setCurrentConversationId(newConvId);
       setMessages([]);
       setParentMessageId(null);
       setInheritedPrompt('');
-      
-      // 刷新对话列表
-      const allConvs = await db.listConversations(50);
-      setConversations(allConvs);
-      
+
+      if (dbSupported) {
+        const db = await getConversationDB();
+        const newConv: Conversation = {
+          id: newConvId,
+          title: '新对话',
+          messageIds: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          lastActiveModel: selectedModel || undefined,
+          messageCount: 0,
+          imageCount: 0
+        };
+        await db.createConversation(newConv);
+        // 刷新对话列表
+        const allConvs = await db.listConversations(50);
+        setConversations(allConvs);
+      }
+
       console.log('[ConversationView] 新对话已创建:', newConvId);
       toast.success('已创建新对话');
     } catch (error) {
@@ -820,6 +835,39 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           if (!publishTarget) return;
           setMessages(prev => prev.map(m => m.id === publishTarget.id ? { ...m, published: true, assetId } : m));
           setPublishTarget(null);
+        }}
+      />
+
+      {/* 融合对话框 */}
+      <PromptFusionDialog
+        open={isFusionOpen}
+        basePrompt={fusionBasePrompt}
+        assetTitle={fusionAsset?.title || ''}
+        coverUrl={fusionAsset?.coverUrl}
+        onClose={() => setIsFusionOpen(false)}
+        onConfirm={async (userPrompt) => {
+          try {
+            // 调用融合接口
+            const res = await httpFetch<{ finalPrompt: string }>(
+              '/api/prompt/fuse',
+              {
+                method: 'POST',
+                body: JSON.stringify({ basePrompt: fusionBasePrompt, userPrompt })
+              }
+            );
+
+            const finalPrompt = res?.finalPrompt || `${fusionBasePrompt}, ${userPrompt}`;
+            const size = fusionAsset?.size;
+            // 点击融合时再新建一个新对话，避免混入旧对话
+            await createNewConversation();
+            await handleSend(finalPrompt, undefined, size ? { size } : undefined);
+          } catch (e) {
+            const finalPrompt = `${fusionBasePrompt}, ${userPrompt}`;
+            await createNewConversation();
+            await handleSend(finalPrompt);
+          } finally {
+            setIsFusionOpen(false);
+          }
         }}
       />
     </div>

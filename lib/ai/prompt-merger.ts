@@ -1,6 +1,5 @@
 import { getPromptOptimizerModel } from "./models";
-import { getOpenAIClient } from "./client";
-import { decryptApiKey } from "@/lib/crypto";
+import { resolveModel, createOpenAIClient } from "./client";
 
 /**
  * 使用 LLM 智能合并原始 Prompt 和用户修改指令
@@ -17,20 +16,16 @@ export async function mergePromptWithLLM(
   
   if (!optimizerModel) {
     throw new Error(
-      "未配置 Prompt 优化器模型，请在管理后台设置一个文本模型作为 Prompt 优化器"
+      "未配置 Prompt 优化器模型，请在管理后台设置一个文本模型（文本对话模型）作为 Prompt 优化器"
     );
   }
 
-  // 解密 Provider API Key
-  const apiKey = optimizerModel.provider.apiKeyEncrypted
-    ? decryptApiKey(optimizerModel.provider.apiKeyEncrypted)
-    : undefined;
-
-  // 创建 OpenAI 客户端
-  const client = getOpenAIClient({
-    baseURL: optimizerModel.provider.baseURL,
-    apiKey
-  });
+  // 通过系统模型解析获取完整上下文与客户端
+  const context = await resolveModel(optimizerModel.slug);
+  const client = createOpenAIClient(context);
+  if (!client) {
+    throw new Error("Prompt 优化器客户端初始化失败");
+  }
 
   // 构建 System Prompt - 只输出完整 Prompt，不要任何解释
   const systemPrompt = `You are a professional image prompt optimizer.
@@ -68,16 +63,16 @@ Modification: ${userModification}`;
   try {
     // 调用 LLM
     const response = await client.chat.completions.create({
-      model: optimizerModel.slug,
+      model: context.model.slug,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.3, // 低温度确保输出稳定
+      temperature: 0.1, // 更保守，避免偏离
       max_tokens: 500
     });
 
-    const mergedPrompt = response.choices[0]?.message?.content?.trim();
+    const mergedPrompt = response.choices?.[0]?.message?.content?.trim();
     
     if (!mergedPrompt) {
       throw new Error("Prompt 优化器未返回有效结果");

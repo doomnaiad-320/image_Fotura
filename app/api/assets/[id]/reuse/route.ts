@@ -59,10 +59,13 @@ export async function POST(
     const prefillData = {
       prompt: asset.prompt || '',
       model: asset.model || '',
+      modelSlug: asset.model || '',
       modelName: asset.modelName || '',
       size: asset.size || '1024x1024',
       mode: asset.mode || 'txt2img',
-      editChain: asset.editChain ? JSON.parse(asset.editChain) : {}
+      editChain: asset.editChain ? JSON.parse(asset.editChain) : {},
+      coverUrl: asset.coverUrl || '',
+      aspectRatio: asset.aspectRatio || 1.0
     };
 
     if (existingRecord) {

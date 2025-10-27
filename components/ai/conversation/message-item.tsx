@@ -95,7 +95,31 @@ export function MessageItem({
         {/* 文本内容 */}
         <div className="px-4 py-3">
           {/* 用户输入 */}
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+          {(() => {
+            const content = message.content || '';
+            let parsed: any = null;
+            try {
+              // 简单判断 JSON：以 { 或 [ 开头，并尝试解析
+              const trimmed = content.trim();
+              if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && JSON.parse(trimmed)) {
+                parsed = JSON.parse(trimmed);
+              }
+            } catch {}
+
+            if (parsed) {
+              return (
+                <div className="rounded-xl border border-default bg-surface/60 backdrop-blur-sm p-3 text-foreground">
+                  <div className="text-xs text-muted-foreground mb-2">结构化提示词</div>
+                  <pre className="text-sm whitespace-pre-wrap break-words font-sans leading-relaxed">
+                    {JSON.stringify(parsed, null, 2)}
+                  </pre>
+                </div>
+              );
+            }
+            return (
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{content}</p>
+            );
+          })()}
         </div>
 
         {/* 图片结果 (仅助手消息) */}
