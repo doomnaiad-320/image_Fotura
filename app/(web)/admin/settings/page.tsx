@@ -74,7 +74,7 @@ export default function AdminSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -82,20 +82,20 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">系统设置</h1>
-        <p className="text-sm text-gray-400">
+        <h1 className="text-3xl font-semibold text-foreground">系统设置</h1>
+        <p className="text-sm text-muted-foreground">
           配置系统全局参数，包括新用户注册奖励等。
         </p>
       </header>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="bg-surface border border-default rounded-lg p-6">
         <form onSubmit={handleSave} className="space-y-6">
           {/* 注册奖励设置 */}
           <div className="space-y-4">
-            <h2 className="text-xl font-medium text-white">用户注册</h2>
+            <h2 className="text-xl font-medium text-foreground">用户注册</h2>
             
             <div className="space-y-2">
-              <label htmlFor="registrationBonus" className="block text-sm font-medium text-gray-300">
+              <label htmlFor="registrationBonus" className="block text-sm font-medium text-muted-foreground">
                 新用户注册赠送积分
               </label>
               <input
@@ -105,10 +105,10 @@ export default function AdminSettingsPage() {
                 step="1"
                 value={registrationBonus}
                 onChange={(e) => setRegistrationBonus(e.target.value)}
-                className="w-full max-w-md px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full max-w-md px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="5000"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 新用户注册后将自动获得该数量的积分，首位用户（管理员）固定为 100,000 积分
               </p>
             </div>
@@ -128,11 +128,11 @@ export default function AdminSettingsPage() {
           )}
 
           {/* 保存按钮 */}
-          <div className="flex items-center gap-3 pt-4 border-t border-gray-800">
+          <div className="flex items-center gap-3 pt-4 border-t border-default">
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-foreground rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
             >
               {saving ? (
                 <>

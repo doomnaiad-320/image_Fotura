@@ -93,8 +93,8 @@ export default async function AdminAIPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">AI 管理中心</h1>
-        <p className="text-sm text-gray-400">
+        <h1 className="text-3xl font-semibold text-foreground">AI 管理中心</h1>
+        <p className="text-sm text-muted-foreground">
           统一管理 Provider、模型库、用户积分与操作日志，所有变更实时记录。
         </p>
       </header>

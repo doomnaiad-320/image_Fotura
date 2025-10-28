@@ -5,9 +5,6 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import useSWR from "swr";
-import { PublishedGrid } from "@/components/asset/published-grid";
-import { ReusedThumbGrid } from "@/components/asset/reused-thumb-grid";
-import { FavoritesThumbGrid } from "@/components/asset/favorites-thumb-grid";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -136,18 +133,13 @@ type ImageLogView = {
   } | null;
 };
 
-type TabKey = "providers" | "users" | "logs" | "imageLogs" | "me";
+type TabKey = "providers";
 
 export function AdminAIConsole({ initialProviders, initialModels }: Props) {
   const tabs: { key: TabKey; label: string }[] = [
-    { key: "providers", label: "Provider 管理" },
-    { key: "users", label: "用户管理" },
-    { key: "logs", label: "操作日志" },
-    { key: "imageLogs", label: "生成日志" },
-    { key: "me", label: "个人主页" }
+    { key: "providers", label: "AI 管理" }
   ];
 
-  const [activeTab, setActiveTab] = useState<TabKey>("providers");
 
   const { data: providersData, mutate: mutateProviders } = useSWR(
     "/api/providers",
@@ -159,23 +151,8 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     fallbackData: { models: initialModels }
   });
 
-  const { data: usersData, mutate: mutateUsers } = useSWR("/api/admin/users", fetcher, {
-    fallbackData: { users: [] }
-  });
 
-  const { data: logsData, mutate: mutateLogs } = useSWR("/api/admin/logs", fetcher, {
-    fallbackData: { logs: [] },
-    refreshInterval: 60_000
-  });
 
-  const { data: imageLogsData, mutate: mutateImageLogs } = useSWR(
-    "/api/admin/image-logs",
-    fetcher,
-    {
-      fallbackData: { logs: [] },
-      refreshInterval: 60_000
-    }
-  );
 
   const normalizeArray = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -319,14 +296,8 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
   });
 
   const providers: ProviderView[] = providersData?.providers ?? [];
-  const users: UserView[] = usersData?.users ?? [];
-  const logs: LogView[] = logsData?.logs ?? [];
-  const imageLogs: ImageLogView[] = imageLogsData?.logs ?? [];
 
   // 个人主页数据
-  const { data: meData, mutate: mutateMe } = useSWR("/api/me/overview", fetcher, {
-    fallbackData: { published: [], reused: [], favorites: [] }
-  });
 
   const resetForm = () => {
     form.reset({
@@ -694,11 +665,11 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         <form
-          className="space-y-4 rounded-3xl border border-white/10 bg-black/40 p-5"
+          className="space-y-4 rounded-3xl border border-default bg-surface/60 backdrop-blur-sm p-5"
           onSubmit={onSubmit}
         >
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-gray-500">Slug</label>
+            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Slug</label>
             <Input
               placeholder="openai"
               disabled={Boolean(editingSlug)}
@@ -709,13 +680,13 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                 {form.formState.errors.slug.message}
               </p>
             ) : (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 只允许小写字母、数字和连字符，例如: openai, gpt-4-turbo
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-gray-500">名称</label>
+            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">名称</label>
             <Input placeholder="OpenRouter" {...form.register("name")} />
             {form.formState.errors.name && (
               <p className="text-xs text-red-400">
@@ -724,7 +695,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-gray-500">Base URL</label>
+            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Base URL</label>
             <Input placeholder="https://openrouter.ai/api" {...form.register("baseURL")} />
             {form.formState.errors.baseURL && (
               <p className="text-xs text-red-400">
@@ -733,7 +704,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-gray-500">API Key</label>
+            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">API Key</label>
             <Input
               placeholder={editingSlug ? "留空保持原值" : "可选"}
               type="password"
@@ -741,7 +712,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-gray-500">状态</label>
+            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">状态</label>
             <Select
               value={form.watch("enabled") ? "enabled" : "disabled"}
               onChange={(event) => form.setValue("enabled", event.target.value === "enabled")}
@@ -762,27 +733,27 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
           </div>
         </form>
 
-        <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-5">
+        <div className="space-y-4 rounded-3xl border border-default bg-surface p-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-white">现有 Provider</h3>
+            <h3 className="text-sm font-medium text-foreground">现有 Provider</h3>
           </div>
           <div className="space-y-3 text-sm">
             {providers.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-xs text-gray-500">
+              <div className="rounded-2xl border border-dashed border-default p-6 text-center text-xs text-muted-foreground">
                 尚无 Provider，先在左侧表单创建。
               </div>
             )}
             {providers.map((provider) => (
               <div
                 key={provider.id}
-                className="space-y-3 rounded-2xl border border-white/10 bg-black/40 p-4"
+                className="space-y-3 rounded-2xl border border-default bg-surface/60 backdrop-blur-sm p-4"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-white">{provider.name}</p>
-                    <p className="text-xs text-gray-500">{provider.baseURL}</p>
+                    <p className="font-semibold text-foreground">{provider.name}</p>
+                    <p className="text-xs text-muted-foreground">{provider.baseURL}</p>
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     {provider.enabled ? "启用" : "禁用"}
                   </span>
                 </div>
@@ -822,14 +793,14 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">模型库</h2>
+          <h2 className="text-xl font-semibold text-foreground">模型库</h2>
           <Button variant="secondary" size="sm" onClick={() => mutateModels()}>
             刷新
           </Button>
         </div>
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30">
-          <table className="min-w-full text-left text-sm text-gray-300">
-            <thead className="bg-white/5 text-xs uppercase tracking-[0.3em] text-gray-500">
+        <div className="overflow-hidden rounded-3xl border border-default bg-surface">
+          <table className="min-w-full text-left text-sm text-muted-foreground">
+            <thead className="bg-surface-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">模型</th>
                 <th className="px-4 py-3">Provider</th>
@@ -839,12 +810,12 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             </thead>
             <tbody>
               {modelsList.map((model) => (
-                <tr key={model.slug} className="border-t border-white/5 hover:bg-white/5">
-                    <td className="px-4 py-3 text-white">
+                <tr key={model.slug} className="border-t border-default hover:bg-surface-2">
+                    <td className="px-4 py-3 text-foreground">
                       <div className="flex items-center gap-2">
                         <div>
                           <div className="font-semibold">{model.displayName}</div>
-                          <div className="text-xs text-gray-500">{model.slug}</div>
+                          <div className="text-xs text-muted-foreground">{model.slug}</div>
                         </div>
                         {model.isPromptOptimizer && (
                           <span className="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] text-purple-300">
@@ -853,10 +824,10 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {model.provider.name}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {model.modalities.length > 0 ? model.modalities.join(" · ") : "-"}
                       {model.pricing && model.pricing.unit === "image" && (
                         <span className="ml-2 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
@@ -895,7 +866,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
               ))}
               {modelsList.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-xs text-gray-500">
+                  <td colSpan={4} className="px-4 py-6 text-center text-xs text-muted-foreground">
                     暂无模型，请先同步 Provider。
                   </td>
                 </tr>
@@ -907,319 +878,27 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     </div>
   );
 
-  const usersTab = (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">用户列表</h2>
-        <Button variant="secondary" size="sm" onClick={() => mutateUsers()}>
-          刷新
-        </Button>
-      </div>
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30">
-        <table className="min-w-full text-left text-sm text-gray-300">
-          <thead className="bg-white/5 text-xs uppercase tracking-[0.3em] text-gray-500">
-            <tr>
-              <th className="px-4 py-3">用户</th>
-              <th className="px-4 py-3">角色</th>
-              <th className="px-4 py-3">豆余额</th>
-              <th className="px-4 py-3">创建时间</th>
-              <th className="px-4 py-3 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-t border-white/5 hover:bg-white/5">
-                <td className="px-4 py-3">
-                  <div className="font-semibold text-white">{user.email}</div>
-                  <div className="text-xs text-gray-500">{user.name ?? "未设置昵称"}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <Select
-                    value={user.role}
-                    onChange={(event) =>
-                      handleRoleChange(user.id, event.target.value as "user" | "admin")
-                    }
-                    className="w-28"
-                  >
-                    <option value="user">用户</option>
-                    <option value="admin">管理员</option>
-                  </Select>
-                </td>
-                <td className="px-4 py-3 text-white">
-                  {user.credits}
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-500">
-                  {new Date(user.createdAt).toLocaleString()}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => openCreditAdjustment(user)}
-                  >
-                    调整豆
-                  </Button>
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-xs text-gray-500">
-                  暂无用户数据。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const logsTab = (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">操作日志</h2>
-        <Button variant="secondary" size="sm" onClick={() => mutateLogs()}>
-          刷新
-        </Button>
-      </div>
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30">
-        <table className="min-w-full text-left text-sm text-gray-300">
-          <thead className="bg-white/5 text-xs uppercase tracking-[0.3em] text-gray-500">
-            <tr>
-              <th className="px-4 py-3">时间</th>
-              <th className="px-4 py-3">操作</th>
-              <th className="px-4 py-3">描述</th>
-              <th className="px-4 py-3">操作者</th>
-              <th className="px-4 py-3 text-right">IP</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr key={log.id} className="border-t border-white/5 hover:bg-white/5">
-                <td className="px-4 py-3 text-xs text-gray-500">
-                  {new Date(log.createdAt).toLocaleString()}
-                </td>
-                <td className="px-4 py-3 text-xs text-white">{log.action}</td>
-                <td className="px-4 py-3 text-xs text-gray-300">{log.description}</td>
-                <td className="px-4 py-3 text-xs text-gray-400">
-                  {log.user?.email ?? "系统"}
-                </td>
-                <td className="px-4 py-3 text-right text-xs text-gray-500">
-                  {log.ip ?? "-"}
-                </td>
-              </tr>
-            ))}
-            {logs.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-xs text-gray-500">
-                  暂无日志记录。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
 
 
-  const imageLogsTab = (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">生成日志</h2>
-        <Button variant="secondary" size="sm" onClick={() => mutateImageLogs()}>
-          刷新
-        </Button>
-      </div>
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/30">
-        <table className="min-w-full text-left text-sm text-gray-300">
-          <thead className="bg-white/5 text-xs uppercase tracking-[0.3em] text-gray-500">
-            <tr>
-              <th className="px-4 py-3">时间</th>
-              <th className="px-4 py-3">用户</th>
-              <th className="px-4 py-3">模型</th>
-              <th className="px-4 py-3">Provider</th>
-              <th className="px-4 py-3">状态</th>
-              <th className="px-4 py-3">消耗</th>
-              <th className="px-4 py-3 text-right">请求 ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {imageLogs.map((log) => {
-              const statusLabel = log.status === "success" ? "成功" : "失败";
-              const statusClass =
-                log.status === "success" ? "text-emerald-400" : "text-rose-400";
-              return (
-                <tr key={log.id} className="border-t border-white/5 hover:bg-white/5">
-                  <td className="px-4 py-3 text-xs text-gray-500">
-                    {new Date(log.createdAt).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-white">
-                    <div>{log.user?.email ?? "未知用户"}</div>
-                    <div className="text-gray-500">{log.user?.name ?? "未设置昵称"}</div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-300">
-                    {log.model?.displayName ?? log.modelSlug ?? "-"}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-300">
-                    {log.providerSlug ?? "-"}
-                  </td>
-                  <td className={`px-4 py-3 text-xs ${statusClass}`}>{statusLabel}</td>
-                  <td className="px-4 py-3 text-xs text-white">
-                    {typeof log.cost === "number" ? log.cost : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-xs text-gray-500">
-                    {log.requestId}
-                  </td>
-                </tr>
-              );
-            })}
-            {imageLogs.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-xs text-gray-500">
-                  暂无生成日志记录。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((tab) => (
-          <Button
-            key={tab.key}
-            variant={activeTab === tab.key ? "primary" : "secondary"}
-            size="sm"
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </div>
-
-      {activeTab === "providers" && providersTab}
-      {activeTab === "users" && usersTab}
-      {activeTab === "logs" && logsTab}
-      {activeTab === "imageLogs" && imageLogsTab}
-
-      {activeTab === "me" && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">个人主页</h2>
-            <Button variant="secondary" size="sm" onClick={() => mutateMe()}>
-              刷新
-            </Button>
-          </div>
-          <div className="grid gap-6 xl:grid-cols-3">
-            <section className="space-y-3 xl:col-span-1">
-              <h3 className="text-sm text-gray-400">已发布</h3>
-              <PublishedGrid initialItems={(meData?.published ?? []) as any} isAuthenticated={true} />
-            </section>
-            <section className="space-y-3 xl:col-span-1">
-              <h3 className="text-sm text-gray-400">已复用</h3>
-              <ReusedThumbGrid initialItems={(meData?.reused ?? []) as any} isAuthenticated={true} />
-            </section>
-            <section className="space-y-3 xl:col-span-1">
-              <h3 className="text-sm text-gray-400">收藏</h3>
-              <FavoritesThumbGrid initialItems={(meData?.favorites ?? []) as any} isAuthenticated={true} />
-            </section>
-          </div>
-        </div>
-      )}
-
-      {creditModal.open && creditModal.user && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-md space-y-5 rounded-3xl border border-white/10 bg-black p-6">
-            <header className="space-y-1">
-              <h3 className="text-lg font-semibold text-white">调整豆</h3>
-              <p className="text-xs text-gray-500">
-                {creditModal.user.email} · 当前余额 {creditModal.user.credits} 豆
-              </p>
-            </header>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                  操作
-                </label>
-                <Select
-                  value={creditModal.mode}
-                  onChange={(event) =>
-                    setCreditModal((prev) => ({
-                      ...prev,
-                      mode: event.target.value as "increase" | "decrease"
-                    }))
-                  }
-                >
-                  <option value="increase">增加豆</option>
-                  <option value="decrease">扣除豆</option>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                  数量
-                </label>
-                <Input
-                  type="number"
-                  placeholder="输入豆数"
-                  value={creditModal.amount}
-                  onChange={(event) =>
-                    setCreditModal((prev) => ({ ...prev, amount: event.target.value }))
-                  }
-                  min={0}
-                />
-                <p className="text-xs text-gray-500">
-                  正整数，实际操作方向以上方选择为准。
-                </p>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                  原因 (可选)
-                </label>
-                <Textarea
-                  rows={3}
-                  placeholder="备注原因，便于后续追溯"
-                  value={creditModal.reason}
-                  onChange={(event) =>
-                    setCreditModal((prev) => ({ ...prev, reason: event.target.value }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={resetCreditModal} disabled={creditModal.submitting}>
-                取消
-              </Button>
-              <Button
-                onClick={submitCreditAdjustment}
-                loading={creditModal.submitting}
-                disabled={!creditModal.amount.trim()}
-              >
-                确认
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {providersTab}
 
       {pricingModal.open && pricingModal.model && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-white/10 bg-black p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">
+          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-default bg-surface p-6">
             <header className="space-y-1">
-              <h3 className="text-lg font-semibold text-white">设置价格</h3>
-              <p className="text-xs text-gray-500">
+              <h3 className="text-lg font-semibold text-foreground">设置价格</h3>
+              <p className="text-xs text-muted-foreground">
                 {pricingModal.model.displayName} · {pricingModal.model.slug}
               </p>
             </header>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   基础价格 (文生图)
                 </label>
                 <Input
@@ -1234,7 +913,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   重绘价格 (可选)
                 </label>
                 <Input
@@ -1252,15 +931,15 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-500">
+                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   尺寸倍率
                 </span>
-                <span className="text-xs text-gray-500">根据尺寸调整 Credits 消耗</span>
+                <span className="text-xs text-muted-foreground">根据尺寸调整 Credits 消耗</span>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {Object.keys(pricingModal.multipliers).map((key) => (
                   <div key={key} className="space-y-2">
-                    <label className="text-xs text-gray-500">{key}</label>
+                    <label className="text-xs text-muted-foreground">{key}</label>
                     <Input
                       inputMode="decimal"
                       pattern="[0-9]*([.,][0-9]+)?"
@@ -1287,14 +966,14 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
       )}
 
       {modelSelector.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-3xl space-y-4 rounded-3xl border border-white/10 bg-black p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">
+          <div className="w-full max-w-3xl space-y-4 rounded-3xl border border-default bg-surface p-6">
             <header className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-foreground">
                   {modelSelector.provider?.name} · 模型选择
                 </h3>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   已同步模型会更新为启用状态，未选中的模型会保持禁用。
                 </p>
               </div>
@@ -1311,15 +990,15 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             </header>
 
             {modelSelector.loading ? (
-              <div className="grid place-items-center py-12 text-sm text-gray-400">
+              <div className="grid place-items-center py-12 text-sm text-muted-foreground">
                 正在拉取远程模型...
               </div>
             ) : (
-              <div className="max-h-[360px] space-y-3 overflow-y-auto rounded-2xl border border-white/10 p-4">
+              <div className="max-h-[360px] space-y-3 overflow-y-auto rounded-2xl border border-default p-4">
                 {modelSelector.models.map((model) => (
                   <label
                     key={model.id}
-                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-black/40 p-4"
+                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-default bg-surface/60 backdrop-blur-sm p-4"
                   >
                     <input
                       type="checkbox"
@@ -1328,10 +1007,10 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                       onChange={() => toggleModelSelection(model.id)}
                     />
                     <div className="space-y-1">
-                      <div className="text-sm font-semibold text-white">{model.name ?? model.id}</div>
-                      <div className="text-xs text-gray-500">{model.id}</div>
+                      <div className="text-sm font-semibold text-foreground">{model.name ?? model.id}</div>
+                      <div className="text-xs text-muted-foreground">{model.id}</div>
                       {model.capabilities && model.capabilities.length > 0 && (
-                        <div className="text-xs text-gray-400">
+                        <div className="text-xs text-muted-foreground">
                           {model.capabilities.join(" · ")}
                         </div>
                       )}
@@ -1339,13 +1018,13 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                   </label>
                 ))}
                 {modelSelector.models.length === 0 && (
-                  <div className="text-center text-xs text-gray-500">该 Provider 暂无可用模型。</div>
+                  <div className="text-center text-xs text-muted-foreground">该 Provider 暂无可用模型。</div>
                 )}
               </div>
             )}
 
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 已选 {modelSelector.selected.size} 个模型
               </span>
               <div className="flex gap-2">

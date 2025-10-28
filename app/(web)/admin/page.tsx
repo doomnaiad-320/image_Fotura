@@ -79,8 +79,8 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">管理概览</h1>
-        <p className="text-sm text-gray-400">
+        <h1 className="text-3xl font-semibold text-foreground">管理概览</h1>
+        <p className="text-sm text-muted-foreground">
           系统整体运营数据总览
         </p>
       </header>
@@ -92,7 +92,7 @@ export default async function AdminDashboardPage() {
           return (
             <div
               key={stat.name}
-              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-gray-700 transition-colors"
+              className="bg-surface border border-default rounded-lg p-6 hover:border-muted-foreground transition-colors"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-lg ${stat.bgColor}`}>
@@ -100,8 +100,8 @@ export default async function AdminDashboardPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-2xl font-bold text-white">{stat.value}</p>
-                <p className="text-sm text-gray-400">{stat.name}</p>
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-sm text-muted-foreground">{stat.name}</p>
               </div>
             </div>
           );
@@ -109,37 +109,37 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* 快速导航 */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-white mb-4">快速导航</h2>
+      <div className="bg-surface border border-default rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">快速导航</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <a
             href="/admin/ai"
-            className="flex items-center gap-3 p-4 bg-gray-800 hover:bg-gray-750 rounded-lg transition-colors"
+            className="flex items-center gap-3 p-4 bg-surface-2 hover:bg-surface rounded-lg transition-colors"
           >
             <Brain className="w-5 h-5 text-blue-500" />
             <div>
-              <div className="text-sm font-medium text-white">AI 管理</div>
-              <div className="text-xs text-gray-400">管理提供商和模型</div>
+              <div className="text-sm font-medium text-foreground">AI 管理</div>
+              <div className="text-xs text-muted-foreground">管理提供商和模型</div>
             </div>
           </a>
           <a
             href="/admin/users"
-            className="flex items-center gap-3 p-4 bg-gray-800 hover:bg-gray-750 rounded-lg transition-colors"
+            className="flex items-center gap-3 p-4 bg-surface-2 hover:bg-surface rounded-lg transition-colors"
           >
             <Users className="w-5 h-5 text-purple-500" />
             <div>
-              <div className="text-sm font-medium text-white">用户管理</div>
-              <div className="text-xs text-gray-400">查看和管理用户</div>
+              <div className="text-sm font-medium text-foreground">用户管理</div>
+              <div className="text-xs text-muted-foreground">查看和管理用户</div>
             </div>
           </a>
           <a
             href="/admin/settings"
-            className="flex items-center gap-3 p-4 bg-gray-800 hover:bg-gray-750 rounded-lg transition-colors"
+            className="flex items-center gap-3 p-4 bg-surface-2 hover:bg-surface rounded-lg transition-colors"
           >
             <CoinsIcon className="w-5 h-5 text-yellow-500" />
             <div>
-              <div className="text-sm font-medium text-white">系统设置</div>
-              <div className="text-xs text-gray-400">配置系统参数</div>
+              <div className="text-sm font-medium text-foreground">系统设置</div>
+              <div className="text-xs text-muted-foreground">配置系统参数</div>
             </div>
           </a>
         </div>

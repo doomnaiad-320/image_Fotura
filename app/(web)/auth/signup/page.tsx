@@ -12,17 +12,17 @@ export const metadata: Metadata = {
 
 export default function SignUpPage() {
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-8 rounded-3xl border border-white/10 bg-black/40 px-8 py-10">
+    <div className="mx-auto flex max-w-md flex-col gap-8 rounded-3xl border border-default bg-surface/60 backdrop-blur-sm px-8 py-10">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">注册新账号</h1>
-        <p className="text-sm text-gray-400">
+        <h1 className="text-2xl font-semibold text-foreground">注册新账号</h1>
+        <p className="text-sm text-muted-foreground">
           创建账户以管理模型、余额并保存你的灵感收藏。
         </p>
       </header>
       <SignUpForm />
-      <p className="text-center text-xs text-gray-500">
-        已有账号？{" "}
-        <Link href="/auth/signin" className="underline">
+      <p className="text-center text-xs text-muted-foreground">
+        已有账号?{" "}
+        <Link href="/auth/signin" className="underline text-link">
           直接登录
         </Link>
       </p>

@@ -63,14 +63,14 @@ export function SignInForm() {
   return (
     <form className="space-y-5" onSubmit={onSubmit}>
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm text-gray-300">
+        <label htmlFor="email" className="text-sm text-muted-foreground">
           邮箱
         </label>
         <Input id="email" type="email" placeholder="name@example.com" {...form.register("email")} />
         {emailError && <p className="text-xs text-red-400">{emailError}</p>}
       </div>
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm text-gray-300">
+        <label htmlFor="password" className="text-sm text-muted-foreground">
           密码
         </label>
         <Input

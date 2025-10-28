@@ -19,6 +19,14 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newCredits, setNewCredits] = useState("0");
+  const [newRole, setNewRole] = useState<"user" | "admin">("user");
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -67,52 +75,190 @@ export default function AdminUsersPage() {
       case "user":
         return "bg-blue-900/20 text-blue-400 border-blue-800";
       default:
-        return "bg-gray-900/20 text-gray-400 border-gray-800";
+        return "bg-surface-2 text-muted-foreground border-default";
     }
   };
 
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">用户管理</h1>
-        <p className="text-sm text-gray-400">
-          查看和管理所有用户账号，调整积分余额。
+        <h1 className="text-3xl font-semibold text-foreground">用户管理</h1>
+        <p className="text-sm text-muted-foreground">
+          查看和管理所有用户账号,调整积分余额。
         </p>
       </header>
 
-      {/* 搜索栏 */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-        <form onSubmit={handleSearch} className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜索邮箱或用户名..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-          >
-            搜索
-          </button>
-          {searchQuery && (
+      {/* 搜索栏 + 操作 */}
+      <div className="bg-surface border border-default rounded-lg p-4">
+        <div className="flex items-center gap-3">
+          <form onSubmit={handleSearch} className="flex gap-3 flex-1">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索邮箱或用户名..."
+                className="w-full pl-10 pr-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
             <button
-              type="button"
-              onClick={() => {
-                setSearchQuery("");
-                fetchUsers();
-              }}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg font-medium transition-colors"
+              type="submit"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
-              清除
+              搜索
             </button>
-          )}
-        </form>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  fetchUsers();
+                }}
+                className="px-4 py-2 bg-surface-2 hover:bg-surface text-foreground rounded-lg font-medium transition-colors"
+              >
+                清除
+              </button>
+            )}
+          </form>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+          >
+            添加用户
+          </button>
+        </div>
       </div>
+
+      {/* 新建用户弹窗 */}
+      {createOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">
+          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-default bg-surface p-6">
+            <header className="space-y-1">
+              <h3 className="text-lg font-semibold text-foreground">添加用户</h3>
+              <p className="text-xs text-muted-foreground">创建新用户并设置初始积分</p>
+            </header>
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  setCreating(true);
+                  setError(null);
+                  const credits = parseInt(newCredits, 10);
+                  const res = await fetch("/api/admin/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      email: newEmail.trim(),
+                      name: newName.trim(),
+                      password: newPassword,
+                      credits: Number.isFinite(credits) ? credits : 0,
+                      role: newRole,
+                    })
+                  });
+                  if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data?.message || "创建失败");
+                  }
+                  setCreateOpen(false);
+                  setNewEmail("");
+                  setNewName("");
+                  setNewPassword("");
+                  setNewCredits("0");
+                  setNewRole("user");
+                  await fetchUsers();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "创建失败");
+                } finally {
+                  setCreating(false);
+                }
+              }}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">邮箱</label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">昵称</label>
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="创作者昵称"
+                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">初始积分</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newCredits}
+                    onChange={(e) => setNewCredits(e.target.value)}
+                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">角色</label>
+                  <select
+                    value={newRole}
+                    onChange={(e) => setNewRole(e.target.value as "user" | "admin")}
+                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground focus:outline-none"
+                  >
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                  </select>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-sm text-muted-foreground">密码</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="至少 8 位"
+                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-900/20 border border-red-800 text-red-400 p-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(false)}
+                  disabled={creating}
+                  className="px-4 py-2 bg-surface-2 hover:bg-surface rounded-lg text-foreground"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg"
+                >
+                  {creating ? "创建中..." : "创建"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 错误提示 */}
       {error && (
@@ -122,43 +268,43 @@ export default function AdminUsersPage() {
       )}
 
       {/* 用户表格 */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-surface border border-default rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : users.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <UserPlus className="w-12 h-12 mb-3" />
             <p>暂无用户数据</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-800/50 border-b border-gray-800">
+              <thead className="bg-surface-2 border-b border-default">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     用户
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     角色
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     积分余额
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     注册时间
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     最后更新
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-default">
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    className="hover:bg-gray-800/30 transition-colors"
+                    className="hover:bg-surface-2 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -166,10 +312,10 @@ export default function AdminUsersPage() {
                           {user.name?.[0] || user.email[0].toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-white">
+                          <div className="text-sm font-medium text-foreground">
                             {user.name || "未设置"}
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-muted-foreground">
                             {user.email}
                           </div>
                         </div>
@@ -185,15 +331,15 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-sm text-white">
+                      <div className="flex items-center gap-1.5 text-sm text-foreground">
                         <CoinsIcon className="w-4 h-4 text-yellow-500" />
                         {user.credits.toLocaleString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-300">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {formatDate(user.createdAt)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-300">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {formatDate(user.updatedAt)}
                     </td>
                   </tr>
@@ -206,18 +352,18 @@ export default function AdminUsersPage() {
 
       {/* 统计信息 */}
       {!loading && users.length > 0 && (
-        <div className="flex items-center justify-between text-sm text-gray-400">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div>共 {users.length} 个用户</div>
           <div className="flex gap-6">
             <div>
               管理员:{" "}
-              <span className="text-white font-medium">
+              <span className="text-foreground font-medium">
                 {users.filter((u) => u.role === "admin").length}
               </span>
             </div>
             <div>
               普通用户:{" "}
-              <span className="text-white font-medium">
+              <span className="text-foreground font-medium">
                 {users.filter((u) => u.role === "user").length}
               </span>
             </div>

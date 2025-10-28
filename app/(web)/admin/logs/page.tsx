@@ -163,26 +163,26 @@ export default function AdminCreditLogsPage() {
     if (reason.includes("退款")) {
       return <span className="text-xs text-yellow-400">↩️ {reason}</span>;
     }
-    return <span className="text-xs text-gray-400">📝 {reason}</span>;
+    return <span className="text-xs text-muted-foreground">📝 {reason}</span>;
   };
 
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-white">积分日志</h1>
-        <p className="text-sm text-gray-400">
+        <h1 className="text-3xl font-semibold text-foreground">积分日志</h1>
+        <p className="text-sm text-muted-foreground">
           查看所有用户的积分变动记录，包括充值、消费、复用奖励等。
         </p>
       </header>
 
       {/* 筛选栏 */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <div className="bg-surface border border-default rounded-lg p-4">
         <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-300">状态筛选：</label>
+          <label className="text-sm font-medium text-muted-foreground">状态筛选：</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">全部</option>
             <option value="success">成功</option>
@@ -201,57 +201,57 @@ export default function AdminCreditLogsPage() {
       )}
 
       {/* 交易记录表格 */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-surface border border-default rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : transactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <CoinsIcon className="w-12 h-12 mb-3" />
             <p>暂无交易记录</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-800/50 border-b border-gray-800">
+              <thead className="bg-surface-2/50 border-b border-default">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     时间
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     用户
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     积分变动
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     原因
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     状态
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     关联信息
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-800/30 transition-colors">
-                    <td className="px-4 py-4 text-sm text-gray-300 whitespace-nowrap">
+                  <tr key={tx.id} className="hover:bg-surface-2/30 transition-colors">
+                    <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {formatDate(tx.createdAt)}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium">
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-foreground text-xs font-medium">
                           {tx.user?.name?.[0] || tx.user?.email[0].toUpperCase() || "?"}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-white truncate">
+                          <div className="text-sm font-medium text-foreground truncate">
                             {tx.user?.name || "未知用户"}
                           </div>
-                          <div className="text-xs text-gray-400 truncate">
+                          <div className="text-xs text-muted-foreground truncate">
                             {tx.user?.email || tx.userId}
                           </div>
                         </div>
@@ -264,7 +264,7 @@ export default function AdminCreditLogsPage() {
                       <div className="space-y-1">
                         {getReasonBadge(tx.reason)}
                         {tx.model && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             模型: {tx.model.displayName}
                           </div>
                         )}
@@ -274,7 +274,7 @@ export default function AdminCreditLogsPage() {
                       {getStatusBadge(tx.status)}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="text-xs text-gray-500 space-y-1">
+                      <div className="text-xs text-muted-foreground space-y-1">
                         {tx.provider && (
                           <div>提供商: {tx.provider.name}</div>
                         )}
@@ -298,15 +298,15 @@ export default function AdminCreditLogsPage() {
 
       {/* 分页控件 */}
       {!loading && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-4">
-          <div className="text-sm text-gray-400">
+        <div className="flex items-center justify-between bg-surface border border-default rounded-lg p-4">
+          <div className="text-sm text-muted-foreground">
             共 {pagination.total} 条记录，第 {pagination.page} / {pagination.totalPages} 页
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => fetchLogs(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="flex items-center gap-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-850 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1 px-4 py-2 bg-surface-2 hover:bg-surface disabled:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-lg text-sm font-medium transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
               上一页
@@ -314,7 +314,7 @@ export default function AdminCreditLogsPage() {
             <button
               onClick={() => fetchLogs(pagination.page + 1)}
               disabled={pagination.page === pagination.totalPages}
-              className="flex items-center gap-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-850 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1 px-4 py-2 bg-surface-2 hover:bg-surface disabled:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-lg text-sm font-medium transition-colors"
             >
               下一页
               <ChevronRight className="w-4 h-4" />
@@ -326,25 +326,25 @@ export default function AdminCreditLogsPage() {
       {/* 统计信息 */}
       {!loading && transactions.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-            <div className="text-xs text-gray-400 mb-1">总交易数</div>
-            <div className="text-2xl font-bold text-white">{pagination.total}</div>
+          <div className="bg-surface border border-default rounded-lg p-4">
+            <div className="text-xs text-muted-foreground mb-1">总交易数</div>
+            <div className="text-2xl font-bold text-foreground">{pagination.total}</div>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-            <div className="text-xs text-gray-400 mb-1">充值/奖励</div>
+          <div className="bg-surface border border-default rounded-lg p-4">
+            <div className="text-xs text-muted-foreground mb-1">充值/奖励</div>
             <div className="text-2xl font-bold text-green-400">
               +{transactions.filter(t => t.delta > 0).reduce((sum, t) => sum + t.delta, 0).toLocaleString()}
             </div>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-            <div className="text-xs text-gray-400 mb-1">消费</div>
+          <div className="bg-surface border border-default rounded-lg p-4">
+            <div className="text-xs text-muted-foreground mb-1">消费</div>
             <div className="text-2xl font-bold text-red-400">
               {transactions.filter(t => t.delta < 0).reduce((sum, t) => sum + t.delta, 0).toLocaleString()}
             </div>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-            <div className="text-xs text-gray-400 mb-1">成功交易</div>
-            <div className="text-2xl font-bold text-white">
+          <div className="bg-surface border border-default rounded-lg p-4">
+            <div className="text-xs text-muted-foreground mb-1">成功交易</div>
+            <div className="text-2xl font-bold text-foreground">
               {transactions.filter(t => t.status === "success").length}
             </div>
           </div>

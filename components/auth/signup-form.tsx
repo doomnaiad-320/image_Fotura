@@ -86,21 +86,21 @@ export function SignUpForm() {
   return (
     <form className="space-y-5" onSubmit={onSubmit}>
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm text-gray-300">
+        <label htmlFor="email" className="text-sm text-muted-foreground">
           邮箱
         </label>
         <Input id="email" type="email" placeholder="name@example.com" {...form.register("email")} />
         {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
       </div>
       <div className="space-y-2">
-        <label htmlFor="name" className="text-sm text-gray-300">
+        <label htmlFor="name" className="text-sm text-muted-foreground">
           昵称
         </label>
         <Input id="name" placeholder="创作者昵称" {...form.register("name")} />
         {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
       </div>
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm text-gray-300">
+        <label htmlFor="password" className="text-sm text-muted-foreground">
           密码
         </label>
         <Input
@@ -113,7 +113,7 @@ export function SignUpForm() {
         {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
       </div>
       <div className="space-y-2">
-        <label htmlFor="confirmPassword" className="text-sm text-gray-300">
+        <label htmlFor="confirmPassword" className="text-sm text-muted-foreground">
           确认密码
         </label>
         <Input
