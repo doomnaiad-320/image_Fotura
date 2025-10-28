@@ -376,6 +376,39 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   }, [dbSupported, currentConversationId, selectedModel]);
 
   // 处理发送消息
+  // 简单将 JSON 提示词转为可识别的纯文本（键值对）
+  const normalizePromptForAI = (input: string): string => {
+    try {
+      const trimmed = input.trim();
+      if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return input;
+      const obj = JSON.parse(trimmed);
+      const kv: string[] = [];
+      const walk = (val: any, path: string[]) => {
+        if (val == null) return;
+        if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+          kv.push(`${path.join('.')} : ${String(val)}`);
+          return;
+        }
+        if (Array.isArray(val)) {
+          kv.push(`${path.join('.')} : ${val.map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).join(', ')}`);
+          return;
+        }
+        if (typeof val === 'object') {
+          for (const k of Object.keys(val)) walk(val[k], [...path, k]);
+        }
+      };
+      if (Array.isArray(obj)) {
+        obj.forEach((item, i) => walk(item, [`item${i}`]));
+      } else {
+        walk(obj, []);
+      }
+      const text = kv.join(', ');
+      return text.length > 0 ? text : input;
+    } catch {
+      return input;
+    }
+  };
+
   const handleSend = useCallback(async (
     prompt: string,
     uploadedImages?: File[],
@@ -411,7 +444,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       isEditMode = true;
     }
 
-    // 1. 添加用户消息
+    // 1. 添加用户消息（保留原始输入用于展示）
     const userMsg: ConversationMessage = {
       id: `msg-user-${Date.now()}`,
       conversationId: currentConversationId,
@@ -426,11 +459,14 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
     // 2. 添加助手消息(生成中状态)
     const assistantMsgId = `msg-asst-${Date.now()}`;
+    // 规范化文本（仅文生图时转换 JSON 为可识别文本）
+    const normalizedPrompt = normalizePromptForAI(prompt);
+
     const assistantMsg: ConversationMessage = {
       id: assistantMsgId,
       conversationId: currentConversationId,
       role: 'assistant',
-      content: prompt,
+      content: normalizedPrompt,
       timestamp: Date.now(),
       isGenerating: true,
       generationParams: {
@@ -465,7 +501,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         // 调用图像编辑 API
         const formData = new FormData();
         formData.append('model', selectedModel);
-        formData.append('prompt', prompt); // 用户输入的修改指令
+        formData.append('prompt', normalizedPrompt); // 用户输入的修改指令（若为 JSON 则转文本）
         if (originalPrompt) {
           formData.append('originalPrompt', originalPrompt); // 原始完整 Prompt（如果有）
         }
@@ -523,7 +559,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             method: 'POST',
             body: JSON.stringify({
               model: selectedModel,
-              prompt: prompt,
+              prompt: normalizedPrompt,
               size: finalSize,
               n: 1,
               response_format: 'url'
@@ -547,7 +583,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       // 3. 保存到 IndexedDB (历史记录)
       const { localUrl, historyId } = await addHistory(
         imageUrl,
-        prompt,
+        isEditMode ? prompt : normalizedPrompt,
         {
           model: selectedModel,
           modelName: models.find(m => m.slug === selectedModel)?.displayName,

@@ -27,6 +27,8 @@ export function MessageItem({
   const isAssistant = message.role === 'assistant';
   const [showLightbox, setShowLightbox] = useState(false);
   const [showPromptModal, setShowPromptModal] = useState(false); // 控制 Prompt 弹窗
+  const [jsonCollapsed, setJsonCollapsed] = useState(true);
+  const [assistantCollapsed, setAssistantCollapsed] = useState(true);
 
   // 系统消息（暂时不显示）
   if (message.role === 'system') {
@@ -52,6 +54,8 @@ export function MessageItem({
       return false;
     }
   };
+
+  const isContentJSON = isJSON(message.content || '');
 
   const handleDownload = () => {
     if (!message.imageUrl) return;
@@ -87,38 +91,71 @@ export function MessageItem({
       {/* 消息内容 - ChatGPT 风格：用户消息限制 70%，AI 消息全宽 */}
       <div
         className={`${
-          isUser 
-            ? 'max-w-[70%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground' 
-            : 'flex-1 bg-surface/80 backdrop-blur-sm text-foreground border border-default'
+          isContentJSON
+            ? 'flex-1 bg-surface/80 backdrop-blur-sm text-foreground border border-default'
+            : isUser 
+              ? 'max-w-[70%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground' 
+              : 'flex-1 bg-surface/80 backdrop-blur-sm text-foreground border border-default'
         } rounded-2xl shadow-lg`}
       >
         {/* 文本内容 */}
         <div className="px-4 py-3">
-          {/* 用户输入 */}
+          {/* 用户输入/助手生成提示词展示 */}
           {(() => {
             const content = message.content || '';
             let parsed: any = null;
             try {
-              // 简单判断 JSON：以 { 或 [ 开头，并尝试解析
               const trimmed = content.trim();
               if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && JSON.parse(trimmed)) {
                 parsed = JSON.parse(trimmed);
               }
             } catch {}
 
-            if (parsed) {
+            // 助手消息：无论是否 JSON，都用折叠卡片（避免重复占位）
+            if (isAssistant && content) {
+              const pretty = parsed ? JSON.stringify(parsed, null, 2) : content;
               return (
-                <div className="rounded-xl border border-default bg-surface/60 backdrop-blur-sm p-3 text-foreground">
-                  <div className="text-xs text-muted-foreground mb-2">结构化提示词</div>
-                  <pre className="text-sm whitespace-pre-wrap break-words font-sans leading-relaxed">
-                    {JSON.stringify(parsed, null, 2)}
-                  </pre>
+                <div className="rounded-xl border border-default bg-surface-2/70 backdrop-blur p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">生成提示词</span>
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setAssistantCollapsed((v) => !v)}
+                      aria-label={assistantCollapsed ? '展开' : '收起'}
+                    >
+                      {assistantCollapsed ? '展开' : '收起'}
+                    </button>
+                  </div>
+                  <p className={`text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground ${assistantCollapsed ? 'line-clamp-3' : ''}`}>
+                    {pretty}
+                  </p>
                 </div>
               );
             }
-            return (
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{content}</p>
-            );
+
+            // 用户消息：若为 JSON，采用折叠卡片；否则普通文本
+            if (parsed) {
+              const pretty = JSON.stringify(parsed, null, 2);
+              return (
+                <div className="rounded-xl border border-default bg-surface-2/70 backdrop-blur p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">提示词</span>
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setJsonCollapsed((v) => !v)}
+                      aria-label={jsonCollapsed ? '展开' : '收起'}
+                    >
+                      {jsonCollapsed ? '展开' : '收起'}
+                    </button>
+                  </div>
+                  <p className={`text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground ${jsonCollapsed ? 'line-clamp-3' : ''}`}>
+                    {pretty}
+                  </p>
+                </div>
+              );
+            }
+
+            return <p className="text-sm whitespace-pre-wrap leading-relaxed">{content}</p>;
           })()}
         </div>
 
