@@ -108,22 +108,22 @@ export default function AdminCreditLogsPage() {
     const styles = {
       success: {
         icon: CheckCircle,
-        className: "bg-green-900/20 text-green-400 border-green-800",
+        className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
         text: "成功",
       },
       pending: {
         icon: Clock,
-        className: "bg-yellow-900/20 text-yellow-400 border-yellow-800",
+        className: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
         text: "处理中",
       },
       failed: {
         icon: AlertCircle,
-        className: "bg-red-900/20 text-red-400 border-red-800",
+        className: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
         text: "失败",
       },
       refunded: {
         icon: RefreshCw,
-        className: "bg-blue-900/20 text-blue-400 border-blue-800",
+        className: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
         text: "已退款",
       },
     };

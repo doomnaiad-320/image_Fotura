@@ -817,9 +817,9 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                           <div className="font-semibold">{model.displayName}</div>
                           <div className="text-xs text-muted-foreground">{model.slug}</div>
                         </div>
-                        {model.isPromptOptimizer && (
-                          <span className="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] text-purple-300">
-                            ⚡ Prompt 优化器
+{model.isPromptOptimizer && (
+                          <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium bg-fuchsia-500/15 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-500/10 dark:text-fuchsia-300 dark:border-fuchsia-700">
+                            ⚡ 优化器
                           </span>
                         )}
                       </div>
@@ -830,8 +830,8 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {model.modalities.length > 0 ? model.modalities.join(" · ") : "-"}
                       {model.pricing && model.pricing.unit === "image" && (
-                        <span className="ml-2 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
-                          {model.pricing.base}豆/图
+<span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-700 dark:text-amber-300">
+                          {model.pricing.base}/次
                         </span>
                       )}
                     </td>

@@ -8,7 +8,10 @@ import {
   Database,
   Receipt,
   FileText,
-  User
+  User,
+  ImageIcon,
+  RefreshCw,
+  Heart
 } from "lucide-react";
 
 import { ensureAdmin } from "@/lib/ai/guards";
@@ -16,7 +19,7 @@ import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const navItems = [
+const navItems: Array<{ name: string; href: string; icon: any; sub?: boolean }> = [
   {
     name: "概览",
     href: "/admin",
@@ -46,6 +49,24 @@ const navItems = [
     name: "个人主页",
     href: "/admin/me",
     icon: User,
+  },
+  {
+    name: "已发布",
+    href: "/admin/me/published",
+    icon: ImageIcon,
+    sub: true,
+  },
+  {
+    name: "已复用",
+    href: "/admin/me/reused",
+    icon: RefreshCw,
+    sub: true,
+  },
+  {
+    name: "收藏",
+    href: "/admin/me/favorites",
+    icon: Heart,
+    sub: true,
   },
   {
     name: "系统设置",
@@ -92,7 +113,7 @@ export default async function AdminLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
+                    className={`flex items-center gap-3 ${item.sub ? "pl-9 pr-3 text-sm" : "px-3"} py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors`}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="text-sm font-medium">{item.name}</span>

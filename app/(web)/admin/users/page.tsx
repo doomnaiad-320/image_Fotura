@@ -71,11 +71,11 @@ export default function AdminUsersPage() {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "admin":
-        return "bg-purple-900/20 text-purple-400 border-purple-800";
+        return "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800";
       case "user":
-        return "bg-blue-900/20 text-blue-400 border-blue-800";
+        return "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800";
       default:
-        return "bg-surface-2 text-muted-foreground border-default";
+        return "bg-neutral-500/10 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-800";
     }
   };
 
