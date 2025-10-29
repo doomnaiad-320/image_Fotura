@@ -6,6 +6,7 @@ import type { AssetListItem } from "@/lib/assets";
 import { PublishedGrid } from "@/components/asset/published-grid";
 import { ReusedThumbGrid } from "@/components/asset/reused-thumb-grid";
 import { FavoritesThumbGrid } from "@/components/asset/favorites-thumb-grid";
+import { ConsumptionHistory } from "@/components/settings/consumption-history";
 
 export type MeDashboardProps = {
   published: AssetListItem[];
@@ -16,7 +17,8 @@ export type MeDashboardProps = {
 const tabs = [
   { key: "published", label: "已发布" },
   { key: "reused", label: "已复用" },
-  { key: "favorites", label: "收藏" }
+  { key: "favorites", label: "收藏" },
+  { key: "consumption", label: "消费日志" }
 ] as const;
 
 export function MeDashboard({ published, reused, favorites }: MeDashboardProps) {
@@ -25,7 +27,8 @@ export function MeDashboard({ published, reused, favorites }: MeDashboardProps) 
   const counts = useMemo(() => ({
     published: published.length,
     reused: reused.length,
-    favorites: favorites.length
+    favorites: favorites.length,
+    consumption: '' // 不显示数量
   }), [published.length, reused.length, favorites.length]);
 
   return (
@@ -43,7 +46,7 @@ export function MeDashboard({ published, reused, favorites }: MeDashboardProps) 
                 aria-selected={selected}
               >
                 <span>{t.label}</span>
-                <span className="ml-1 text-xs opacity-75">{counts[t.key]}</span>
+                {counts[t.key] !== '' && <span className="ml-1 text-xs opacity-75">{counts[t.key]}</span>}
               </button>
             );
           })}
@@ -63,7 +66,7 @@ export function MeDashboard({ published, reused, favorites }: MeDashboardProps) 
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium border text-left transition ${selected ? "bg-orange-600 text-white border-orange-600" : "bg-surface-2 text-foreground border-default hover:bg-surface-3"}`}
                 >
                   <span>{t.label}</span>
-                  <span className={`ml-2 text-xs ${selected ? "text-white/80" : "opacity-75"}`}>{counts[t.key]}</span>
+                  {counts[t.key] !== '' && <span className={`ml-2 text-xs ${selected ? "text-white/80" : "opacity-75"}`}>{counts[t.key]}</span>}
                 </button>
               );
             })}
@@ -79,6 +82,9 @@ export function MeDashboard({ published, reused, favorites }: MeDashboardProps) 
           {active === "favorites" && (
             <FavoritesThumbGrid initialItems={favorites} isAuthenticated={true} />
           )}
+          {active === "consumption" && (
+            <ConsumptionHistory />
+          )}
         </section>
       </div>
 
@@ -92,6 +98,9 @@ export function MeDashboard({ published, reused, favorites }: MeDashboardProps) 
         )}
         {active === "favorites" && (
           <FavoritesThumbGrid initialItems={favorites} isAuthenticated={true} />
+        )}
+        {active === "consumption" && (
+          <ConsumptionHistory />
         )}
       </div>
     </div>

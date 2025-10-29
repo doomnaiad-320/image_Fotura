@@ -21,9 +21,28 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const skip = (page - 1) * limit;
 
-    const [pageItems, total, newerItems] = await Promise.all([
+    // 获取时间筛选参数
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
+    // 构建时间筛选条件
+    const dateFilter: any = { userId: user.id };
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) {
+        dateFilter.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        // 设置为当天结束时间
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateFilter.createdAt.lte = end;
+      }
+    }
+
+    const [pageItems, total, newerItems, allTransactions] = await Promise.all([
       prisma.creditTransaction.findMany({
-        where: { userId: user.id },
+        where: dateFilter,
         orderBy: { createdAt: "desc" },
         take: limit,
         skip,
@@ -36,15 +55,23 @@ export async function GET(req: NextRequest) {
           metadata: true,
         },
       }),
-      prisma.creditTransaction.count({ where: { userId: user.id } }),
+      prisma.creditTransaction.count({ where: dateFilter }),
       skip > 0
         ? prisma.creditTransaction.findMany({
-            where: { userId: user.id },
+            where: dateFilter,
             orderBy: { createdAt: "desc" },
             take: skip,
             select: { delta: true },
           })
         : Promise.resolve([] as { delta: number }[]),
+      // 获取所有交易用于统计
+      prisma.creditTransaction.findMany({
+        where: dateFilter,
+        select: {
+          delta: true,
+          status: true,
+        },
+      }),
     ]);
 
     // 计算当前页起始余额（为本页第一条记录的“交易后余额”）
@@ -101,6 +128,23 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    // 计算统计数据
+    let totalSpent = 0;
+    let totalEarned = 0;
+    
+    allTransactions.forEach(t => {
+      // 只统计已完成的交易
+      if (t.status === 'success' || t.status === 'refunded') {
+        if (t.delta < 0) {
+          totalSpent += Math.abs(t.delta);
+        } else if (t.delta > 0 && t.status === 'success') {
+          totalEarned += t.delta;
+        }
+      }
+    });
+
+    const netChange = totalEarned - totalSpent;
+
     return NextResponse.json({
       transactions: formattedTransactions,
       pagination: {
@@ -108,6 +152,12 @@ export async function GET(req: NextRequest) {
         limit,
         total,
         totalPages: Math.ceil(total / limit),
+      },
+      statistics: {
+        totalRecords: total,
+        totalSpent,
+        totalEarned,
+        netChange,
       },
     });
   } catch (error) {

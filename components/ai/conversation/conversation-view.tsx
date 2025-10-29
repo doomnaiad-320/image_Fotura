@@ -588,7 +588,10 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           model: selectedModel,
           modelName: models.find(m => m.slug === selectedModel)?.displayName,
           mode: isEditMode ? 'img2img' : 'txt2img',
-          size: finalSize
+          size: finalSize,
+          // 链接会话：默认将每个对话内的生成串为单链
+          threadId: currentConversationId,
+          parentHistoryId: parentMsg?.imageId
         }
       );
 

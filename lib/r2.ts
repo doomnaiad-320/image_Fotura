@@ -22,7 +22,7 @@ function validateR2Config() {
 }
 
 // 创建 S3 客户端（R2 兼容）
-function getR2Client() {
+export function getR2Client() {
   validateR2Config();
 
   return new S3Client({
@@ -61,6 +61,23 @@ export async function uploadToR2(file: Blob | File, userId: string): Promise<str
   await client.send(command);
 
   // 返回公开 URL
+  const publicUrl = process.env.R2_PUBLIC_URL!;
+  return `${publicUrl}/${key}`;
+}
+
+/**
+ * 直接以指定 key 上传 Buffer
+ */
+export async function uploadBufferToR2(key: string, buffer: Buffer | Uint8Array, contentType: string, cacheControl?: string): Promise<string> {
+  const client = getR2Client();
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME!,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType,
+    CacheControl: cacheControl,
+  });
+  await client.send(command);
   const publicUrl = process.env.R2_PUBLIC_URL!;
   return `${publicUrl}/${key}`;
 }

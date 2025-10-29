@@ -7,7 +7,7 @@
  */
 
 const DB_NAME = 'aigc-studio-local';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   images: 'images',
@@ -35,6 +35,12 @@ export interface HistoryStore {
   mode?: 'txt2img' | 'img2img';  // 生成模式
   size?: string;           // 图片尺寸
   timestamp: number;       // 生成时间戳
+
+  // 会话编辑链（单链）
+  threadId?: string;        // 对话ID/线程ID（用于将记录归入同一编辑链）
+  parentHistoryId?: string; // 父历史记录ID（上一步）
+  step?: number;            // 当前在链中的步骤，从 1 开始
+  ops?: any;                // 可选：本步的编辑操作/参数描述
   
   // 生成参数 (为重现功能保留)
   parameters?: {
@@ -99,6 +105,7 @@ export class LocalDatabase {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const oldVersion = (event as IDBVersionChangeEvent).oldVersion || 0;
 
         // 创建 images 表
         if (!db.objectStoreNames.contains(STORES.images)) {
@@ -106,7 +113,7 @@ export class LocalDatabase {
           imagesStore.createIndex('createdAt', 'createdAt', { unique: false });
         }
 
-        // 创建 history 表
+        // 创建或升级 history 表
         if (!db.objectStoreNames.contains(STORES.history)) {
           const historyStore = db.createObjectStore(STORES.history, { keyPath: 'id' });
           historyStore.createIndex('timestamp', 'timestamp', { unique: false });
@@ -114,6 +121,24 @@ export class LocalDatabase {
           historyStore.createIndex('model', 'model', { unique: false });
           historyStore.createIndex('shared', 'shared', { unique: false });
           historyStore.createIndex('favorite', 'favorite', { unique: false });
+          // v2 新增索引
+          historyStore.createIndex('threadId', 'threadId', { unique: false });
+          historyStore.createIndex('parentHistoryId', 'parentHistoryId', { unique: false });
+          historyStore.createIndex('step', 'step', { unique: false });
+        } else {
+          // 升级已有的 history 表以添加新索引（从 v1 -> v2）
+          if (oldVersion < 2) {
+            const historyStore = (request.transaction as IDBTransaction).objectStore(STORES.history);
+            if (!historyStore.indexNames.contains('threadId')) {
+              historyStore.createIndex('threadId', 'threadId', { unique: false });
+            }
+            if (!historyStore.indexNames.contains('parentHistoryId')) {
+              historyStore.createIndex('parentHistoryId', 'parentHistoryId', { unique: false });
+            }
+            if (!historyStore.indexNames.contains('step')) {
+              historyStore.createIndex('step', 'step', { unique: false });
+            }
+          }
         }
       };
     });

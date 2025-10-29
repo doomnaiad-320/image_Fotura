@@ -28,6 +28,10 @@ export interface UseLocalHistoryReturn {
     mode?: 'txt2img' | 'img2img';
     size?: string;
     parameters?: any;
+    // 链信息（可选）
+    threadId?: string;           // 对话/线程ID
+    parentHistoryId?: string;    // 父历史记录ID
+    ops?: any;                   // 本步编辑操作
   }) => Promise<{ localUrl: string; historyId: string }>;
   removeHistory: (id: string) => Promise<void>;
   clearHistory: () => Promise<void>;
@@ -204,6 +208,9 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       mode?: 'txt2img' | 'img2img';
       size?: string;
       parameters?: any;
+      threadId?: string;
+      parentHistoryId?: string;
+      ops?: any;
     }
   ): Promise<{ localUrl: string; historyId: string }> => {
     console.log('[useLocalHistory] addHistory 被调用:', { 
@@ -248,6 +255,19 @@ export function useLocalHistory(): UseLocalHistoryReturn {
       const localUrl = blobManagerRef.current.createObjectURL(blob, imageId);
       console.log('[useLocalHistory] Blob URL 创建成功:', localUrl.slice(0, 50));
       
+      // 计算链路 step（如果提供了父历史ID，则 step=父+1，否则为1）
+      let step = 1;
+      if (metadata.parentHistoryId) {
+        try {
+          const parent = await db.getHistoryById(metadata.parentHistoryId);
+          if (parent && typeof parent.step === 'number' && Number.isFinite(parent.step)) {
+            step = (parent.step || 0) + 1;
+          } else {
+            step = 2; // 父无step字段时，视为第二步
+          }
+        } catch {}
+      }
+
       // 保存历史记录元数据
       const historyId = `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const historyData: HistoryStore = {
@@ -259,6 +279,10 @@ export function useLocalHistory(): UseLocalHistoryReturn {
         mode: metadata.mode,
         size: metadata.size,
         timestamp: Date.now(),
+        threadId: metadata.threadId,
+        parentHistoryId: metadata.parentHistoryId,
+        step,
+        ops: metadata.ops,
         parameters: metadata.parameters,
         shared: false,
         favorite: false

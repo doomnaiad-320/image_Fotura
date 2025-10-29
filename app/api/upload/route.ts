@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
-import { uploadToR2 } from '@/lib/r2';
+import { uploadToR2, uploadBufferToR2 } from '@/lib/r2';
 
 /**
  * 上传图片到 Cloudflare R2
@@ -44,9 +44,52 @@ export async function POST(request: Request) {
       );
     }
 
-    // 上传到 R2
-    const url = await uploadToR2(file, user.id);
+    // 优先使用服务端压缩并生成多规格 WebP，仅在云端存派生图
+    let useSharp = true;
+    let sharp: any = null;
+    try {
+      // 动态加载，避免构建时强依赖
+      // @ts-ignore
+      sharp = (await import('sharp')).default || (await import('sharp'));
+    } catch {
+      useSharp = false;
+    }
 
+    if (useSharp && sharp) {
+      const arrayBuf = await file.arrayBuffer();
+      const inputBuffer = Buffer.from(arrayBuf);
+      const crypto = await import('crypto');
+      const hash = crypto.createHash('sha1').update(inputBuffer).digest('hex').slice(0, 12);
+
+      const base = sharp(inputBuffer, { failOn: 'none' }).rotate().removeMetadata();
+      const widths = [320, 1024, 2048];
+      const quality = 75;
+      const userPrefix = `images/${user.id}/${hash}`;
+      const cacheControl = 'public, max-age=31536000, immutable';
+
+      let coverUrl = '';
+      for (const w of widths) {
+        const out = await base
+          .clone()
+          .resize({ width: w, height: w, fit: 'inside', withoutEnlargement: true })
+          .webp({ quality })
+          .toBuffer();
+        const key = `${userPrefix}/${w}.webp`;
+        const url = await uploadBufferToR2(key, out, 'image/webp', cacheControl);
+        if (w === 1024) {
+          coverUrl = url; // 默认用 1024 作为封面
+        }
+      }
+      // 如果没有生成 1024（极小图），回退为 320 或 2048 中最大的可用
+      if (!coverUrl) {
+        coverUrl = `${process.env.R2_PUBLIC_URL!}/${userPrefix}/1024.webp`;
+      }
+
+      return NextResponse.json({ url: coverUrl, variantsBase: `${process.env.R2_PUBLIC_URL!}/${userPrefix}/` });
+    }
+
+    // Fallback: 无 sharp 时直接原图上传
+    const url = await uploadToR2(file, user.id);
     return NextResponse.json({ url });
   } catch (error) {
     console.error('[upload] error:', error);

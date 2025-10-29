@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, ChevronLeft, ChevronRight, TrendingDown, TrendingUp } from 'lucide-react';
+import { RefreshCw, ChevronLeft, ChevronRight, TrendingDown, Coins, Calendar } from 'lucide-react';
 import { httpFetch } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +27,12 @@ interface PaginationInfo {
 interface ConsumptionResponse {
   transactions: CreditTransaction[];
   pagination: PaginationInfo;
+  statistics: {
+    totalRecords: number;
+    totalSpent: number;
+    totalEarned: number;
+    netChange: number;
+  };
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -50,18 +56,33 @@ export function ConsumptionHistory() {
     total: 0,
     totalPages: 0,
   });
+  const [statistics, setStatistics] = useState({
+    totalRecords: 0,
+    totalSpent: 0,
+    totalEarned: 0,
+    netChange: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // 时间筛选状态
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: '',
+    end: '',
+  });
 
   const loadHistory = async (page: number = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await httpFetch<ConsumptionResponse>(
-        `/api/credits/history?page=${page}&limit=20`
-      );
+      let url = `/api/credits/history?page=${page}&limit=20`;
+      if (dateRange.start) url += `&startDate=${dateRange.start}`;
+      if (dateRange.end) url += `&endDate=${dateRange.end}`;
+      
+      const data = await httpFetch<ConsumptionResponse>(url);
       setTransactions(data.transactions);
       setPagination(data.pagination);
+      setStatistics(data.statistics);
     } catch (err) {
       console.error('Failed to load consumption history:', err);
       setError('加载消费记录失败');
@@ -77,6 +98,28 @@ export function ConsumptionHistory() {
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
     loadHistory(newPage);
+  };
+
+  const handleDateFilter = () => {
+    loadHistory(1); // 重新从第一页加载
+  };
+
+  const handleClearFilter = () => {
+    setDateRange({ start: '', end: '' });
+    setTimeout(() => loadHistory(1), 0);
+  };
+
+  // 快捷时间筛选
+  const setQuickDateRange = (days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    
+    setDateRange({
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0],
+    });
+    setTimeout(() => loadHistory(1), 0);
   };
 
   const getTypeColor = (_type: string) => {
@@ -125,21 +168,114 @@ export function ConsumptionHistory() {
         </Button>
       </div>
 
+      {/* 时间筛选 */}
+      <div className="border rounded-lg p-4 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Calendar className="w-4 h-4" />
+          时间筛选
+        </div>
+        
+        {/* 快捷筛选 */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setQuickDateRange(7)}
+          >
+            最近7天
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setQuickDateRange(30)}
+          >
+            最近30天
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setQuickDateRange(90)}
+          >
+            最近90天
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleClearFilter}
+          >
+            全部时间
+          </Button>
+        </div>
+
+        {/* 自定义日期范围 */}
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="flex-1 min-w-[140px]">
+            <label className="text-xs text-muted-foreground mb-1 block">开始日期</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+            />
+          </div>
+          <div className="flex-1 min-w-[140px]">
+            <label className="text-xs text-muted-foreground mb-1 block">结束日期</label>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+            />
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDateFilter}
+            disabled={!dateRange.start && !dateRange.end}
+          >
+            应用筛选
+          </Button>
+        </div>
+      </div>
+
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="border rounded-lg p-4">
-          <div className="text-sm text-muted-foreground">总记录数</div>
-          <div className="text-2xl font-bold mt-1">{pagination.total}</div>
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5" />
+            总记录数
+          </div>
+          <div className="text-2xl font-bold mt-1">{statistics.totalRecords}</div>
         </div>
         <div className="border rounded-lg p-4">
-          <div className="text-sm text-muted-foreground">当前页</div>
-          <div className="text-2xl font-bold mt-1">
-            {pagination.page} / {pagination.totalPages || 1}
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+            已消费
+          </div>
+          <div className="text-2xl font-bold mt-1 text-red-500">
+            {statistics.totalSpent}
           </div>
         </div>
         <div className="border rounded-lg p-4">
-          <div className="text-sm text-muted-foreground">每页显示</div>
-          <div className="text-2xl font-bold mt-1">{pagination.limit} 条</div>
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <Coins className="w-3.5 h-3.5 text-green-500" />
+            已充值
+          </div>
+          <div className="text-2xl font-bold mt-1 text-green-500">
+            {statistics.totalEarned}
+          </div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <Coins className="w-3.5 h-3.5" />
+            净变化
+          </div>
+          <div className={`text-2xl font-bold mt-1 ${
+            statistics.netChange > 0 ? 'text-green-500' :
+            statistics.netChange < 0 ? 'text-red-500' : ''
+          }`}>
+            {statistics.netChange > 0 ? '+' : ''}{statistics.netChange}
+          </div>
         </div>
       </div>
 
