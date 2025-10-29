@@ -31,7 +31,7 @@ interface ConsumptionResponse {
     totalRecords: number;
     totalSpent: number;
     totalEarned: number;
-    netChange: number;
+    todaySpent: number;
   };
 }
 
@@ -60,7 +60,7 @@ export function ConsumptionHistory() {
     totalRecords: 0,
     totalSpent: 0,
     totalEarned: 0,
-    netChange: 0,
+    todaySpent: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -267,14 +267,11 @@ export function ConsumptionHistory() {
         </div>
         <div className="border rounded-lg p-4">
           <div className="text-sm text-muted-foreground flex items-center gap-1">
-            <Coins className="w-3.5 h-3.5" />
-            净变化
+            <TrendingDown className="w-3.5 h-3.5 text-orange-500" />
+            今日消耗
           </div>
-          <div className={`text-2xl font-bold mt-1 ${
-            statistics.netChange > 0 ? 'text-green-500' :
-            statistics.netChange < 0 ? 'text-red-500' : ''
-          }`}>
-            {statistics.netChange > 0 ? '+' : ''}{statistics.netChange}
+          <div className="text-2xl font-bold mt-1 text-orange-500">
+            {statistics.todaySpent}
           </div>
         </div>
       </div>

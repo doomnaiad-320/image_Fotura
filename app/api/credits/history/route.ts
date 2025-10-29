@@ -143,7 +143,32 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const netChange = totalEarned - totalSpent;
+    // 计算今日消耗
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayTransactions = await prisma.creditTransaction.findMany({
+      where: {
+        userId: user.id,
+        createdAt: {
+          gte: today,
+          lte: todayEnd,
+        },
+      },
+      select: {
+        delta: true,
+        status: true,
+      },
+    });
+
+    let todaySpent = 0;
+    todayTransactions.forEach(t => {
+      if ((t.status === 'success' || t.status === 'refunded') && t.delta < 0) {
+        todaySpent += Math.abs(t.delta);
+      }
+    });
 
     return NextResponse.json({
       transactions: formattedTransactions,
@@ -157,7 +182,7 @@ export async function GET(req: NextRequest) {
         totalRecords: total,
         totalSpent,
         totalEarned,
-        netChange,
+        todaySpent,
       },
     });
   } catch (error) {
