@@ -8,11 +8,11 @@ import {
   Database,
   Receipt,
   FileText,
-  User,
   ImageIcon,
   RefreshCw,
   Heart
 } from "lucide-react";
+import UserCircleIcon from "@/components/icons/user-circle";
 
 import { ensureAdmin } from "@/lib/ai/guards";
 import { getCurrentUser } from "@/lib/auth";
@@ -48,7 +48,7 @@ const navItems: Array<{ name: string; href: string; icon: any; sub?: boolean }> 
   {
     name: "个人主页",
     href: "/admin/me",
-    icon: User,
+    icon: UserCircleIcon,
   },
   {
     name: "已发布",

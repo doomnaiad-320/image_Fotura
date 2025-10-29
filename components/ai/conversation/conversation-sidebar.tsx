@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import type { Conversation } from '@/types/conversation';
 import type { CurrentUser } from '@/lib/auth';
+import UserCircleIcon from '@/components/icons/user-circle';
 
 interface ConversationSidebarProps {
   conversations: Conversation[];
@@ -281,9 +282,7 @@ export function ConversationSidebar({
                     href="/me"
                     className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A7 7 0 1118.879 6.196 9 9 0 005.121 17.804z" />
-                    </svg>
+                    <UserCircleIcon className="w-4 h-4" />
                     个人主页
                   </Link>
                   

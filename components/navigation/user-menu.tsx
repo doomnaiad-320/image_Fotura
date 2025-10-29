@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 
 import type { CurrentUser } from "@/lib/auth";
 import { useBgTheme } from "@/components/theme/background-provider";
+import UserCircleIcon from "@/components/icons/user-circle";
 
 type Props = {
   user: CurrentUser;
@@ -61,7 +62,7 @@ export function UserMenu({ user }: Props) {
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
             onClick={() => setOpen(false)}
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <UserCircleIcon className="h-4 w-4" />
             个人主页
           </Link>
           <Link

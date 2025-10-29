@@ -183,18 +183,18 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-surface rounded-xl shadow-2xl border border-default p-6 max-w-md mx-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 rounded-full bg-surface-2 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
                 </svg>
               </div>
               
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  确认回退到此节点？
+                  回退到此节点？
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  回退后，当前图片将被替换为该节点的图片，你可以从这里继续编辑。
+                  不会删除任何历史。确认后仅加载该节点的提示词到输入区，下一次生成会作为新的节点。
                 </p>
                 
                 <div className="bg-surface-2/50 rounded-lg p-3 mb-4 border border-default">
@@ -207,15 +207,15 @@ export function EditChainTimeline({ editChain, onNodeClick, currentNodeId }: Edi
                 <div className="flex gap-3">
                   <button
                     onClick={cancelRollback}
-                    className="flex-1 px-4 py-2 rounded-lg bg-surface-2 hover:bg-surface text-foreground text-sm font-medium transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-surface-2 hover:bg-surface text-foreground text-sm font-medium transition-colors"
                   >
                     取消
                   </button>
                   <button
                     onClick={confirmRollback}
-className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-on-accent text-sm font-medium transition-all shadow-lg hover:shadow-xl"
+                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-surface hover:bg-surface-2 text-foreground text-sm font-medium transition-colors"
                   >
-                    确认回退
+                    加载为输入
                   </button>
                 </div>
               </div>
