@@ -176,13 +176,13 @@ export default function AdminCreditLogsPage() {
       </header>
 
       {/* 筛选栏 */}
-      <div className="bg-surface border border-default rounded-lg p-4">
+      <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-muted-foreground">状态筛选：</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 bg-background border border-input rounded-lg text-foreground text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <option value="all">全部</option>
             <option value="success">成功</option>
@@ -201,7 +201,7 @@ export default function AdminCreditLogsPage() {
       )}
 
       {/* 交易记录表格 */}
-      <div className="bg-surface border border-default rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -214,7 +214,7 @@ export default function AdminCreditLogsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-surface-2/50 border-b border-default">
+              <thead className="bg-muted/50 border-b border-border">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     时间
@@ -236,9 +236,9 @@ export default function AdminCreditLogsPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-surface-2/30 transition-colors">
+                  <tr key={tx.id} className="hover:bg-accent/30 transition-colors">
                     <td className="px-4 py-4 text-sm text-muted-foreground whitespace-nowrap">
                       {formatDate(tx.createdAt)}
                     </td>
@@ -298,7 +298,7 @@ export default function AdminCreditLogsPage() {
 
       {/* 分页控件 */}
       {!loading && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between bg-surface border border-default rounded-lg p-4">
+        <div className="flex items-center justify-between bg-card border border-border rounded-lg p-4">
           <div className="text-sm text-muted-foreground">
             共 {pagination.total} 条记录，第 {pagination.page} / {pagination.totalPages} 页
           </div>
@@ -306,7 +306,7 @@ export default function AdminCreditLogsPage() {
             <button
               onClick={() => fetchLogs(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="flex items-center gap-1 px-4 py-2 bg-surface-2 hover:bg-surface disabled:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1 px-4 py-2 bg-muted hover:bg-card disabled:bg-muted disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-lg text-sm font-medium transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
               上一页
@@ -314,7 +314,7 @@ export default function AdminCreditLogsPage() {
             <button
               onClick={() => fetchLogs(pagination.page + 1)}
               disabled={pagination.page === pagination.totalPages}
-              className="flex items-center gap-1 px-4 py-2 bg-surface-2 hover:bg-surface disabled:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1 px-4 py-2 bg-muted hover:bg-card disabled:bg-muted disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-lg text-sm font-medium transition-colors"
             >
               下一页
               <ChevronRight className="w-4 h-4" />
@@ -326,23 +326,23 @@ export default function AdminCreditLogsPage() {
       {/* 统计信息 */}
       {!loading && transactions.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-surface border border-default rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-xs text-muted-foreground mb-1">总交易数</div>
             <div className="text-2xl font-bold text-foreground">{pagination.total}</div>
           </div>
-          <div className="bg-surface border border-default rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-xs text-muted-foreground mb-1">充值/奖励</div>
             <div className="text-2xl font-bold text-green-400">
               +{transactions.filter(t => t.delta > 0).reduce((sum, t) => sum + t.delta, 0).toLocaleString()}
             </div>
           </div>
-          <div className="bg-surface border border-default rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-xs text-muted-foreground mb-1">消费</div>
             <div className="text-2xl font-bold text-red-400">
               {transactions.filter(t => t.delta < 0).reduce((sum, t) => sum + t.delta, 0).toLocaleString()}
             </div>
           </div>
-          <div className="bg-surface border border-default rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="text-xs text-muted-foreground mb-1">成功交易</div>
             <div className="text-2xl font-bold text-foreground">
               {transactions.filter(t => t.status === "success").length}

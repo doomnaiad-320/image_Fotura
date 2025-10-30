@@ -44,10 +44,10 @@ export function MessageList({
         <div className="mt-8 space-y-2 text-xs text-muted-foreground">
           <p>💡 试试这些提示词：</p>
           <div className="flex flex-wrap gap-2 justify-center">
-            <span className="px-3 py-1 bg-surface-2 rounded-full border border-default">
+            <span className="px-3 py-1 bg-muted rounded-full border border-border">
               一只赛博朋克风格的猫
             </span>
-            <span className="px-3 py-1 bg-surface-2 rounded-full border border-default">
+            <span className="px-3 py-1 bg-muted rounded-full border border-border">
               未来主义城市夜景
             </span>
             <span className="px-3 py-1 bg-surface-2 rounded-full border border-default">
@@ -72,7 +72,7 @@ export function MessageList({
         <div className="sticky top-0 z-10 -mt-2 pt-2">
           <button
             onClick={() => setShowAll(true)}
-            className="mx-auto block text-xs px-3 py-1.5 rounded-full bg-surface-2 border border-default text-muted-foreground hover:text-foreground"
+            className="mx-auto block text-xs px-3 py-1.5 rounded-full bg-muted border border-border text-muted-foreground hover:text-foreground"
           >
             展开更早消息（{hiddenCount}）
           </button>

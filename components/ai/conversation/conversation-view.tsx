@@ -17,6 +17,8 @@ import { useLocalHistory } from '@/lib/hooks/useLocalHistory';
 import { getConversationDB, isConversationDBSupported } from '@/lib/storage/conversation-db';
 import { imageBlobStore } from '@/lib/storage/image-blob';
 import PublishDialog from './publish-dialog';
+import { AssetFeed } from '@/components/asset/asset-feed';
+import type { AssetListItem, AssetListResponse } from '@/lib/assets';
 
 interface ConversationViewProps {
   models: ModelOption[];
@@ -29,6 +31,8 @@ const fetcher = (url: string) => httpFetch<any>(url);
 export function ConversationView({ models, isAuthenticated, user }: ConversationViewProps) {
   // 状态管理
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  type RightView = 'conversation' | 'explore';
+  const [activeView, setActiveView] = useState<RightView>('conversation');
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [currentConversationId, setCurrentConversationId] = useState(() => `conv-${Date.now()}`);
   const [parentMessageId, setParentMessageId] = useState<string | null>(null);
@@ -71,6 +75,29 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     fetcher,
     { refreshInterval: 60_000 }
   );
+
+  // 探索：首页瀑布流初始化数据（懒加载）
+  const [exploreInit, setExploreInit] = useState<{ items: AssetListItem[]; cursor: string | null } | null>(null);
+  const [exploreLoading, setExploreLoading] = useState(false);
+  useEffect(() => {
+    const loadExplore = async () => {
+      try {
+        setExploreLoading(true);
+        const res = await httpFetch<AssetListResponse>(
+          '/api/assets?type=all&sort=hot&limit=12',
+          { method: 'GET' }
+        );
+        setExploreInit({ items: res.items || [], cursor: res.nextCursor || null });
+      } catch (e) {
+        toast.error('加载探索内容失败');
+      } finally {
+        setExploreLoading(false);
+      }
+    };
+    if (activeView === 'explore' && !exploreInit && !exploreLoading) {
+      void loadExplore();
+    }
+  }, [activeView, exploreInit, exploreLoading]);
 
   // 检查复用预填数据
   useEffect(() => {
@@ -316,6 +343,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       setMessages(restoredMsgs);
       setParentMessageId(null);
       setInheritedPrompt('');
+      
+      // 切换回对话视图
+      setActiveView('conversation');
       
       // 恢复模型选择
       if (conv.lastActiveModel) {
@@ -845,12 +875,14 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         conversations={conversations}
         currentConversationId={currentConversationId}
         onSelectConversation={handleSelectConversation}
-        onNewConversation={createNewConversation}
+        onNewConversation={() => { setActiveView('conversation'); void createNewConversation(); }}
         onDeleteConversation={handleDeleteConversation}
         onRenameConversation={handleRenameConversation}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         user={user ? { ...user, credits: balance?.credits ?? user.credits } : undefined}
+        onShowExplore={() => setActiveView('explore')}
+        exploreActive={activeView === 'explore'}
       />
 
       {/* 主内容区：全高（由 studio 布局控制视口高度） */}
@@ -876,55 +908,80 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           />
         </div>
 
-        {/* 消息列表（唯一滚动容器） */}
-        <div
-          ref={scrollRef}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 no-scrollbar"
-          style={{ paddingBottom: `${bottomPad}px` }}
-        >
-          <MessageList
-            messages={messages}
-            onUseAsInput={handleUseAsInput}
-            onPublish={handlePublish}
-            onTimelineNodeClick={handleTimelineNodeClick}
-            onRetry={(messageId) => {
-              handleRetry(messageId);
-            }}
-            onCancel={(messageId) => {
-              const ctrl = abortControllersRef.current.get(messageId);
-              // 允许传入的是任意消息ID，但我们存的是助手消息ID；这里直接尝试按该ID取，若为空，再找生成中的助手消息
-              if (!ctrl) {
-                const generating = messages.find(m => m.id === messageId && m.isGenerating);
-                const altCtrl = generating ? abortControllersRef.current.get(generating.id) : undefined;
-                (altCtrl || ctrl)?.abort();
-                return;
-              }
-              ctrl.abort();
-            }}
-            onImageLoad={(loadedId) => {
-              const el = scrollRef.current;
-              if (!el) return;
-              const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
-              const lastId = messages[messages.length - 1]?.id;
-              // 如果用户本就在底部附近，或加载的是最后一条消息的图片，则滚到底
-              if (distance < bottomPad + 200 || loadedId === lastId) {
-                el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-              }
-            }}
-          />
-        </div>
+        {/* 右侧内容区域 */}
+        {activeView === 'conversation' ? (
+          <>
+            {/* 消息列表（唯一滚动容器） */}
+            <div
+              ref={scrollRef}
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 no-scrollbar"
+              style={{ paddingBottom: `${bottomPad}px` }}
+            >
+              <MessageList
+                messages={messages}
+                onUseAsInput={handleUseAsInput}
+                onPublish={handlePublish}
+                onTimelineNodeClick={handleTimelineNodeClick}
+                onRetry={(messageId) => {
+                  handleRetry(messageId);
+                }}
+                onCancel={(messageId) => {
+                  const ctrl = abortControllersRef.current.get(messageId);
+                  // 允许传入的是任意消息ID，但我们存的是助手消息ID；这里直接尝试按该ID取，若为空，再找生成中的助手消息
+                  if (!ctrl) {
+                    const generating = messages.find(m => m.id === messageId && m.isGenerating);
+                    const altCtrl = generating ? abortControllersRef.current.get(generating.id) : undefined;
+                    (altCtrl || ctrl)?.abort();
+                    return;
+                  }
+                  ctrl.abort();
+                }}
+                onImageLoad={(loadedId) => {
+                  const el = scrollRef.current;
+                  if (!el) return;
+                  const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
+                  const lastId = messages[messages.length - 1]?.id;
+                  // 如果用户本就在底部附近，或加载的是最后一条消息的图片，则滚到底
+                  if (distance < bottomPad + 200 || loadedId === lastId) {
+                    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+                  }
+                }}
+              />
+            </div>
 
-        {/* 输入区域：吸附底部，保持可见（去边框） */}
-        <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="max-w-3xl mx-auto px-4 sm:px-6">
-            <InputArea
-              onSend={handleSend}
-              disabled={!selectedModel || messages.some(m => m.isGenerating)}
-              inheritedPrompt={inheritedPrompt}
-              isEditMode={Boolean(parentMessageId)}
-            />
+            {/* 输入区域：吸附底部，保持可见（去边框） */}
+            <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+              <div className="max-w-3xl mx-auto px-4 sm:px-6">
+                <InputArea
+                  onSend={handleSend}
+                  disabled={!selectedModel || messages.some(m => m.isGenerating)}
+                  inheritedPrompt={inheritedPrompt}
+                  isEditMode={Boolean(parentMessageId)}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          // 探索视图
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 no-scrollbar">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6">
+              {!exploreInit ? (
+                <div className="py-10 text-center text-sm text-muted-foreground">
+                  {exploreLoading ? '正在加载...' : '暂无内容'}
+                </div>
+              ) : (
+                <AssetFeed
+                  initialItems={exploreInit.items}
+                  initialCursor={exploreInit.cursor}
+                  initialState={{ type: 'all', sort: 'hot' }}
+                  isAuthenticated={isAuthenticated}
+                  userCredits={balance?.credits}
+                  basePath="/studio"
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 发布对话框 */}

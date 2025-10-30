@@ -15,9 +15,9 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClassName: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:opacity-90 disabled:opacity-60",
+    "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60",
   secondary:
-    "border border-default text-foreground hover:bg-surface-2 disabled:opacity-60",
+    "border border-border bg-background text-foreground hover:bg-muted disabled:opacity-60",
   ghost: "text-muted-foreground hover:text-foreground disabled:opacity-50"
 };
 
@@ -36,7 +36,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-"inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
+          "inline-flex items-center justify-center gap-2 rounded-full font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           variantClassName[variant],
           sizeClassName[size],
           loading && "pointer-events-none opacity-80",
@@ -45,7 +45,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...props}
       >
-{loading && (
+        {loading && (
           <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-[color:rgba(0,0,0,0.2)] border-t-[color:rgba(0,0,0,0.6)] dark:border-[color:rgba(255,255,255,0.3)] dark:border-t-[color:rgba(255,255,255,0.7)]" />
         )}
         {children}

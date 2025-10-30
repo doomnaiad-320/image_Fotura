@@ -94,10 +94,10 @@ export function MessageItem({
       <div
         className={`${
           isContentJSON
-            ? 'flex-1 bg-surface/80 backdrop-blur-sm text-foreground border border-default'
+            ? 'flex-1 bg-card/80 backdrop-blur-sm text-foreground border border-border'
             : isUser 
               ? 'max-w-[70%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground' 
-              : 'flex-1 bg-surface/80 backdrop-blur-sm text-foreground border border-default'
+              : 'flex-1 bg-card/80 backdrop-blur-sm text-foreground border border-border'
         } rounded-2xl shadow-lg`}
       >
         {/* 文本内容 */}
@@ -117,7 +117,7 @@ export function MessageItem({
             if (isAssistant && content) {
               const pretty = parsed ? JSON.stringify(parsed, null, 2) : content;
               return (
-                <div className="rounded-xl border border-default bg-surface-2/70 backdrop-blur p-3">
+                <div className="rounded-xl border border-border bg-muted/70 backdrop-blur p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground">生成提示词</span>
                     <button
@@ -139,7 +139,7 @@ export function MessageItem({
             if (parsed) {
               const pretty = JSON.stringify(parsed, null, 2);
               return (
-                <div className="rounded-xl border border-default bg-surface-2/70 backdrop-blur p-3">
+                <div className="rounded-xl border border-border bg-muted/70 backdrop-blur p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground">提示词</span>
                     <button
@@ -166,7 +166,7 @@ export function MessageItem({
           <div className="px-4 pb-4 space-y-3">
             {/* 图片 */}
             <div 
-              className="relative rounded-lg overflow-hidden border border-default shadow-xl group cursor-pointer bg-black/5 aspect-square"
+              className="relative rounded-lg overflow-hidden border border-border shadow-xl group cursor-pointer bg-black/5 aspect-square"
               onClick={() => !message.isGenerating && setShowLightbox(true)}
               role="button"
               tabIndex={0}

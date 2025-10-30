@@ -7,6 +7,7 @@ import { LocalStorageManager } from "@/components/storage/local-storage-manager"
 import { useBgTheme, type BgTheme } from "@/components/theme/background-provider";
 
 const THEME_OPTIONS: { key: BgTheme; label: string }[] = [
+  { key: "auto", label: "自动" },
   { key: "light", label: "浅色" },
   { key: "dark", label: "深色" },
 ];
@@ -19,7 +20,7 @@ export function AppearanceStoragePanel() {
       {/* 外观设置 */}
       <div className="rounded-lg border border-default bg-[var(--color-surface)] p-5">
         <div className="mb-3 text-base font-semibold text-foreground">界面外观</div>
-        <div className="text-sm text-muted-foreground mb-4">选择你偏好的主题风格</div>
+        <div className="text-sm text-muted-foreground mb-4">选择你偏好的主题风格（自动：7:00-19:00 为浅色）</div>
         <div className="inline-flex rounded-md border border-default p-1">
           {THEME_OPTIONS.map((opt) => (
             <Button

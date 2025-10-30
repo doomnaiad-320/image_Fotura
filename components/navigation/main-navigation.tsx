@@ -13,7 +13,7 @@ export async function MainNavigation() {
   const user = await getCurrentUser();
 
 return (
-    <header className="sticky top-0 z-40 border-b border-default backdrop-blur supports-[backdrop-filter]:bg-[var(--color-nav-bg)]">
+    <header className="sticky top-0 z-40 border-b border-border backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="text-lg font-semibold tracking-tight">
@@ -24,7 +24,7 @@ return (
               <Link
                 key={link.href}
                 href={link.href}
-className="text-foreground transition hover:text-muted-foreground"
+                className="text-foreground transition hover:text-muted-foreground"
               >
                 {link.label}
               </Link>
@@ -36,7 +36,7 @@ className="text-foreground transition hover:text-muted-foreground"
             <Link
               key={link.href}
               href={link.href}
-className="text-foreground transition hover:text-muted-foreground"
+              className="text-foreground transition hover:text-muted-foreground"
             >
               {link.label}
             </Link>
@@ -50,13 +50,13 @@ className="text-foreground transition hover:text-muted-foreground"
             <>
               <Link
                 href="/auth/signin"
-className="rounded-full border border-default px-4 py-1 text-foreground transition hover:bg-surface-2"
+                className="rounded-full border border-border px-4 py-1 text-foreground transition hover:bg-muted"
               >
                 登录
               </Link>
               <Link
                 href="/auth/signup"
-className="rounded-full bg-[var(--color-primary)] px-4 py-1 text-[var(--color-primary-foreground)] transition hover:opacity-90"
+                className="rounded-full bg-primary px-4 py-1 text-primary-foreground transition hover:bg-primary/90"
               >
                 注册
               </Link>

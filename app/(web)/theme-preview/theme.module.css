@@ -1,12 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-
-/* Theme tokens (global): shadcn-like tokens + bridge to existing vars */
-:root {
-  color-scheme: light;
-  /* HSL tokens (shadcn) */
+/* shadcn-like theme tokens, scoped to this preview only */
+.theme {
+  /* Light tokens (HSL like shadcn) */
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
 
@@ -37,7 +31,7 @@
   --ring: 215 20.2% 65.1%;
   --radius: 0.5rem;
 
-  /* Bridge to existing project tokens */
+  /* Bridge to existing project tokens so existing utilities work */
   --color-bg: hsl(var(--background));
   --color-surface: hsl(var(--card));
   --color-surface-2: hsl(var(--muted));
@@ -48,16 +42,12 @@
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-link: hsl(var(--primary));
   --color-nav-bg: hsl(var(--card));
-  --color-scrim: rgba(0,0,0,0.6);
+  --color-scrim: rgba(0, 0, 0, 0.6);
   --color-on-accent: hsl(var(--primary-foreground));
 }
 
-html[data-theme='light'] {
-  color-scheme: light;
-}
-
-html[data-theme='dark'] {
-  color-scheme: dark;
+/* Dark tokens */
+.dark {
   --background: 224 71% 4%;
   --foreground: 213 31% 91%;
 
@@ -99,38 +89,6 @@ html[data-theme='dark'] {
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-link: hsl(var(--primary));
   --color-nav-bg: hsl(var(--card));
-  --color-scrim: rgba(0,0,0,0.6);
+  --color-scrim: rgba(0, 0, 0, 0.6);
   --color-on-accent: hsl(var(--primary-foreground));
-}
-
-body {
-  @apply antialiased;
-  font-family: "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  background-color: var(--color-bg);
-  color: var(--color-foreground);
-}
-
-@layer utilities {
-  .bg-hero { background-image: linear-gradient(135deg, var(--color-hero-from), var(--color-hero-to)); }
-  .bg-app { background-color: var(--color-bg); }
-  .bg-surface { background-color: var(--color-surface); }
-  .bg-surface-2 { background-color: var(--color-surface-2); }
-  .text-foreground { color: var(--color-foreground); }
-  .text-muted-foreground { color: var(--color-muted-foreground); }
-  .text-link { color: var(--color-link); }
-  .border-default { border-color: var(--color-border); }
-
-  /* Hide scrollbars while keeping scrollability */
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-}
-
-a {
-  color: var(--color-link);
-}
-a:hover { opacity: 0.9; }
-
-button {
-  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black;
 }

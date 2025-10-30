@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
       </header>
 
       {/* 搜索栏 + 操作 */}
-      <div className="bg-surface border border-default rounded-lg p-4">
+      <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center gap-3">
           <form onSubmit={handleSearch} className="flex gap-3 flex-1">
             <div className="flex-1 relative">
@@ -99,7 +99,7 @@ export default function AdminUsersPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索邮箱或用户名..."
-                className="w-full pl-10 pr-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               />
             </div>
             <button
@@ -115,7 +115,7 @@ export default function AdminUsersPage() {
                   setSearchQuery("");
                   fetchUsers();
                 }}
-                className="px-4 py-2 bg-surface-2 hover:bg-surface text-foreground rounded-lg font-medium transition-colors"
+                className="px-4 py-2 bg-muted hover:bg-card text-foreground rounded-lg font-medium transition-colors"
               >
                 清除
               </button>
@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
       {/* 新建用户弹窗 */}
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">
-          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-default bg-surface p-6">
+          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-border bg-popover p-6">
             <header className="space-y-1">
               <h3 className="text-lg font-semibold text-foreground">添加用户</h3>
               <p className="text-xs text-muted-foreground">创建新用户并设置初始积分</p>
@@ -184,7 +184,7 @@ export default function AdminUsersPage() {
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     required
                   />
                 </div>
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="创作者昵称"
-                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     required
                   />
                 </div>
@@ -205,7 +205,7 @@ export default function AdminUsersPage() {
                     min="0"
                     value={newCredits}
                     onChange={(e) => setNewCredits(e.target.value)}
-                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   />
                 </div>
                 <div className="space-y-2">
@@ -213,7 +213,7 @@ export default function AdminUsersPage() {
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as "user" | "admin")}
-                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground focus:outline-none"
+                    className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none"
                   >
                     <option value="user">普通用户</option>
                     <option value="admin">管理员</option>
@@ -226,7 +226,7 @@ export default function AdminUsersPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="至少 8 位"
-                    className="w-full px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     required
                   />
                 </div>
@@ -243,7 +243,7 @@ export default function AdminUsersPage() {
                   type="button"
                   onClick={() => setCreateOpen(false)}
                   disabled={creating}
-                  className="px-4 py-2 bg-surface-2 hover:bg-surface rounded-lg text-foreground"
+                  className="px-4 py-2 bg-muted hover:bg-card rounded-lg text-foreground"
                 >
                   取消
                 </button>
@@ -268,7 +268,7 @@ export default function AdminUsersPage() {
       )}
 
       {/* 用户表格 */}
-      <div className="bg-surface border border-default rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -281,7 +281,7 @@ export default function AdminUsersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-surface-2 border-b border-default">
+              <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     用户
@@ -300,11 +300,11 @@ export default function AdminUsersPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-default">
+              <tbody className="divide-y divide-border">
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    className="hover:bg-surface-2 transition-colors"
+                    className="hover:bg-accent transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">

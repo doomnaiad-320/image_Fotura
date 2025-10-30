@@ -102,7 +102,7 @@ export default async function AssetDetailPage({ params }: { params: { id: string
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* 左侧：图片 */}
-        <div className="rounded-2xl border border-default bg-surface overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card overflow-hidden">
           {asset.type === "video" ? (
             <video
               className="w-full h-auto"
@@ -148,15 +148,15 @@ export default async function AssetDetailPage({ params }: { params: { id: string
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">提示词 (Prompt)</h3>
               {promptVisible ? (
-                <p className="rounded-xl border border-default bg-surface-2 p-4 text-sm leading-relaxed">
+                <p className="rounded-xl border border-border bg-muted p-4 text-sm leading-relaxed">
                   {asset.prompt}
                 </p>
               ) : (
-                <div className="rounded-xl border border-default bg-surface-2 p-4 relative">
+                <div className="rounded-xl border border-border bg-muted p-4 relative">
                   <p className="text-sm leading-relaxed blur-sm select-none">
                     {asset.prompt}
                   </p>
-                  <div className="absolute inset-0 flex items-center justify-center bg-surface-2/80 backdrop-blur-[2px] rounded-xl">
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted/80 backdrop-blur-[2px] rounded-xl">
                     <div className="text-center space-y-2">
                       <svg className="w-8 h-8 mx-auto text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -177,7 +177,7 @@ export default async function AssetDetailPage({ params }: { params: { id: string
           {/* 模型信息 */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">生成信息</h3>
-            <div className="rounded-xl border border-default bg-surface-2 p-4 space-y-2 text-sm">
+            <div className="rounded-xl border border-border bg-muted p-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">模型</span>
                 <span className="font-medium">{asset.modelName || asset.model || asset.modelTag}</span>
@@ -211,7 +211,7 @@ export default async function AssetDetailPage({ params }: { params: { id: string
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-default bg-surface-2 px-3 py-1 text-xs uppercase tracking-[0.2em]"
+                    className="rounded-full border border-border bg-muted px-3 py-1 text-xs uppercase tracking-[0.2em]"
                   >
                     {tag}
                   </span>
@@ -223,7 +223,7 @@ export default async function AssetDetailPage({ params }: { params: { id: string
           {/* 统计信息 */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">统计</h3>
-            <div className="rounded-xl border border-default bg-surface-2 p-4 grid grid-cols-3 gap-4 text-center text-sm">
+            <div className="rounded-xl border border-border bg-muted p-4 grid grid-cols-3 gap-4 text-center text-sm">
               <div>
                 <p className="text-2xl font-bold text-foreground">{asset.views}</p>
                 <p className="text-muted-foreground">浏览</p>
@@ -243,7 +243,7 @@ export default async function AssetDetailPage({ params }: { params: { id: string
           {asset.user && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground">创作者</h3>
-              <div className="rounded-xl border border-default bg-surface-2 p-4 text-sm">
+              <div className="rounded-xl border border-border bg-muted p-4 text-sm">
                 <p className="font-medium">{asset.user.name || asset.user.email}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   发布于 {new Date(asset.createdAt).toLocaleDateString("zh-CN")}

@@ -49,7 +49,7 @@ export default async function ExplorePage() {
         {PLACEHOLDER_FILTERS.map((filter) => (
           <div
             key={filter.title}
-className="space-y-3 rounded-3xl border border-default bg-surface p-5"
+className="space-y-3 rounded-3xl border border-border bg-card p-5"
           >
             <div>
 <h2 className="text-sm font-semibold text-foreground">{filter.title}</h2>

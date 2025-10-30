@@ -4,8 +4,9 @@ import React from "react";
 import { useBgTheme, type BgTheme } from "@/components/theme/background-provider";
 
 const THEMES: { key: BgTheme; name: string; previewClass: string; desc: string }[] = [
-  { key: "dark", name: "Dark", previewClass: "bg-neutral-900", desc: "深色主题" },
-  { key: "light", name: "Light", previewClass: "bg-neutral-100", desc: "浅色主题" },
+  { key: "auto", name: "自动", previewClass: "", desc: "根据本地时间 7:00-19:00 浅色，其余深色" },
+  { key: "dark", name: "深色", previewClass: "bg-neutral-900", desc: "深色主题" },
+  { key: "light", name: "浅色", previewClass: "bg-neutral-100", desc: "浅色主题" },
 ];
 
 export function AppearanceSelector() {
@@ -16,7 +17,7 @@ export function AppearanceSelector() {
       <label className="text-sm text-muted-foreground">选择主题</label>
       <select
         value={theme}
-        onChange={(e) => setTheme(e.target.value as any)}
+        onChange={(e) => setTheme(e.target.value as BgTheme)}
         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
       >
         {THEMES.map((t) => (

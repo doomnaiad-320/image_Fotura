@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { Select } from '@/components/ui/select';
 import type { ModelOption } from '../playground';
 import { useBgTheme } from '@/components/theme/background-provider';
@@ -19,8 +18,8 @@ export function ConversationHeader({
   onModelChange,
   credits
 }: ConversationHeaderProps) {
-  const { theme, setTheme } = useBgTheme();
-  const toggle = () => setTheme(theme === 'dark' ? 'light' as any : 'dark' as any);
+  const { resolvedTheme, setTheme } = useBgTheme();
+  const toggle = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
 
   return (
     <div className="flex items-center w-full">
@@ -52,30 +51,8 @@ export function ConversationHeader({
         </Select>
       </div>
 
-      {/* 右侧 - 首页入口 + 余额 + 主题 */}
+      {/* 右侧 - 余额 + 主题 */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        {/* 首页（移动端仅图标，桌面带文字） */}
-        <Link
-          href="/"
-          className="inline-flex sm:hidden items-center justify-center h-8 w-8 rounded-md border border-default text-muted-foreground hover:bg-surface-2"
-          title="回到首页"
-          aria-label="回到首页"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-        </Link>
-        <Link
-          href="/"
-          className="hidden sm:inline-flex items-center gap-1.5 h-8 rounded-md bg-gradient-to-r from-orange-500 to-orange-600 px-3 text-xs font-medium text-white shadow hover:from-orange-600 hover:to-orange-700"
-          title="回到首页"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          首页
-        </Link>
-
         {/* 余额 */}
         {credits !== undefined && (
           <div className="flex h-8 items-center gap-2 rounded-md border border-orange-500/30 bg-orange-500/10 px-3">
@@ -88,16 +65,16 @@ export function ConversationHeader({
         )}
 
         {/* 分隔线（桌面） */}
-        <span className="hidden sm:block h-5 w-px bg-default" />
+        <span className="hidden sm:block h-5 w-px bg-border" />
 
         {/* 主题 */}
         <button
           onClick={toggle}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-default text-muted-foreground hover:bg-surface-2"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted"
           aria-label="切换主题"
           title="切换主题"
         >
-          {theme === 'dark' ? (
+          {resolvedTheme === 'dark' ? (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.293 13.293a8 8 0 11-6.586-6.586 6 6 0 106.586 6.586z" />
             </svg>

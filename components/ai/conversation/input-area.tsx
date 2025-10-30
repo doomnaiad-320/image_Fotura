@@ -230,10 +230,10 @@ export function InputArea({
       onDragLeave={handleDragLeave}
     >
       {/* 渐变遮罩层 */}
-      <div className="absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-app to-transparent pointer-events-none"></div>
+      <div className="absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
       
       {/* 输入区容器 */}
-      <div className="bg-app py-4 sm:py-6">
+      <div className="bg-background py-4 sm:py-6">
         <div className="space-y-3">
         {/* 编辑模式提示 */}
         {isEditMode && inheritedPrompt && (
@@ -258,10 +258,10 @@ export function InputArea({
 
         {/* 主输入容器 */}
         <div
-          className={`relative rounded-2xl bg-surface-2/80 border-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)] transition-all duration-200 ${
+          className={`relative rounded-2xl bg-muted/80 border-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)] transition-all duration-200 ${
             isFocused
               ? 'border-orange-500 shadow-[0_-8px_24px_rgba(251,146,60,0.15)] dark:shadow-[0_-8px_24px_rgba(251,146,60,0.2)]'
-              : 'border-default hover:border-default/80 hover:shadow-[0_-6px_20px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_-6px_20px_rgba(0,0,0,0.35)]'
+              : 'border-border hover:border-border/80 hover:shadow-[0_-6px_20px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_-6px_20px_rgba(0,0,0,0.35)]'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {/* 拖动手柄 */}
@@ -271,7 +271,7 @@ export function InputArea({
             className={`absolute top-0 left-0 right-0 h-5 flex items-center justify-center cursor-ns-resize group rounded-t-2xl transition-all ${
               isDragging 
                 ? 'bg-orange-500/15 border-b border-orange-500/30' 
-                : 'hover:bg-surface-2'
+                : 'hover:bg-muted'
             }`}
             title="拖动调整高度"
           >
@@ -297,7 +297,7 @@ export function InputArea({
             </div>
             
             {/* 文字提示 - 悬停时显示 */}
-            <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-surface border border-default text-[11px] text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg flex items-center gap-1.5">
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-popover border border-border text-[11px] text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg flex items-center gap-1.5">
               <svg 
                 className="w-3 h-3" 
                 fill="none" 
@@ -343,7 +343,7 @@ export function InputArea({
             <div className="px-4 sm:px-5 pb-2 pt-1">
               <div className="flex items-center gap-2 flex-wrap">
                 {imagePreviewUrls.map((url, index) => (
-                  <div key={index} className="relative inline-block rounded-lg overflow-hidden border border-default group">
+                  <div key={index} className="relative inline-block rounded-lg overflow-hidden border border-border group">
                     <img 
                       src={url} 
                       alt={`上传的图片 ${index + 1}`} 
@@ -399,7 +399,7 @@ export function InputArea({
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   uploadedImages.length > 0
                     ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
-                    : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`}
                 title="上传图片（可多选）"
               >
@@ -417,7 +417,7 @@ export function InputArea({
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   showAdvanced
                     ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
-                    : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`}
                 title="高级选项"
               >
@@ -437,9 +437,9 @@ export function InputArea({
             <div className="flex items-center gap-3">
               {/* 快捷键提示 */}
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
-                <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-default font-mono text-[10px] text-foreground">⇧</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px] text-foreground">⇧</kbd>
                 <span>+</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-default font-mono text-[10px] text-foreground">↵</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px] text-foreground">↵</kbd>
               </div>
 
               {/* 发送按钮 */}
@@ -448,7 +448,7 @@ export function InputArea({
                 disabled={disabled || !prompt.trim()}
                 className={`flex items-center justify-center gap-2 px-4 sm:px-5 py-2 rounded-xl font-medium text-sm transition-all ${
                   disabled || !prompt.trim()
-                    ? 'bg-surface-2 text-muted-foreground cursor-not-allowed'
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
                     : 'bg-gradient-to-r from-orange-500 to-orange-600 text-primary-foreground hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 active:scale-95'
                 }`}
               >
@@ -463,7 +463,7 @@ export function InputArea({
 
           {/* 高级选项面板 */}
           {showAdvanced && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-surface-2/50 border border-default animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-muted/50 border border-border animate-in fade-in slide-in-from-bottom-2 duration-200">
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-xs font-medium text-foreground">
                   <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -474,7 +474,7 @@ export function InputArea({
                 <Select
                   value={aspectRatio}
                   onChange={(e) => setAspectRatio(e.target.value)}
-                  className="w-full bg-surface border-default hover:border-default/60"
+                  className="w-full bg-background border border-input hover:border-border/60"
                 >
                   {ASPECT_RATIOS.map((ratio) => (
                     <option key={ratio.value} value={ratio.value}>
@@ -494,7 +494,7 @@ export function InputArea({
                 <Select
                   value={selectedSize}
                   onChange={(e) => setSelectedSize(e.target.value)}
-                  className="w-full bg-surface border-default hover:border-default/60"
+                  className="w-full bg-background border border-input hover:border-border/60"
                 >
                   {sizeOptions.map((size) => (
                     <option key={size} value={size}>

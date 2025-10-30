@@ -27,12 +27,12 @@ export default function AdminActionLogsPage() {
         <Button variant="secondary" size="sm" onClick={() => mutate()}>刷新</Button>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-default bg-surface">
+      <div className="overflow-hidden rounded-3xl border border-border bg-card">
         {isLoading ? (
           <div className="grid place-items-center py-16 text-sm text-muted-foreground">加载中...</div>
         ) : (
           <table className="min-w-full text-left text-sm text-muted-foreground">
-            <thead className="bg-surface-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            <thead className="bg-muted text-xs uppercase tracking-[0.3em] text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">时间</th>
                 <th className="px-4 py-3">操作</th>
@@ -43,7 +43,7 @@ export default function AdminActionLogsPage() {
             </thead>
             <tbody>
               {logs.map((log) => (
-                <tr key={log.id} className="border-t border-default hover:bg-surface-2">
+                <tr key={log.id} className="border-t border-border hover:bg-accent">
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {new Date(log.createdAt).toLocaleString()}
                   </td>

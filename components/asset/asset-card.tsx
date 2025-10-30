@@ -48,7 +48,7 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
   };
 
   return (
-<article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-default bg-surface shadow transition hover:-translate-y-1">
+<article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card shadow transition hover:-translate-y-1">
       <div 
         className="relative w-full overflow-hidden cursor-pointer" 
         onClick={handleViewDetail}
@@ -72,10 +72,10 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
           />
         )}
         <div className="absolute left-3 top-3 flex items-center gap-2 text-xs font-medium">
-<Badge className="border-default bg-surface-2 text-foreground">
+<Badge className="border-border bg-muted text-foreground">
             {asset.type === "video" ? "视频" : "图片"}
           </Badge>
-<span className="rounded-full bg-surface-2 px-3 py-1 text-[11px] tracking-wide text-foreground border border-default">
+<span className="rounded-full bg-muted px-3 py-1 text-[11px] tracking-wide text-foreground border border-border">
             {asset.modelTag}
           </span>
         </div>
@@ -87,7 +87,7 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
             {asset.tags.map((tag) => (
               <span
                 key={tag}
-className="rounded-full border border-default px-3 py-1 text-[11px] uppercase tracking-[0.2em]"
+className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.2em]"
               >
                 {tag}
               </span>

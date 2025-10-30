@@ -88,7 +88,7 @@ export default function AdminSettingsPage() {
         </p>
       </header>
 
-      <div className="bg-surface border border-default rounded-lg p-6">
+      <div className="bg-card border border-border rounded-lg p-6">
         <form onSubmit={handleSave} className="space-y-6">
           {/* 注册奖励设置 */}
           <div className="space-y-4">
@@ -105,7 +105,7 @@ export default function AdminSettingsPage() {
                 step="1"
                 value={registrationBonus}
                 onChange={(e) => setRegistrationBonus(e.target.value)}
-                className="w-full max-w-md px-4 py-2 bg-surface-2 border border-default rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full max-w-md px-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 placeholder="5000"
               />
               <p className="text-xs text-muted-foreground">
@@ -128,7 +128,7 @@ export default function AdminSettingsPage() {
           )}
 
           {/* 保存按钮 */}
-          <div className="flex items-center gap-3 pt-4 border-t border-default">
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
             <button
               type="submit"
               disabled={saving}

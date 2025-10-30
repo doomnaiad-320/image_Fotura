@@ -665,7 +665,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         <form
-          className="space-y-4 rounded-3xl border border-default bg-surface/60 backdrop-blur-sm p-5"
+          className="space-y-4 rounded-3xl border border-border bg-card/60 backdrop-blur-sm p-5"
           onSubmit={onSubmit}
         >
           <div className="space-y-2">
@@ -733,20 +733,20 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
           </div>
         </form>
 
-        <div className="space-y-4 rounded-3xl border border-default bg-surface p-5">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">现有 Provider</h3>
           </div>
           <div className="space-y-3 text-sm">
             {providers.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-default p-6 text-center text-xs text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
                 尚无 Provider，先在左侧表单创建。
               </div>
             )}
             {providers.map((provider) => (
               <div
                 key={provider.id}
-                className="space-y-3 rounded-2xl border border-default bg-surface/60 backdrop-blur-sm p-4"
+                className="space-y-3 rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-4"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -798,9 +798,9 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             刷新
           </Button>
         </div>
-        <div className="overflow-hidden rounded-3xl border border-default bg-surface">
+        <div className="overflow-hidden rounded-3xl border border-border bg-card">
           <table className="min-w-full text-left text-sm text-muted-foreground">
-            <thead className="bg-surface-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            <thead className="bg-muted text-xs uppercase tracking-[0.3em] text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">模型</th>
                 <th className="px-4 py-3">Provider</th>
@@ -810,7 +810,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
             </thead>
             <tbody>
               {modelsList.map((model) => (
-                <tr key={model.slug} className="border-t border-default hover:bg-surface-2">
+                <tr key={model.slug} className="border-t border-border hover:bg-accent">
                     <td className="px-4 py-3 text-foreground">
                       <div className="flex items-center gap-2">
                         <div>
@@ -888,7 +888,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
 
       {pricingModal.open && pricingModal.model && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">
-          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-default bg-surface p-6">
+          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-border bg-popover p-6">
             <header className="space-y-1">
               <h3 className="text-lg font-semibold text-foreground">设置价格</h3>
               <p className="text-xs text-muted-foreground">
@@ -967,7 +967,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
 
       {modelSelector.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">
-          <div className="w-full max-w-3xl space-y-4 rounded-3xl border border-default bg-surface p-6">
+          <div className="w-full max-w-3xl space-y-4 rounded-3xl border border-border bg-popover p-6">
             <header className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
@@ -994,11 +994,11 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                 正在拉取远程模型...
               </div>
             ) : (
-              <div className="max-h-[360px] space-y-3 overflow-y-auto rounded-2xl border border-default p-4">
+              <div className="max-h-[360px] space-y-3 overflow-y-auto rounded-2xl border border-border p-4">
                 {modelSelector.models.map((model) => (
                   <label
                     key={model.id}
-                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-default bg-surface/60 backdrop-blur-sm p-4"
+                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-4"
                   >
                     <input
                       type="checkbox"

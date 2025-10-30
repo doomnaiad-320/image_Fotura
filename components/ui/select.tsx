@@ -13,10 +13,10 @@ export const Select = forwardRef<HTMLSelectElement, Props>(
     return (
       <select
         ref={ref}
-className={cn(
-          "w-full appearance-none rounded-full border px-4 py-2 text-sm font-medium text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-foreground)]",
+        className={cn(
+          "w-full appearance-none rounded-full border px-4 py-2 text-sm font-medium text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           variant === "solid"
-            ? "border-default bg-[var(--color-surface)]"
+            ? "border-input bg-background"
             : "border-transparent bg-transparent text-muted-foreground",
           className
         )}

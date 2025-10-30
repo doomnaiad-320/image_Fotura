@@ -134,15 +134,15 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-scrim">
       <div
-        className="w-full sm:max-w-2xl bg-surface rounded-t-2xl sm:rounded-2xl border border-default shadow-2xl"
+        className="w-full sm:max-w-2xl bg-popover rounded-t-2xl sm:rounded-2xl border border-border shadow-2xl"
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-default">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
           <h3 className="text-base sm:text-lg font-semibold">发布到首页</h3>
           <button
-            className="p-3 sm:p-2 rounded-lg hover:bg-surface-2 touch-manipulation"
+            className="p-3 sm:p-2 rounded-lg hover:bg-accent touch-manipulation"
             onClick={onClose}
             aria-label="关闭"
           >
@@ -156,13 +156,13 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-h-[70vh] overflow-y-auto">
           {/* 示例图 */}
           {message.imageUrl && (
-            <div className="rounded-xl overflow-hidden border border-default shadow-sm">
+            <div className="rounded-xl overflow-hidden border border-border shadow-sm">
               <img src={message.imageUrl} alt={title} className="w-full max-h-80 object-contain bg-black/5" />
             </div>
           )}
 
           {/* 模型信息 */}
-          <div className="rounded-xl border border-default bg-surface-2 p-3 sm:p-4">
+          <div className="rounded-xl border border-border bg-muted p-3 sm:p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -177,10 +177,10 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
           </div>
 
           {/* Prompt 折叠区 */}
-          <div className="rounded-xl border border-default bg-surface-2 overflow-hidden">
+          <div className="rounded-xl border border-border bg-muted overflow-hidden">
             <button
               onClick={() => setPromptExpanded(!promptExpanded)}
-              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-surface-3 transition-colors"
+              className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-accent transition-colors"
             >
               <div className="flex items-center gap-2 text-sm font-medium">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -199,7 +199,7 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
             </button>
             {promptExpanded && (
               <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-0">
-                <div className="text-sm text-foreground bg-surface-3 rounded-lg p-3 max-h-48 overflow-y-auto">
+                <div className="text-sm text-foreground bg-muted rounded-lg p-3 max-h-48 overflow-y-auto">
                   {message.editChain?.currentFullPrompt || message.editChain?.fullPrompt || message.content || '无提示词'}
                 </div>
               </div>
@@ -215,7 +215,7 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
               标题
             </label>
             <input
-              className="w-full rounded-xl border border-default bg-surface-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               placeholder="给你的作品取个名字"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -231,7 +231,7 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
               标签（用英文逗号分隔）
             </label>
             <input
-              className="w-full rounded-xl border border-default bg-surface-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               placeholder="portrait, cyberpunk, neon"
               value={tagsText}
               onChange={(e) => setTagsText(e.target.value)}
@@ -252,7 +252,7 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
                 min="0"
                 max="1000"
                 step="10"
-                className="flex-1 rounded-xl border border-default bg-surface-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 placeholder="设置为 0 表示免费复用"
                 value={reusePoints}
                 onChange={(e) => setReusePoints(Math.max(0, parseInt(e.target.value) || 0))}
@@ -265,7 +265,7 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
           </div>
 
           {/* 是否公开 */}
-          <div className="flex items-center justify-between rounded-xl border border-default bg-surface-2 px-4 py-3">
+          <div className="flex items-center justify-between rounded-xl border border-border bg-muted px-4 py-3">
             <div>
               <p className="text-sm font-medium">公开发布</p>
               <p className="text-xs text-muted-foreground">关闭后仅自己可见（后续实现）</p>
@@ -283,11 +283,11 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-4 sm:px-6 py-4 border-t border-default">
+        <div className="flex gap-3 px-4 sm:px-6 py-4 border-t border-border">
           <button
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 min-h-[48px] rounded-xl border border-default bg-surface-2 text-foreground text-base font-medium touch-manipulation disabled:opacity-60"
+            className="flex-1 min-h-[48px] rounded-xl border border-input bg-muted text-foreground text-base font-medium touch-manipulation disabled:opacity-60"
           >
             取消
           </button>

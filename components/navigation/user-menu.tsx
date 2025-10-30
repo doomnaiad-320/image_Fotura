@@ -31,9 +31,9 @@ export function UserMenu({ user }: Props) {
 
   return (
     <div className="relative" ref={menuRef}>
-      <button
+<button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full border border-default bg-surface px-3 py-1.5 hover:bg-surface-2"
+        className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 hover:bg-muted"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -49,17 +49,17 @@ export function UserMenu({ user }: Props) {
         </svg>
       </button>
 
-      {open && (
+{open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-default bg-surface p-1 shadow-xl"
+          className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-popover p-1 shadow-xl"
         >
           <div className="px-3 py-2 text-xs text-muted-foreground">
             {user.email}
           </div>
           <Link
             href="/me"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
             onClick={() => setOpen(false)}
           >
             <UserCircleIcon className="h-4 w-4" />
@@ -91,7 +91,7 @@ export function UserMenu({ user }: Props) {
               管理后台
             </Link>
           )}
-          <div className="my-1 h-px bg-default" />
+<div className="my-1 h-px bg-border" />
           <button
             onClick={() => { setOpen(false); signOut({ callbackUrl: "/" }); }}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-500 hover:bg-red-500/10"

@@ -27,7 +27,16 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('ui:bg-theme') || 'dark';
+                  var saved = localStorage.getItem('ui:bg-theme');
+                  var theme;
+                  if (saved === 'auto') {
+                    var h = new Date().getHours();
+                    theme = (h >= 7 && h < 19) ? 'light' : 'dark';
+                  } else if (saved === 'light' || saved === 'dark') {
+                    theme = saved;
+                  } else {
+                    theme = 'dark';
+                  }
                   document.documentElement.setAttribute('data-theme', theme);
                 } catch (e) {}
               })();

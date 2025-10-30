@@ -19,6 +19,7 @@ export type AssetFeedProps = {
   initialState: AssetFilterState;
   isAuthenticated?: boolean;
   userCredits?: number;
+  basePath?: string; // 新增：用于更新 URL 时的基础路径（默认首页）
 };
 
 const DEFAULT_STATE: AssetFilterState = {
@@ -31,7 +32,8 @@ export function AssetFeed({
   initialCursor,
   initialState = DEFAULT_STATE,
   isAuthenticated,
-  userCredits
+  userCredits,
+  basePath = "/"
 }: AssetFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -140,9 +142,9 @@ export function AssetFeed({
       params.set("type", state.type);
       params.set("sort", state.sort);
       params.delete("cursor");
-      router.replace(`/?${params.toString()}`);
+      router.replace(`${basePath}?${params.toString()}`);
     },
-    [router, searchParams]
+    [router, searchParams, basePath]
   );
 
   const handleFilterChange = useCallback(
