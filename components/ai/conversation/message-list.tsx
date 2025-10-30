@@ -11,6 +11,7 @@ interface MessageListProps {
   onTimelineNodeClick?: (messageId: string, nodeId: string) => void;
   onRetry?: (messageId: string) => void;
   onCancel?: (messageId: string) => void;
+  onImageLoad?: (messageId: string) => void;
 }
 
 export function MessageList({
@@ -19,7 +20,8 @@ export function MessageList({
   onPublish,
   onTimelineNodeClick,
   onRetry,
-  onCancel
+  onCancel,
+  onImageLoad
 }: MessageListProps) {
   if (messages.length === 0) {
     return (
@@ -89,6 +91,7 @@ export function MessageList({
           }
           onRetry={onRetry ? () => onRetry(message.id) : undefined}
           onCancel={onCancel ? () => onCancel(message.id) : undefined}
+          onImageLoad={onImageLoad ? () => onImageLoad(message.id) : undefined}
         />
       ))}
     </div>

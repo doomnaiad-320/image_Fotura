@@ -223,6 +223,20 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     }
   }, [messages]);
 
+  // 输入区高度变化时，尝试滚动到底部避免遮挡
+  useEffect(() => {
+    const handler = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
+      if (distance < bottomPad + 200) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      }
+    };
+    window.addEventListener('input-area-resized', handler);
+    return () => window.removeEventListener('input-area-resized', handler);
+  }, [bottomPad]);
+
   // 确保登录
   const ensureLogin = useCallback(() => {
     if (!isAuthenticated) {
@@ -639,7 +653,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         try {
           const node = document.getElementById(`msg-${assistantMsgId}`);
           if (node) {
-            node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            node.scrollIntoView({ behavior: 'smooth', block: 'end' });
           } else if (scrollRef.current) {
             scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
           }
@@ -886,6 +900,16 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                 return;
               }
               ctrl.abort();
+            }}
+            onImageLoad={(loadedId) => {
+              const el = scrollRef.current;
+              if (!el) return;
+              const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
+              const lastId = messages[messages.length - 1]?.id;
+              // 如果用户本就在底部附近，或加载的是最后一条消息的图片，则滚到底
+              if (distance < bottomPad + 200 || loadedId === lastId) {
+                el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+              }
             }}
           />
         </div>

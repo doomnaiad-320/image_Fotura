@@ -13,6 +13,7 @@ interface MessageItemProps {
   onTimelineNodeClick?: (nodeId: string) => void;
   onRetry?: () => void;
   onCancel?: () => void;
+  onImageLoad?: () => void;
 }
 
 export function MessageItem({
@@ -21,7 +22,8 @@ export function MessageItem({
   onPublish,
   onTimelineNodeClick,
   onRetry,
-  onCancel
+  onCancel,
+  onImageLoad,
 }: MessageItemProps) {
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
@@ -180,6 +182,7 @@ export function MessageItem({
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
+                onLoad={() => onImageLoad?.()}
                 width={1024}
                 height={1024}
               />

@@ -90,6 +90,11 @@ export function InputArea({
     setCustomHeight(48);
     if (textareaRef.current) {
       textareaRef.current.style.height = '48px';
+      // 确保输入区收起后，消息列表底部露出
+      try {
+        const evt = new Event('input-area-resized');
+        window.dispatchEvent(evt);
+      } catch {}
     }
   };
 
