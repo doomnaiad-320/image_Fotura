@@ -86,8 +86,10 @@ export function InputArea({
     setUploadedImages([]);
     setImagePreviewUrls([]);
     
+    // 重置高度为默认值
+    setCustomHeight(48);
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = '48px';
     }
   };
 

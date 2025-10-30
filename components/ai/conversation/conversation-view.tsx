@@ -47,7 +47,23 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const { addHistory } = useLocalHistory();
   const dbSupported = isConversationDBSupported();
 
-
+  // 跟随输入区高度，给消息列表增加底部内边距，避免被 sticky 输入区遮挡
+  const inputStickyRef = useRef<HTMLDivElement>(null);
+  const [bottomPad, setBottomPad] = useState(96);
+  useEffect(() => {
+    const el = inputStickyRef.current;
+    if (!el) return;
+    const update = () => setBottomPad(el.offsetHeight || 96);
+    update();
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(() => update());
+      ro.observe(el);
+      return () => ro.disconnect();
+    } else {
+      const id = window.setInterval(update, 500);
+      return () => window.clearInterval(id);
+    }
+  }, []);
 
   // 获取积分余额
   const { data: balance, mutate: refreshBalance } = useSWR(
@@ -194,13 +210,16 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     }
   }, [dbSupported, isLoadingConversation]);
 
-  // 自动滚动到底部（仅在接近底部时）
+  // 自动滚动到底部（仅在接近底部时），并确保不被底部输入区遮挡
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    const hasGenerating = messages.some(m => m.isGenerating);
     const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
-    if (distance < 200) {
-      el.scrollTop = el.scrollHeight;
+    if (hasGenerating || distance < 200) {
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      });
     }
   }, [messages]);
 
@@ -479,6 +498,12 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     };
     setMessages(prev => [...prev, assistantMsg]);
 
+    // 立刻滚动到底部，显示“生成中”占位
+    setTimeout(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }, 0);
+
     // 重置父消息ID和继承提示词
     setParentMessageId(null);
     setInheritedPrompt('');
@@ -608,6 +633,18 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       setMessages(prev => prev.map(m =>
         m.id === assistantMsgId ? updatedAssistantMsg : m
       ));
+
+      // 滚动到新生成的图片位置，避免被输入框遮挡
+      setTimeout(() => {
+        try {
+          const node = document.getElementById(`msg-${assistantMsgId}`);
+          if (node) {
+            node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } else if (scrollRef.current) {
+            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+          }
+        } catch {}
+      }, 50);
       
       // 保存助手消息到 DB
       await saveMessageToDB(updatedAssistantMsg);
@@ -828,7 +865,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         {/* 消息列表（唯一滚动容器） */}
         <div
           ref={scrollRef}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 pb-0 no-scrollbar"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 no-scrollbar"
+          style={{ paddingBottom: `${bottomPad}px` }}
         >
           <MessageList
             messages={messages}
@@ -853,7 +891,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         </div>
 
         {/* 输入区域：吸附底部，保持可见（去边框） */}
-        <div className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <InputArea
               onSend={handleSend}
