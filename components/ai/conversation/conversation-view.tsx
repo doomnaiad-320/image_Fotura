@@ -1005,6 +1005,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         onClose={() => setIsFusionOpen(false)}
         onConfirm={async (userPrompt) => {
           try {
+            // 切换到对话视图
+            setActiveView('conversation');
+            
             // 调用融合接口
             const res = await httpFetch<{ finalPrompt: string }>(
               '/api/prompt/fuse',
