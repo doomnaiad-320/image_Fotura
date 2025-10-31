@@ -20,6 +20,7 @@ export type AssetFeedProps = {
   isAuthenticated?: boolean;
   userCredits?: number;
   basePath?: string; // 新增：用于更新 URL 时的基础路径（默认首页）
+  compact?: boolean; // 紧凑模式，隐藏筛选栏和自动加载
 };
 
 const DEFAULT_STATE: AssetFilterState = {
@@ -33,7 +34,8 @@ export function AssetFeed({
   initialState = DEFAULT_STATE,
   isAuthenticated,
   userCredits,
-  basePath = "/"
+  basePath = "/",
+  compact = false
 }: AssetFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -182,34 +184,37 @@ export function AssetFeed({
 
   return (
     <div className="space-y-6">
-      <AssetFilterBar value={filterState} onChange={handleFilterChange} />
+      {!compact && <AssetFilterBar value={filterState} onChange={handleFilterChange} />}
       <AssetMasonry
         assets={items}
         onToggleFavorite={handleToggleFavorite}
         isAuthenticated={isAuthenticated}
         userCredits={userCredits}
+        compact={compact}
       />
-      <div className="flex flex-col items-center gap-3">
-        {query.hasNextPage && (
-          <Button
-            variant="secondary"
-            onClick={() => query.fetchNextPage()}
-            loading={query.isFetchingNextPage}
-            className="w-full max-w-xs"
-          >
-            加载更多
-          </Button>
-        )}
-        <div
-          ref={sentinelRef}
-          className={cn(
-            "text-center text-xs text-gray-500",
-            query.isFetchingNextPage && "animate-pulse"
+      {!compact && (
+        <div className="flex flex-col items-center gap-3">
+          {query.hasNextPage && (
+            <Button
+              variant="secondary"
+              onClick={() => query.fetchNextPage()}
+              loading={query.isFetchingNextPage}
+              className="w-full max-w-xs"
+            >
+              加载更多
+            </Button>
           )}
-        >
-          {sentinelState}
+          <div
+            ref={sentinelRef}
+            className={cn(
+              "text-center text-xs text-gray-500",
+              query.isFetchingNextPage && "animate-pulse"
+            )}
+          >
+            {sentinelState}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

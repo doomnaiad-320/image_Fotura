@@ -9,9 +9,10 @@ export type AssetMasonryProps = {
   onToggleFavorite?: (assetId: string, nextState: boolean) => Promise<void>;
   isAuthenticated?: boolean;
   userCredits?: number;
+  compact?: boolean;
 };
 
-export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated, userCredits }: AssetMasonryProps) {
+export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated, userCredits, compact = false }: AssetMasonryProps) {
   if (assets.length === 0) {
     return (
 <div className="grid min-h-[320px] place-items-center rounded-3xl border border-dashed border-default py-24 text-muted-foreground">
@@ -21,7 +22,7 @@ export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated, userCr
   }
 
   return (
-    <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
+    <div className={compact ? "columns-2 gap-4 sm:columns-3 lg:columns-4" : "columns-1 gap-6 sm:columns-2 lg:columns-3"}>
       {assets.map((asset) => (
         <AssetCard
           key={asset.id}
@@ -29,6 +30,7 @@ export function AssetMasonry({ assets, onToggleFavorite, isAuthenticated, userCr
           onToggleFavorite={onToggleFavorite}
           isAuthenticated={isAuthenticated}
           userCredits={userCredits}
+          compact={compact}
         />
       ))}
     </div>

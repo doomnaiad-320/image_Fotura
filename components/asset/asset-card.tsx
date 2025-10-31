@@ -15,9 +15,10 @@ export type AssetCardProps = {
   onToggleFavorite?: (assetId: string, nextState: boolean) => Promise<void>;
   isAuthenticated?: boolean;
   userCredits?: number;
+  compact?: boolean;
 };
 
-export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredits = 0 }: AssetCardProps) {
+export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredits = 0, compact = false }: AssetCardProps) {
   const router = useRouter();
   const [optimisticFavorite, setOptimisticFavorite] = useState(asset.isFavorited);
   const favorited = optimisticFavorite;
@@ -46,6 +47,45 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
   const handleViewDetail = () => {
     router.push(`/assets/${asset.id}`);
   };
+
+  if (compact) {
+    // 紧凑模式：只显示图片和基本信息
+    return (
+<article className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <div 
+          className="relative w-full overflow-hidden cursor-pointer" 
+          onClick={handleViewDetail}
+        >
+          {asset.type === "video" ? (
+            <video
+              className="h-full w-full"
+              style={{ aspectRatio: asset.aspectRatio }}
+              poster={asset.coverUrl}
+              src={asset.videoUrl ?? undefined}
+              controls
+              preload="metadata"
+            />
+          ) : (
+            <Image
+              src={asset.coverUrl}
+              alt={asset.title}
+              width={640}
+              height={640 / asset.aspectRatio}
+              className="h-auto w-full object-cover"
+            />
+          )}
+          <div className="absolute left-2 top-2">
+<Badge className="border-border bg-muted/90 text-foreground backdrop-blur-sm text-[10px]">
+              {asset.type === "video" ? "视频" : "图片"}
+            </Badge>
+          </div>
+        </div>
+        <div className="px-3 py-3">
+<h3 className="line-clamp-2 text-sm font-medium leading-tight text-foreground">{asset.title}</h3>
+        </div>
+      </article>
+    );
+  }
 
   return (
 <article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card shadow transition hover:-translate-y-1">
