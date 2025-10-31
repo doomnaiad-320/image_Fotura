@@ -6,24 +6,24 @@
 /* Theme tokens (global): shadcn-like tokens + bridge to existing vars */
 :root {
   color-scheme: light;
-  /* HSL tokens (shadcn) */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  /* HSL tokens - Edit0 Light 主题 */
+  --background: 0 0% 96%;  /* #f5f5f5 - 浅灰背景 */
+  --foreground: 0 0% 23%;  /* #3a3a3a - 深灰文字 */
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 0 0% 96%;  /* #f5f5f5 */
+  --muted-foreground: 0 0% 50%;  /* #808080 - 中灰文字 */
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
+  --popover-foreground: 0 0% 23%;
 
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;  /* 纯白卡片 */
+  --card-foreground: 0 0% 23%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
+  --border: 0 0% 88%;  /* #e0e0e0 - 浅灰边框 */
+  --input: 0 0% 90%;  /* #e5e5e5 */
 
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 12 43% 59%;  /* #c17c68 - Edit0 橙红色 */
+  --primary-foreground: 0 0% 100%;
 
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -58,23 +58,24 @@ html[data-theme='light'] {
 
 html[data-theme='dark'] {
   color-scheme: dark;
-  --background: 224 71% 4%;
-  --foreground: 213 31% 91%;
+  /* Edit0 工作台 Dark 主题 - 更精确、更暗的匹配 */
+  --background: 0 0% 24%;       /* #3C3C3C - 主内容区背景 */
+  --foreground: 0 0% 88%;       /* #E0E0E0 - 主文字 */
 
-  --muted: 223 47% 11%;
-  --muted-foreground: 215.4 16.3% 56.9%;
+  --muted: 0 0% 18%;            /* #2E2E2E - 侧边栏背景 */
+  --muted-foreground: 0 0% 62%; /* #9E9E9E - 辅助文字 */
 
-  --popover: 224 71% 4%;
-  --popover-foreground: 215 20.2% 65.1%;
+  --popover: 0 0% 18%;
+  --popover-foreground: 0 0% 88%;
 
-  --card: 224 71% 4%;
-  --card-foreground: 213 31% 91%;
+  --card: 0 0% 24%;             /* #3C3C3C - 卡片背景 */
+  --card-foreground: 0 0% 88%;
 
-  --border: 216 34% 17%;
-  --input: 216 34% 17%;
+  --border: 0 0% 29%;           /* #4A4A4A - 边框 */
+  --input: 0 0% 0%;              /* #000000 - 输入框 */
 
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
+  --primary: 11 60% 64%;        /* #D9826D - 主按钮 */
+  --primary-foreground: 0 0% 100%;
 
   --secondary: 223 47% 11%;
   --secondary-foreground: 210 40% 98%;
@@ -116,6 +117,7 @@ body {
   .bg-app { background-color: var(--color-bg); }
   .bg-surface { background-color: var(--color-surface); }
   .bg-surface-2 { background-color: var(--color-surface-2); }
+  .bg-studio-dark { background-color: #272526; } /* Studio 对话页暗色背景 */
   .text-foreground { color: var(--color-foreground); }
   .text-muted-foreground { color: var(--color-muted-foreground); }
   .text-link { color: var(--color-link); }

@@ -869,7 +869,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   }
 
   return (
-    <div className="bg-app h-full">
+    <div className="h-full bg-app dark:bg-studio-dark">
       {/* 侧边栏（固定，桌面常显，移动遮罩抽屉） */}
       <ConversationSidebar
         conversations={conversations}

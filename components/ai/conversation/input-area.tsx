@@ -258,10 +258,10 @@ export function InputArea({
 
         {/* 主输入容器 */}
         <div
-          className={`relative rounded-2xl bg-muted/80 border-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)] transition-all duration-200 ${
+          className={`relative rounded-2xl bg-white dark:bg-black border-2 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.35)] transition-all duration-200 ${
             isFocused
-              ? 'border-orange-500 shadow-[0_-8px_24px_rgba(251,146,60,0.15)] dark:shadow-[0_-8px_24px_rgba(251,146,60,0.2)]'
-              : 'border-border hover:border-border/80 hover:shadow-[0_-6px_20px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_-6px_20px_rgba(0,0,0,0.35)]'
+              ? 'border-orange-500 shadow-[0_-8px_24px_rgba(251,146,60,0.15)] dark:shadow-[0_-8px_24px_rgba(251,146,60,0.25)]'
+              : 'border-[#e5e5e5] dark:border-[#505050] hover:border-[#d5d5d5] dark:hover:border-[#5a5a5a] hover:shadow-[0_-6px_20px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_-6px_20px_rgba(0,0,0,0.45)]'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {/* 拖动手柄 */}
