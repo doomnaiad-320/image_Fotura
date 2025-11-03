@@ -19,6 +19,7 @@ import { imageBlobStore } from '@/lib/storage/image-blob';
 import PublishDialog from './publish-dialog';
 import { AssetFeed } from '@/components/asset/asset-feed';
 import type { AssetListItem, AssetListResponse } from '@/lib/assets';
+import { HistorySidebar, type HistoryItem } from '../history-sidebar';
 
 interface ConversationViewProps {
   models: ModelOption[];
@@ -45,6 +46,11 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const [isFusionOpen, setIsFusionOpen] = useState(false);
   const [fusionBasePrompt, setFusionBasePrompt] = useState<string>("");
   const [fusionAsset, setFusionAsset] = useState<{ id: string; title: string; coverUrl?: string; size?: string } | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('conversation-history-sidebar-open');
+    return saved ? JSON.parse(saved) : true;
+  });
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -856,6 +862,65 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     toast.success(`已回退到节点，可以继续编辑`);
   }, [messages]);
 
+  // 历史侧边栏功能
+  const handleToggleHistory = useCallback(() => {
+    setIsHistoryOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem('conversation-history-sidebar-open', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const historyItems: HistoryItem[] = React.useMemo(() => {
+    return messages
+      .filter(m => m.role === 'assistant' && m.imageUrl && !m.isGenerating)
+      .map(m => ({
+        id: m.id,
+        url: m.imageUrl!,
+        title: m.content,
+        timestamp: m.timestamp,
+        model: m.generationParams?.modelName,
+        size: m.generationParams?.size
+      }));
+  }, [messages]);
+
+  const handleHistoryDownload = useCallback(async (item: HistoryItem) => {
+    try {
+      const response = await fetch(item.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aigc-${item.id}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('下载成功');
+    } catch (error) {
+      console.error(error);
+      toast.error('下载失败');
+    }
+  }, []);
+
+  const handleHistoryEdit = useCallback((item: HistoryItem) => {
+    const message = messages.find(m => m.id === item.id);
+    if (message) {
+      handleUseAsInput(item.id);
+      toast.success('已加载到编辑模式');
+    }
+  }, [messages, handleUseAsInput]);
+
+  const handleHistoryShare = useCallback((item: HistoryItem) => {
+    const message = messages.find(m => m.id === item.id);
+    if (message) {
+      handlePublish(item.id);
+    }
+  }, [messages, handlePublish]);
+
+  const handleHistoryDelete = useCallback((item: HistoryItem) => {
+    setMessages(prev => prev.filter(m => m.id !== item.id));
+    toast.success('已删除');
+  }, []);
+
   // 加载中状态
   if (isLoadingConversation) {
     return (
@@ -905,6 +970,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
             credits={balance?.credits}
+            onToggleHistory={handleToggleHistory}
           />
         </div>
 
@@ -946,12 +1012,16 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
                   }
                 }}
+                isHistoryOpen={isHistoryOpen}
               />
             </div>
 
             {/* 输入区域：吸附底部，保持可见（去边框） */}
             <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-              <div className="max-w-3xl mx-auto px-4 sm:px-6">
+              <div 
+                className="max-w-3xl mx-auto px-4 sm:px-6 transition-all duration-300"
+                style={{ marginRight: isHistoryOpen ? '420px' : 'auto' }}
+              >
                 <InputArea
                   onSend={handleSend}
                   disabled={!selectedModel || messages.some(m => m.isGenerating)}
@@ -1030,6 +1100,17 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             setIsFusionOpen(false);
           }
         }}
+      />
+
+      {/* 右侧历史侧边栏 */}
+      <HistorySidebar
+        items={historyItems}
+        isOpen={isHistoryOpen}
+        onToggle={handleToggleHistory}
+        onDownload={handleHistoryDownload}
+        onEdit={handleHistoryEdit}
+        onShare={handleHistoryShare}
+        onDelete={handleHistoryDelete}
       />
     </div>
   );

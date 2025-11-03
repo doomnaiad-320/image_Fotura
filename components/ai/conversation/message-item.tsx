@@ -166,7 +166,7 @@ export function MessageItem({
           <div className="px-4 pb-4 space-y-3">
             {/* 图片 */}
             <div 
-              className="relative rounded-lg overflow-hidden border border-border shadow-xl group cursor-pointer bg-black/5 aspect-square"
+              className="relative rounded-lg overflow-hidden border border-border shadow-xl group cursor-pointer bg-black/5 w-[70%] aspect-square"
               onClick={() => !message.isGenerating && setShowLightbox(true)}
               role="button"
               tabIndex={0}

@@ -12,6 +12,7 @@ interface MessageListProps {
   onRetry?: (messageId: string) => void;
   onCancel?: (messageId: string) => void;
   onImageLoad?: (messageId: string) => void;
+  isHistoryOpen?: boolean;
 }
 
 export function MessageList({
@@ -21,7 +22,8 @@ export function MessageList({
   onTimelineNodeClick,
   onRetry,
   onCancel,
-  onImageLoad
+  onImageLoad,
+  isHistoryOpen = false
 }: MessageListProps) {
   if (messages.length === 0) {
     return (
@@ -49,7 +51,12 @@ export function MessageList({
   const hiddenCount = messages.length - visibleMessages.length;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 px-4 sm:px-6">
+    <div 
+      className="mx-auto max-w-3xl space-y-4 px-4 sm:px-6 transition-all duration-300"
+      style={{ 
+        marginRight: isHistoryOpen ? '420px' : 'auto'
+      }}
+    >
       {hiddenCount > 0 && !showAll && (
         <div className="sticky top-0 z-10 -mt-2 pt-2">
           <button

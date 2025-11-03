@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { httpFetch } from "@/lib/http";
+import { HistorySidebar, type HistoryItem } from "./history-sidebar";
 
 export type ModelOption = {
   slug: string;
@@ -97,6 +98,11 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
   const [selectedImageModel, setSelectedImageModel] = useState<string | null>(null);
   const [referenceImage, setReferenceImage] = useState<File | null>(null);
   const [referencePreview, setReferencePreview] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const saved = localStorage.getItem("ai-history-sidebar-open");
+    return saved ? JSON.parse(saved) : true;
+  });
 
   const { data: balance, mutate: refreshBalance } = useSWR(
     isAuthenticated ? "/api/credits/balance" : null,
@@ -279,9 +285,61 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
     Boolean(imageSize) &&
     (mode === "txt2img" || Boolean(referenceImage));
 
+  const handleToggleHistory = () => {
+    setHistoryOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem("ai-history-sidebar-open", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const historyItems: HistoryItem[] = useMemo(() => {
+    return imageResults.map((item) => ({
+      ...item,
+      timestamp: parseInt(item.id.split("-")[2] ?? String(Date.now()), 10),
+      model: selectedImageModel ?? undefined,
+      size: imageSize
+    }));
+  }, [imageResults, selectedImageModel, imageSize]);
+
+  const handleDownload = async (item: HistoryItem) => {
+    try {
+      const response = await fetch(item.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `aigc-${item.id}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("下载成功");
+    } catch (error) {
+      console.error(error);
+      toast.error("下载失败");
+    }
+  };
+
+  const handleEdit = (item: HistoryItem) => {
+    setImagePrompt(item.title);
+    setMode("img2img");
+    toast.success("已加载到编辑模式");
+  };
+
+  const handleShare = async (item: HistoryItem) => {
+    toast.success("分享功能即将推出");
+    // TODO: 实现分享到首页的功能
+  };
+
+  const handleDelete = (item: HistoryItem) => {
+    setImageResults((prev) => prev.filter((img) => img.id !== item.id));
+    toast.success("已删除");
+  };
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-      <aside className="space-y-6">
+    <>
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+        {/* Left Sidebar - Input Panel */}
+        <aside className="space-y-6">
         <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-5">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500">生成模式</p>
@@ -431,7 +489,8 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
         </Button>
       </aside>
 
-      <section className="space-y-4">
+        {/* Center Section - Generation Results */}
+        <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">生成结果</h3>
           <span className="text-xs text-gray-500">
@@ -440,23 +499,43 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
               : "结果将展示在此处"}
           </span>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {imageResults.map((item) => (
             <div
               key={item.id}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-black/40"
+              className="group overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all hover:border-white/20"
             >
-              <img src={item.url} alt={item.title} className="w-full" />
-              <div className="p-3 text-sm text-gray-400">{item.title}</div>
+              <div className="aspect-square overflow-hidden">
+                <img
+                  src={item.url}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                />
+              </div>
+              <div className="p-3">
+                <p className="line-clamp-2 text-xs text-gray-400">{item.title}</p>
+              </div>
             </div>
           ))}
           {imageResults.length === 0 && (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-black/20 p-6 text-center text-xs text-gray-500 sm:col-span-2 xl:col-span-3">
-              生成结果将在这里展示，支持保存与下载。
+            <div className="rounded-3xl border border-dashed border-white/10 bg-black/20 p-8 text-center text-xs text-gray-500 sm:col-span-2 lg:col-span-3 2xl:col-span-4">
+              生成结果将在这里展示，查看历史记录请点击右侧按钮。
             </div>
           )}
         </div>
-      </section>
-    </div>
+        </section>
+      </div>
+
+      {/* Right Sidebar - History Panel (Fixed Position) */}
+      <HistorySidebar
+        items={historyItems}
+        isOpen={historyOpen}
+        onToggle={handleToggleHistory}
+        onDownload={handleDownload}
+        onEdit={handleEdit}
+        onShare={handleShare}
+        onDelete={handleDelete}
+      />
+    </>
   );
 }
