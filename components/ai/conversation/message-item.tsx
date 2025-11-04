@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import MessageActions from './message-actions';
-import EditChainTimeline from './edit-chain-timeline';
 import ImageLightbox from './image-lightbox';
 import type { ConversationMessage } from '@/types/conversation';
 
@@ -113,10 +111,26 @@ export function MessageItem({
               }
             } catch {}
 
-            // 任务1：AI 回复内容不再展示带有展开的提示词
-            // 对于助手消息，直接不展示文本内容块（仅展示图片与操作按钮）
-            if (isAssistant) {
-              return null;
+            // 助手消息：以带背景的卡片展示“提示词”，默认折叠
+            if (isAssistant && content) {
+              const pretty = parsed ? JSON.stringify(parsed, null, 2) : content;
+              return (
+                <div className="rounded-xl border border-default bg-surface-2 backdrop-blur p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">提示词</span>
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setAssistantCollapsed((v) => !v)}
+                      aria-label={assistantCollapsed ? '展开' : '收起'}
+                    >
+                      {assistantCollapsed ? '展开' : '收起'}
+                    </button>
+                  </div>
+                  <p className={`text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground ${assistantCollapsed ? 'line-clamp-3' : ''}`}>
+                    {pretty}
+                  </p>
+                </div>
+              );
             }
 
             // 用户消息：若为 JSON，采用折叠卡片；否则普通文本
@@ -203,24 +217,29 @@ export function MessageItem({
               )}
             </div>
 
-            {/* 编辑链时间轴 */}
-            {message.editChain && (
-              <EditChainTimeline
-                editChain={message.editChain}
-                onNodeClick={onTimelineNodeClick}
-              />
+            {/* 重新生成按钮 */}
+            {!message.isGenerating && onRetry && (
+              <div className="px-4 pt-1">
+                <button
+                  onClick={() => onRetry()}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v6h6M20 20v-6h-6M20 4l-6 6M4 20l6-6" />
+                  </svg>
+                  重新生成
+                </button>
+              </div>
             )}
 
-            {/* 操作按钮 */}
-            {!message.isGenerating && (
-              <MessageActions
-                onDownload={handleDownload}
-                onPublish={onPublish}
-                onViewPrompt={() => setShowPromptModal(true)}
-                hasPrompt={!!promptText}
-                published={message.published}
-                disabled={message.isGenerating}
-              />
+            {/* 编辑链时间轴（已隐藏） */}
+            {false && message.editChain && (
+              <div></div>
+            )}
+
+            {/* 操作按钮（已隐藏） */}
+            {false && !message.isGenerating && (
+              <div></div>
             )}
           </div>
         )}
