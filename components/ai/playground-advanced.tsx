@@ -724,6 +724,28 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         onShowFavorites={() => showFavorites()}
         onShowAll={() => showAll()}
         onToggleFavorite={(id) => toggleFavorite(id)}
+        onSubmitEdit={async (imageUrl, instruction, parentId, threadId) => {
+          try {
+            // 拉取图片并设为输入
+            const isHttp = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+            const proxyUrl = isHttp ? `/api/proxy/image?url=${encodeURIComponent(imageUrl)}` : imageUrl;
+            const blob = await fetch(proxyUrl, { cache: 'no-store' }).then(r => r.blob());
+            const file = new File([blob], `input-${Date.now()}.png`, { type: blob.type || 'image/png' });
+            handleImageSelect(file, imageUrl);
+            setMode('img2img');
+            // 记录链路
+            if (parentId) setParentHistoryId(parentId);
+            if (threadId) setCurrentThreadId(threadId);
+            // 设置提示词并触发生成
+            setImagePrompt(instruction);
+            setPromptOrigin('manual');
+            setGeneratedImageUrl(null);
+            setTimeout(() => { void handleImageGenerate(); }, 0);
+          } catch (e) {
+            console.error(e);
+            toast.error('发送失败');
+          }
+        }}
       />
 
       {/* Image Preview Modal */}

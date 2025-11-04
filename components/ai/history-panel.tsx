@@ -31,6 +31,8 @@ interface HistoryPanelProps {
   onShowFavorites?: () => void;
   onShowAll?: () => void;
   onToggleFavorite?: (id: string) => void;
+  // 新增：提交二次编辑
+  onSubmitEdit?: (imageUrl: string, instruction: string, parentId?: string, threadId?: string) => void;
 }
 
 // 根据 parentHistoryId 向上回溯构建当前项的编辑链（基础 -> 当前）
@@ -146,7 +148,7 @@ const HistoryItem: React.FC<{
       className={`flex items-center justify-center gap-1.5 py-1.5 px-3 text-xs font-medium rounded-lg transition-all duration-200 ${
         variant === 'primary'
           ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm hover:from-orange-600 hover:to-orange-700 hover:shadow-md' 
-          : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10'
+          : 'bg-surface-2 hover:bg-surface text-muted-foreground hover:text-foreground border border-default'
       }`}
     >
       {icon}
@@ -155,7 +157,7 @@ const HistoryItem: React.FC<{
   );
 
   return (
-    <div className="bg-black/40 rounded-xl border border-white/10 overflow-hidden hover:border-white/20 transition-colors">
+    <div className="bg-surface rounded-xl border border-default overflow-hidden hover:border-default/80 transition-colors">
       <div className="flex gap-3 p-3">
         {/* 左侧图片 - 100x100px */}
         <div className="flex-shrink-0">
@@ -170,13 +172,13 @@ const HistoryItem: React.FC<{
         {/* 右侧信息 */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
           {/* 时间 */}
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>{formatDate(item.timestamp)}</span>
             {item.mode && (
-              <span className="px-2 py-0.5 rounded-full bg-white/5 text-[10px]">
+              <span className="px-2 py-0.5 rounded-full bg-surface-2 text-[10px]">
                 {item.mode === 'txt2img' ? '文生图' : '图生图'}
               </span>
             )}
@@ -184,7 +186,7 @@ const HistoryItem: React.FC<{
           
           {/* 提示词 */}
           <div className="space-y-1">
-            <div className="text-xs text-gray-300 leading-relaxed break-words">
+            <div className="text-xs text-foreground/90 leading-relaxed break-words">
               {displayPrompt}
             </div>
             {shouldTruncate && (
@@ -215,18 +217,18 @@ const HistoryItem: React.FC<{
           <div className="flex items-center gap-2 text-xs">
             {item.modelName && (
               <>
-                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                 </svg>
-                <span className="text-gray-400">{item.modelName}</span>
+                <span className="text-muted-foreground">{item.modelName}</span>
               </>
             )}
             {item.size && (
-              <span className="text-gray-500">· {item.size}</span>
+              <span className="text-muted-foreground">· {item.size}</span>
             )}
             <button
               onClick={() => onToggleFavorite?.(item.id)}
-              className={`ml-auto text-xs ${item.favorite ? 'text-yellow-400' : 'text-gray-500'} hover:text-yellow-300`}
+              className={`ml-auto text-xs ${item.favorite ? 'text-yellow-400' : 'text-muted-foreground'} hover:text-yellow-300`}
               title={item.favorite ? '取消收藏' : '收藏'}
             >
               {item.favorite ? '★' : '☆'}
@@ -259,11 +261,71 @@ const HistoryItem: React.FC<{
           </div>
         </div>
       </div>
+
+      {/* 回退确认弹窗 */
+      {confirmNode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-sm animate-in fade-in duration-200" role="dialog" aria-modal="true">
+          <div className="bg-card rounded-xl shadow-2xl border border-default p-6 max-w-md mx-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-surface-2 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-foreground mb-2">回退到此节点？</h3>
+                <p className="text-sm text-muted-foreground mb-4">不会删除任何历史。确认后仅加载该节点的图片与提示词到输入区，下一次生成会作为新节点。</p>
+                <div className="bg-surface-2 rounded-lg p-3 mb-4 border border-default">
+                  <p className="text-xs text-muted-foreground mb-2">目标节点:</p>
+                  <div className="flex items-start gap-3">
+                    <img src={confirmNode.url} alt="目标缩略图" className="w-16 h-16 rounded-md object-cover border border-default" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-foreground/80 mb-2">第{confirmStep}步 · {confirmNode.title || confirmNode.prompt?.slice(0, 60) || '无标题'}</p>
+                      <label className="text-[11px] text-muted-foreground mb-1 block">二次编辑指令</label>
+                      <textarea
+                        value={confirmInput}
+                        onChange={(e) => setConfirmInput(e.target.value)}
+                        rows={3}
+                        placeholder="描述需要修改的内容，例如：增强光影，对焦主体，去背景。"
+                        className="w-full resize-none rounded-md bg-surface border border-default px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirmNode(null)}
+                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-surface-2 hover:bg-surface text-foreground text-sm font-medium transition-colors"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={() => { onUseImage(confirmNode.url); setConfirmNode(null); }}
+                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-surface hover:bg-surface-2 text-foreground text-sm font-medium transition-colors"
+                  >
+                    仅加载为输入
+                  </button>
+                  <button
+                    onClick={() => { onSubmitEdit?.(confirmNode.url, confirmInput, confirmNode.id, confirmNode.threadId); setConfirmNode(null); setConfirmInput(""); }}
+                    disabled={!confirmInput.trim()}
+                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    继续编辑并发送
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, onUseImage, onSearch, onShowFavorites, onShowAll, onToggleFavorite }) => {
+  const [confirmNode, setConfirmNode] = React.useState<GeneratedImage | null>(null);
+  const [confirmStep, setConfirmStep] = React.useState<number>(0);
+  const [confirmInput, setConfirmInput] = React.useState<string>("");
   const handleDownload = (url: string) => {
     const filename = `generated-image-${Date.now()}.png`;
     downloadImage(url, filename);
@@ -273,19 +335,23 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
     <div className={`fixed inset-0 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className={`absolute top-0 right-0 h-full w-full max-w-[560px] bg-gray-900 border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="p-4 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
+      <div className={`absolute top-0 right-0 h-full w-full max-w-[560px] bg-card border-l border-default shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="p-4 border-b border-default flex items-center gap-3 flex-shrink-0">
           <h2 className="text-xl font-semibold text-orange-500">生成历史</h2>
+          <span className="hidden sm:inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+            点击节点回退并继续编辑，不会删除历史
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <input
-              className="rounded-md bg-black/40 px-2 py-1 text-sm text-gray-200 border border-white/10 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="rounded-md bg-surface-2 px-2 py-1 text-sm text-foreground border border-default focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="搜索提示词..."
               onChange={(e) => onSearch?.(e.target.value)}
             />
-            <button className="text-xs text-gray-400 hover:text-white" onClick={() => onShowAll?.()}>全部</button>
-            <button className="text-xs text-gray-400 hover:text-white" onClick={() => onShowFavorites?.()}>收藏</button>
+            <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => onShowAll?.()}>全部</button>
+            <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => onShowFavorites?.()}>收藏</button>
           </div>
-          <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-1 rounded-full text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors">
              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
@@ -294,7 +360,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
 
         <div className="flex-grow overflow-y-auto p-4">
           {history.length === 0 ? (
-            <div className="text-center text-gray-400 pt-10 flex flex-col items-center gap-4">
+            <div className="text-center text-muted-foreground pt-10 flex flex-col items-center gap-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -308,12 +374,29 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
                     <div key={node.id} className="flex items-stretch gap-3">
                       {/* 竖向时间轴 */}
                       <div className="w-8 flex flex-col items-center">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border ${
-                          idx === chain.length - 1
-                            ? 'bg-orange-500 text-white border-orange-400 ring-2 ring-orange-500/30'
-                            : 'bg-white/5 text-gray-300 border-white/10'
-                        }`}>
-                          {node.step ?? (idx + 1)}
+                        <div className="relative group">
+                          <button
+                            onClick={() => { setConfirmNode(node); setConfirmStep(node.step ?? (idx + 1)); }}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
+                              idx === chain.length - 1
+                                ? 'bg-orange-500 text-white border-orange-400 ring-2 ring-orange-500/30'
+                                : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+                            }`}
+                            title={`回退到第${(node.step ?? (idx + 1))}步`}
+                          >
+                            {node.step ?? (idx + 1)}
+                          </button>
+                          {/* Tooltip */}
+                          <div className="absolute left-8 top-1/2 -translate-y-1/2 hidden group-hover:block z-10">
+                            <div className="bg-surface text-foreground text-xs rounded-md px-3 py-2 shadow-xl border border-default max-w-xs">
+                              <p className="font-medium mb-1">回退到第{node.step ?? (idx + 1)}步</p>
+                              <p className="opacity-80">加载该步图片与提示词为输入，新的生成将成为第{(node.step ?? (idx + 1)) + 1}步。</p>
+                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-surface border-l border-t border-default rotate-45"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-1 text-[10px] text-gray-500 h-3">
+                          {idx === 0 ? '原图' : (idx === chain.length - 1 ? '当前步骤' : '')}
                         </div>
                         {idx < chain.length - 1 && (
                           <div className="flex-1 w-0.5 bg-white/10"></div>
