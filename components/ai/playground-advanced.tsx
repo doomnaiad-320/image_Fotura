@@ -724,22 +724,39 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         onShowFavorites={() => showFavorites()}
         onShowAll={() => showAll()}
         onToggleFavorite={(id) => toggleFavorite(id)}
-        onSubmitEdit={async (imageUrl, instruction, parentId, threadId) => {
+        onSubmitEdit={async (imageUrl, instruction, parentId, threadId, payload) => {
           try {
-            // 拉取图片并设为输入
-            const isHttp = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
-            const proxyUrl = isHttp ? `/api/proxy/image?url=${encodeURIComponent(imageUrl)}` : imageUrl;
-            const blob = await fetch(proxyUrl, { cache: 'no-store' }).then(r => r.blob());
-            const file = new File([blob], `input-${Date.now()}.png`, { type: blob.type || 'image/png' });
-            handleImageSelect(file, imageUrl);
+            // 选择输入图片：优先使用用户上传，其次使用节点图片
+            let inputFile: File | null = null;
+            if (payload?.images && payload.images[0]) {
+              inputFile = payload.images[0];
+            } else {
+              const isHttp = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+              const proxyUrl = isHttp ? `/api/proxy/image?url=${encodeURIComponent(imageUrl)}` : imageUrl;
+              const blob = await fetch(proxyUrl, { cache: 'no-store' }).then(r => r.blob());
+              inputFile = new File([blob], `input-${Date.now()}.png`, { type: blob.type || 'image/png' });
+            }
+            if (inputFile) {
+              const tmpUrl = URL.createObjectURL(inputFile);
+              handleImageSelect(inputFile, tmpUrl);
+            }
             setMode('img2img');
-            // 记录链路
+            // 应用链路
             if (parentId) setParentHistoryId(parentId);
             if (threadId) setCurrentThreadId(threadId);
+            // 应用高级参数（若提供）
+            if (payload?.options?.aspectRatio) {
+              setAspectRatio(payload.options.aspectRatio);
+            }
+            if (payload?.options?.size) {
+              setImageSize(payload.options.size);
+            }
             // 设置提示词并触发生成
             setImagePrompt(instruction);
             setPromptOrigin('manual');
             setGeneratedImageUrl(null);
+            // 关闭历史抽屉
+            setIsHistoryOpen(false);
             setTimeout(() => { void handleImageGenerate(); }, 0);
           } catch (e) {
             console.error(e);

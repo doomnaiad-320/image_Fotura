@@ -1115,11 +1115,14 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         onEdit={handleHistoryEdit}
         onShare={handleHistoryShare}
         onDelete={handleHistoryDelete}
-        onSubmitEdit={(item, instruction) => {
+        onSubmitEdit={(item, instruction, payload) => {
           // 设置父节点并直接发送
           setParentMessageId(item.id);
           setInheritedPrompt(instruction);
-          void handleSend(instruction);
+          // 关闭历史并切回对话视图
+          setIsHistoryOpen(false);
+          setActiveView('conversation');
+          void handleSend(instruction, payload?.images, payload?.options);
         }}
       />
     </div>

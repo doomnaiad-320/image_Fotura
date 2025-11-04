@@ -3,6 +3,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Download, Edit, Share2, Trash2 } from "lucide-react";
+import BasePromptInput from "./common/base-prompt-input";
+
+// 高级选项预设（与对话页一致）
+const RATIO_OPTIONS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
+const SIZE_PRESETS: Record<string, string[]> = {
+  "1:1": ["512x512", "768x768", "1024x1024"],
+  "3:4": ["576x768", "768x1024"],
+  "4:3": ["768x576", "1024x768"],
+  "9:16": ["720x1280", "864x1536"],
+  "16:9": ["1280x720", "1536x864"],
+};
 
 export type HistoryItem = {
   id: string;
@@ -27,7 +38,7 @@ type Props = {
   onDelete?: (item: HistoryItem) => void;
   onItemClick?: (item: HistoryItem) => void;
   // 新增：提交二次编辑（会话/工作台实现发送给 AI）
-  onSubmitEdit?: (item: HistoryItem, instruction: string) => void;
+  onSubmitEdit?: (item: HistoryItem, instruction: string, payload?: { images?: File[]; options?: { size?: string; aspectRatio?: string } }) => void;
 };
 
 // 根据 parentHistoryId 向上回溯构建当前项的编辑链（基础 -> 当前）
@@ -91,12 +102,18 @@ export function HistorySidebar({
   onEdit,
   onShare,
   onDelete,
-  onItemClick
+  onItemClick,
+  onSubmitEdit
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmItem, setConfirmItem] = useState<HistoryItem | null>(null);
   const [confirmStep, setConfirmStep] = useState<number>(0);
   const [confirmInput, setConfirmInput] = useState<string>("");
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<string>("1:1");
+  const [imageSize, setImageSize] = useState<string>("1024x1024");
 
   const handleItemClick = (item: HistoryItem) => {
     setSelectedId(item.id);
@@ -285,20 +302,80 @@ export function HistorySidebar({
                 <img src={confirmItem.url} alt="目标缩略图" className="w-44 h-44 rounded-lg object-cover border border-default flex-shrink-0" />
                 <div className="flex-1 min-w-0 space-y-3">
                   <div>
-                    <label className="text-[11px] text-muted-foreground mb-1 block">节点摘要</label>
+<label className="text-[11px] text-muted-foreground mb-1 block">节点提示词</label>
                     <div className="max-h-28 overflow-auto rounded-md bg-surface-2 border border-default p-2 text-xs text-muted-foreground whitespace-pre-wrap">
                       {(confirmItem.title || '').slice(0, 200)}{(confirmItem.title && confirmItem.title.length > 200) ? '…' : ''}
                     </div>
                   </div>
                   <div>
                     <label className="text-[11px] text-muted-foreground mb-1 block">二次编辑指令</label>
-                    <textarea
+                    <BasePromptInput
                       value={confirmInput}
-                      onChange={(e) => setConfirmInput(e.target.value)}
-                      rows={4}
+                      onChange={setConfirmInput}
+                      onSubmit={(txt)=>{ onSubmitEdit?.(confirmItem!, txt, { images: uploadedFiles, options: { size: imageSize, aspectRatio } }); setConfirmItem(null); setConfirmInput(""); setUploadedFiles([]); setPreviewUrls([]); }}
+                      rowsMin={3}
+                      rowsMax={8}
+                      autoFocus
                       placeholder="描述需要修改的内容，例如：增强光影，对焦主体，去背景。"
-                      className="w-full resize-none rounded-md bg-surface border border-default px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      className="px-3 py-2 rounded-md bg-surface border border-default"
                     />
+                  </div>
+
+                  {/* 图片上传与预览 */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="sidebar-file-input"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e)=>{
+                          const files = Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/'));
+                          if (files.length===0) return;
+                          setUploadedFiles(prev=>[...prev, ...files]);
+                          files.forEach(file=>{
+                            const reader = new FileReader();
+                            reader.onload = (ev)=> setPreviewUrls(prev=>[...prev, String(ev.target?.result||'')]);
+                            reader.readAsDataURL(file);
+                          });
+                          e.currentTarget.value='';
+                        }}
+                      />
+                      <button onClick={()=>document.getElementById('sidebar-file-input')?.click()} className="px-2.5 py-1.5 text-xs rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground">上传图片{uploadedFiles.length>0?` (${uploadedFiles.length})`:''}</button>
+                      {uploadedFiles.length>0 && (
+                        <button onClick={()=>{ setUploadedFiles([]); setPreviewUrls([]); }} className="px-2.5 py-1.5 text-xs rounded-md bg-red-500/15 text-red-500 hover:bg-red-500/25 border border-red-500/30">清空</button>
+                      )}
+                      <button onClick={()=>setShowAdvanced(s=>!s)} className={`ml-auto px-2.5 py-1.5 text-xs rounded-md border ${showAdvanced? 'bg-orange-500/20 text-orange-500 border-orange-500/30':'bg-surface text-muted-foreground border-default hover:bg-surface-2'}`}>{showAdvanced?'隐藏高级':'高级选项'}</button>
+                    </div>
+                    {previewUrls.length>0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {previewUrls.map((url,idx)=> (
+                          <div key={idx} className="relative inline-block rounded-lg overflow-hidden border border-default">
+                            <img src={url} alt={`预览${idx+1}`} className="h-16 w-16 object-cover" />
+                            <button onClick={()=>{ setUploadedFiles(prev=>prev.filter((_,i)=>i!==idx)); setPreviewUrls(prev=>prev.filter((_,i)=>i!==idx)); }} className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-red-600">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {showAdvanced && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-muted-foreground">图片比例</label>
+                          <select value={aspectRatio} onChange={(e)=>{ setAspectRatio(e.target.value); const sizes = SIZE_PRESETS[e.target.value]||[]; if (sizes.length>0) setImageSize(sizes[0]); }} className="w-full rounded-md bg-surface border border-default px-2 py-1.5 text-sm">
+                            {RATIO_OPTIONS.map(r=> (<option key={r} value={r}>{r}</option>))}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-muted-foreground">图像尺寸</label>
+                          <select value={imageSize} onChange={(e)=>setImageSize(e.target.value)} className="w-full rounded-md bg-surface border border-default px-2 py-1.5 text-sm">
+                            {(SIZE_PRESETS[aspectRatio]||[]).map(s=> (<option key={s} value={s}>{s}</option>))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -314,7 +391,7 @@ export function HistorySidebar({
                   仅加载为输入
                 </button>
                 <button
-                  onClick={() => { onSubmitEdit?.(confirmItem, confirmInput); setConfirmItem(null); setConfirmInput(""); }}
+                  onClick={() => { onSubmitEdit?.(confirmItem!, confirmInput, { images: uploadedFiles, options: { size: imageSize, aspectRatio } }); setConfirmItem(null); setConfirmInput(""); setUploadedFiles([]); setPreviewUrls([]); }}
                   disabled={!confirmInput.trim()}
                   className="px-3 py-2 text-sm rounded-md bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 disabled:opacity-60 disabled:cursor-not-allowed"
                 >

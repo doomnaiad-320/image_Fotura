@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
+import BasePromptInput from "../common/base-prompt-input";
 
 interface InputAreaProps {
   onSend: (prompt: string, uploadedImages?: File[], options?: { size?: string; aspectRatio?: string }) => void;
@@ -98,13 +99,7 @@ export function InputArea({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // 使用 Shift + Enter 发送；Enter 换行
-    if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
+  // Shift+Enter 发送已内置在 BasePromptInput
 
   // 拖动处理
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
@@ -316,27 +311,20 @@ export function InputArea({
           </div>
 
           {/* 输入框 */}
-          <textarea
-            ref={textareaRef}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => {
-              setIsFocused(true);
-              // 移动端键盘弹起时，确保输入框在可视区域内
-              setTimeout(() => {
-                textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-              }, 50);
-            }}
-            onPaste={handlePaste}
-            onBlur={() => setIsFocused(false)}
-            placeholder={placeholder}
-            aria-label="输入提示词"
-            disabled={disabled}
-            rows={1}
-            style={{ height: `${customHeight}px`, minHeight: '48px', maxHeight: '600px' }}
-            className="w-full resize-none bg-transparent px-4 sm:px-5 pt-7 pb-3 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
-          />
+          <div className="px-4 sm:px-5 pt-7 pb-3">
+            <BasePromptInput
+              value={prompt}
+              onChange={setPrompt}
+              onSubmit={handleSubmit}
+              disabled={disabled}
+              placeholder={placeholder}
+              rowsMin={1}
+              rowsMax={25}
+              onPaste={handlePaste}
+              onHeightChange={(h)=>{ setCustomHeight(h); }}
+              className="pt-0 px-0"
+            />
+          </div>
 
           {/* 图片预览（多图片） */}
           {imagePreviewUrls.length > 0 && (
