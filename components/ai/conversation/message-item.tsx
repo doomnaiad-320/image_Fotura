@@ -96,12 +96,12 @@ export function MessageItem({
           isContentJSON
             ? 'flex-1 bg-card/80 backdrop-blur-sm text-foreground border border-border'
             : isUser 
-              ? 'max-w-[70%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground' 
+              ? 'max-w-[65%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground' 
               : 'flex-1 bg-card/80 backdrop-blur-sm text-foreground border border-border'
-        } rounded-2xl shadow-lg`}
+        } rounded-2xl shadow-lg ${isAssistant ? 'ml-[-12px]' : ''}`}
       >
         {/* 文本内容 */}
-        <div className="px-4 py-3">
+        <div className="px-3 py-3 sm:px-4">
           {/* 用户输入/助手生成提示词展示 */}
           {(() => {
             const content = message.content || '';
@@ -113,26 +113,10 @@ export function MessageItem({
               }
             } catch {}
 
-            // 助手消息：无论是否 JSON，都用折叠卡片（避免重复占位）
-            if (isAssistant && content) {
-              const pretty = parsed ? JSON.stringify(parsed, null, 2) : content;
-              return (
-                <div className="rounded-xl border border-border bg-muted/70 backdrop-blur p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">生成提示词</span>
-                    <button
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                      onClick={() => setAssistantCollapsed((v) => !v)}
-                      aria-label={assistantCollapsed ? '展开' : '收起'}
-                    >
-                      {assistantCollapsed ? '展开' : '收起'}
-                    </button>
-                  </div>
-                  <p className={`text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground ${assistantCollapsed ? 'line-clamp-3' : ''}`}>
-                    {pretty}
-                  </p>
-                </div>
-              );
+            // 任务1：AI 回复内容不再展示带有展开的提示词
+            // 对于助手消息，直接不展示文本内容块（仅展示图片与操作按钮）
+            if (isAssistant) {
+              return null;
             }
 
             // 用户消息：若为 JSON，采用折叠卡片；否则普通文本
@@ -163,10 +147,10 @@ export function MessageItem({
 
         {/* 图片结果 (仅助手消息) */}
         {isAssistant && message.imageUrl && (
-          <div className="px-4 pb-4 space-y-3">
+          <div className="px-4 pb-4 space-y-3 sm:space-y-4">
             {/* 图片 */}
             <div 
-              className="relative rounded-lg overflow-hidden border border-border shadow-xl group cursor-pointer bg-black/5 w-[70%] aspect-square"
+              className="relative rounded-lg overflow-hidden border border-border shadow-xl group cursor-pointer bg-black/5 w-[68%] sm:w-[60%] lg:w-[52%] mx-auto aspect-square"
               onClick={() => !message.isGenerating && setShowLightbox(true)}
               role="button"
               tabIndex={0}

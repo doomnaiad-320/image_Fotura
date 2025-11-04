@@ -85,7 +85,11 @@ async function historyStoreToGeneratedImage(
     timestamp: historyStore.timestamp,
     mode: historyStore.mode,
     size: historyStore.size,
-    favorite: historyStore.favorite
+    favorite: historyStore.favorite,
+    // 新增链路信息用于历史时间轴
+    threadId: historyStore.threadId,
+    parentHistoryId: historyStore.parentHistoryId,
+    step: historyStore.step
   };
   
   console.log('[historyStoreToGeneratedImage] 转换完成, 最终URL:', result.url.slice(0, 50) || '(空)');

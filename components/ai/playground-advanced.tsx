@@ -111,6 +111,9 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [promptOrigin, setPromptOrigin] = useState<'history' | 'manual'>('manual');
+  // 链路/父节点追踪（用于历史时间轴）
+  const [parentHistoryId, setParentHistoryId] = useState<string | null>(null);
+  const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   // 使用本地存储 Hook 替代内存状态
   const {
     history,
@@ -229,6 +232,9 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
       setCurrentImageFile(null);
       setMaskDataUrl(null);
       setIsMaskToolActive(false);
+      // 切换到文生图时，清空父节点和线程
+      setParentHistoryId(null);
+      setCurrentThreadId(null);
     }
   }, [mode]);
 
@@ -247,6 +253,8 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
     setCurrentImageFile(null);
     setMaskDataUrl(null);
     setIsMaskToolActive(false);
+    setParentHistoryId(null);
+    // 保留 currentThreadId，直到用户切换模式或开始新的链
   }, []);
 
   const handleMaskChange = useCallback((dataUrl: string | null) => {
@@ -281,6 +289,15 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
         // 切换到图生图模式
         setMode("img2img");
         
+        // 链路追踪：记录父节点与线程
+        if (historyItem) {
+          setParentHistoryId(historyItem.id);
+          setCurrentThreadId(historyItem.threadId || historyItem.id);
+        } else {
+          setParentHistoryId(null);
+          // 若来自外部图片，不设置线程，由首次保存后再开始新线程
+        }
+        
         // 如果找到历史记录，继承提示词
         if (historyItem && historyItem.prompt) {
           setImagePrompt(historyItem.prompt);
@@ -300,8 +317,16 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
       });
   }, [handleImageSelect, history, originalImageUrl]);
 
-  const addToHistory = useCallback(async (imageUrl: string, prompt: string, modelSlug?: string, genMode?: GenerationMode, size?: string) => {
-    console.log('[History] 开始保存历史记录:', { imageUrl: imageUrl.slice(0, 50), prompt: prompt.slice(0, 30), modelSlug, genMode });
+  const addToHistory = useCallback(async (
+    imageUrl: string,
+    prompt: string,
+    modelSlug?: string,
+    genMode?: GenerationMode,
+    size?: string,
+    parentId?: string,
+    threadId?: string
+  ) => {
+    console.log('[History] 开始保存历史记录:', { imageUrl: imageUrl.slice(0, 50), prompt: prompt.slice(0, 30), modelSlug, genMode, parentId, threadId });
     
     // 获取模型显示名称
     const model = imageModels.find(m => m.slug === modelSlug);
@@ -318,18 +343,24 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
           size: size,
           parameters: {
             aspectRatio: aspectRatio
-          }
+          },
+          // 链路字段
+          parentHistoryId: parentId,
+          threadId: threadId
         });
         console.log('[History] 保存成功! historyId:', historyId, 'localUrl:', localUrl.slice(0, 50));
         // 用本地URL更新结果展示，保证"作为输入"直接读取本地
         setGeneratedImageUrl(localUrl);
+        return { localUrl, historyId };
       } else {
         // 降级：使用内存存储（刷新会丢失）
         console.warn('[History] 浏览器不支持 IndexedDB，使用内存存储');
+        return { localUrl: imageUrl, historyId: `mem-${Date.now()}` } as any;
       }
     } catch (error) {
       console.error('[History] 保存历史记录失败:', error);
       // 不阻塞用户操作
+      throw error;
     }
   }, [imageModels, addLocalHistory, storageSupported, aspectRatio]);
 
@@ -422,7 +453,23 @@ export function AIPlaygroundAdvanced({ models, isAuthenticated }: Props) {
       setGeneratedImageUrl(imageUrl);
       
       // 异步保存到历史记录(会更新为本地URL)
-      await addToHistory(imageUrl, imagePrompt, selectedImageModel, mode, imageSize);
+      const { historyId } = await addToHistory(
+        imageUrl,
+        imagePrompt,
+        selectedImageModel,
+        mode,
+        imageSize,
+        // 额外链路信息
+        parentHistoryId ?? undefined,
+        currentThreadId ?? (parentHistoryId ?? undefined)
+      );
+      
+      // 更新父节点为当前，维持链路
+      setParentHistoryId(historyId);
+      // 如无线程，则以父节点或当前记录作为线程起点
+      if (!currentThreadId) {
+        setCurrentThreadId(parentHistoryId ?? historyId);
+      }
       
       await refreshBalance();
       toast.success("生成成功！");

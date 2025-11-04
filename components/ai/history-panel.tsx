@@ -13,6 +13,10 @@ export interface GeneratedImage {
   mode?: 'txt2img' | 'img2img'; // 生成模式
   size?: string; // 图片尺寸
   favorite?: boolean; // 是否收藏
+  // 链路信息（用于时间轴）
+  threadId?: string;
+  parentHistoryId?: string;
+  step?: number;
 }
 
 interface HistoryPanelProps {
@@ -29,6 +33,62 @@ interface HistoryPanelProps {
   onToggleFavorite?: (id: string) => void;
 }
 
+// 根据 parentHistoryId 向上回溯构建当前项的编辑链（基础 -> 当前）
+function buildChain(all: GeneratedImage[], current: GeneratedImage): GeneratedImage[] {
+  if (!all || all.length === 0) return [current];
+  const byId = new Map(all.map(i => [i.id, i] as const));
+  const chain: GeneratedImage[] = [];
+  let node: GeneratedImage | undefined = current;
+  let guard = 0;
+  while (node && guard < 1000) {
+    chain.unshift(node);
+    if (!node.parentHistoryId) break;
+    const parent = byId.get(node.parentHistoryId);
+    if (!parent) break;
+    node = parent;
+    guard++;
+  }
+  return chain;
+}
+
+// 构建所有链（按 threadId 或根节点分组），并按时间排序
+function buildChainsFromList(all: GeneratedImage[]): GeneratedImage[][] {
+  const byId = new Map(all.map(i => [i.id, i] as const));
+  const groups = new Map<string, GeneratedImage[]>();
+  const getRootKey = (item: GeneratedImage): string => {
+    if (item.threadId) return `thread:${item.threadId}`;
+    // 回溯到根节点
+    let cur: GeneratedImage | undefined = item;
+    let parent: GeneratedImage | undefined;
+    let guard = 0;
+    while (cur && cur.parentHistoryId && guard < 1000) {
+      parent = byId.get(cur.parentHistoryId);
+      if (!parent) break;
+      cur = parent;
+      guard++;
+    }
+    return `root:${cur?.id || item.id}`;
+  };
+  for (const item of all) {
+    const key = getRootKey(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(item);
+  }
+  const chains: GeneratedImage[][] = [];
+  for (const list of groups.values()) {
+    const unique = Array.from(new Map(list.map(i => [i.id, i] as const)).values());
+    unique.sort((a, b) => (a.step ?? 0) - (b.step ?? 0) || a.timestamp - b.timestamp);
+    chains.push(unique);
+  }
+  // 按每条链最后时间倒序，最近的链在上
+  chains.sort((a, b) => {
+    const ta = a[a.length - 1]?.timestamp || 0;
+    const tb = b[b.length - 1]?.timestamp || 0;
+    return tb - ta;
+  });
+  return chains;
+}
+
 const downloadImage = (url: string, filename: string) => {
   const link = document.createElement('a');
   link.href = url;
@@ -43,7 +103,8 @@ const HistoryItem: React.FC<{
   onUseImage: (url: string) => void; 
   onDownload: (url: string) => void;
   onToggleFavorite?: (id: string) => void;
-}> = ({ item, onUseImage, onDownload, onToggleFavorite }) => {
+  chain?: GeneratedImage[]; // 同一线程的节点序列
+}> = ({ item, onUseImage, onDownload, onToggleFavorite, chain }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   
   // 格式化时间
@@ -212,7 +273,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
     <div className={`fixed inset-0 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className={`absolute top-0 right-0 h-full w-full max-w-md bg-gray-900 border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`absolute top-0 right-0 h-full w-full max-w-[560px] bg-gray-900 border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-4 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
           <h2 className="text-xl font-semibold text-orange-500">生成历史</h2>
           <div className="ml-auto flex items-center gap-2">
@@ -240,16 +301,37 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
                 <p>暂无生成历史</p>
             </div>
           ) : (
-             <div className="space-y-4">
-                {history.map((item) => (
-                    <HistoryItem 
-                      key={item.id} 
-                      item={item} 
-                      onUseImage={onUseImage} 
-                      onDownload={handleDownload}
-                      onToggleFavorite={onToggleFavorite}
-                    />
-                ))}
+            <div className="space-y-8">
+              {buildChainsFromList(history).map((chain) => (
+                <div key={chain[0]?.id || Math.random()} className="space-y-4">
+                  {chain.map((node, idx) => (
+                    <div key={node.id} className="flex items-stretch gap-3">
+                      {/* 竖向时间轴 */}
+                      <div className="w-8 flex flex-col items-center">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border ${
+                          idx === chain.length - 1
+                            ? 'bg-orange-500 text-white border-orange-400 ring-2 ring-orange-500/30'
+                            : 'bg-white/5 text-gray-300 border-white/10'
+                        }`}>
+                          {node.step ?? (idx + 1)}
+                        </div>
+                        {idx < chain.length - 1 && (
+                          <div className="flex-1 w-0.5 bg-white/10"></div>
+                        )}
+                      </div>
+                      {/* 节点卡片 */}
+                      <div className="flex-1">
+                        <HistoryItem
+                          item={node}
+                          onUseImage={onUseImage}
+                          onDownload={handleDownload}
+                          onToggleFavorite={onToggleFavorite}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
           )}
         </div>

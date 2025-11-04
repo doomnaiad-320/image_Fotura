@@ -880,7 +880,11 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         title: m.content,
         timestamp: m.timestamp,
         model: m.generationParams?.modelName,
-        size: m.generationParams?.size
+        size: m.generationParams?.size,
+        // 为侧边栏时间轴提供链路信息
+        threadId: m.conversationId,
+        parentHistoryId: m.editChain?.parentMessageId,
+        step: m.editChain ? (m.editChain.edits?.length || 0) + 1 : 1
       }));
   }, [messages]);
 
