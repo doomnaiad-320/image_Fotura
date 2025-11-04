@@ -173,7 +173,7 @@ export function HistorySidebar({
                                 className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
                                   idx === chain.length - 1
                                     ? 'bg-orange-500 text-white border-orange-400 ring-2 ring-orange-500/30'
-                                    : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+                                    : 'bg-surface-2 text-foreground/80 border-default hover:bg-surface'
                                 }`}
                                 title={`回退到第${(item.step ?? (idx + 1))}步`}
                               >
@@ -192,7 +192,7 @@ export function HistorySidebar({
                               {idx === 0 ? '原图' : (idx === chain.length - 1 ? '当前步骤' : '')}
                             </div>
                             {idx < chain.length - 1 && (
-                              <div className="flex-1 w-0.5 bg-white/10"></div>
+                              <div className="flex-1 border-l border-default"></div>
                             )}
                           </div>
                           {/* 节点卡片 */}
@@ -226,25 +226,29 @@ export function HistorySidebar({
                                   </p>
                                 )}
                               </div>
-                              <div className="flex gap-1">
+                              <div className="flex gap-2">
                                 {onDownload && (
-                                  <Button variant="secondary" size="sm" onClick={() => onDownload(item)} className="flex-1 px-2" title="下载">
+                                  <Button variant="secondary" size="sm" onClick={() => onDownload(item)} className="flex-1 px-2 gap-1" title="下载">
                                     <Download className="h-3 w-3" />
+                                    <span className="text-xs">下载</span>
                                   </Button>
                                 )}
                                 {onEdit && (
-                                  <Button variant="secondary" size="sm" onClick={() => onEdit(item)} className="flex-1 px-2" title="编辑">
+                                  <Button variant="secondary" size="sm" onClick={() => onEdit(item)} className="flex-1 px-2 gap-1" title="编辑">
                                     <Edit className="h-3 w-3" />
+                                    <span className="text-xs">编辑</span>
                                   </Button>
                                 )}
                                 {onShare && (
-                                  <Button variant="secondary" size="sm" onClick={() => onShare(item)} className="flex-1 px-2" title="分享">
+                                  <Button variant="secondary" size="sm" onClick={() => onShare(item)} className="flex-1 px-2 gap-1" title="分享">
                                     <Share2 className="h-3 w-3" />
+                                    <span className="text-xs">发布</span>
                                   </Button>
                                 )}
                                 {onDelete && (
-                                  <Button variant="secondary" size="sm" onClick={() => onDelete(item)} className="flex-1 px-2 !bg-red-500/10 !text-red-500 hover:!bg-red-500/20 border-red-500/20" title="删除">
+                                  <Button variant="secondary" size="sm" onClick={() => onDelete(item)} className="flex-1 px-2 gap-1 !bg-red-500/10 !text-red-500 hover:!bg-red-500/20 border-red-500/20" title="删除">
                                     <Trash2 className="h-3 w-3" />
+                                    <span className="text-xs">删除</span>
                                   </Button>
                                 )}
                               </div>
@@ -264,54 +268,58 @@ export function HistorySidebar({
       {/* 回退确认弹窗 */}
       {confirmItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-sm animate-in fade-in duration-200" role="dialog" aria-modal="true">
-          <div className="bg-card rounded-xl shadow-2xl border border-default p-6 max-w-md mx-4 animate-in zoom-in-95 duration-200">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-surface-2 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
-                </svg>
+          <div className="bg-card rounded-2xl shadow-2xl border border-default w-[min(680px,92vw)] animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-default">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.333 4z"/></svg>
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">回退到第{confirmStep}步 <span className="text-[11px] font-normal text-muted-foreground">不会删除历史</span></h3>
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-foreground mb-2">回退到此节点？</h3>
-                <p className="text-sm text-muted-foreground mb-4">不会删除任何历史。确认后仅加载该节点的图片与提示词到输入区，下一次生成会作为新节点。</p>
-                <div className="bg-surface-2 rounded-lg p-3 mb-4 border border-default">
-                  <p className="text-xs text-muted-foreground mb-2">目标节点:</p>
-                  <div className="flex items-start gap-3">
-                    <img src={confirmItem.url} alt="目标缩略图" className="w-16 h-16 rounded-md object-cover border border-default" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-foreground/80 mb-2">第{confirmStep}步 · {confirmItem.title?.slice(0, 60) || '无标题'}</p>
-                      <label className="text-[11px] text-muted-foreground mb-1 block">二次编辑指令</label>
-                      <textarea
-                        value={confirmInput}
-                        onChange={(e) => setConfirmInput(e.target.value)}
-                        rows={3}
-                        placeholder="描述需要修改的内容，例如：增强光影，对焦主体，去背景。"
-                        className="w-full resize-none rounded-md bg-surface border border-default px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      />
+              <button onClick={() => setConfirmItem(null)} className="p-2 rounded-md hover:bg-surface-2 text-muted-foreground" aria-label="关闭">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              <div className="flex gap-4">
+                <img src={confirmItem.url} alt="目标缩略图" className="w-44 h-44 rounded-lg object-cover border border-default flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">节点摘要</label>
+                    <div className="max-h-28 overflow-auto rounded-md bg-surface-2 border border-default p-2 text-xs text-muted-foreground whitespace-pre-wrap">
+                      {(confirmItem.title || '').slice(0, 200)}{(confirmItem.title && confirmItem.title.length > 200) ? '…' : ''}
                     </div>
                   </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">二次编辑指令</label>
+                    <textarea
+                      value={confirmInput}
+                      onChange={(e) => setConfirmInput(e.target.value)}
+                      rows={4}
+                      placeholder="描述需要修改的内容，例如：增强光影，对焦主体，去背景。"
+                      className="w-full resize-none rounded-md bg-surface border border-default px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    />
+                  </div>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setConfirmItem(null)}
-                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-surface-2 hover:bg-surface text-foreground text-sm font-medium transition-colors"
-                  >
-                    取消
-                  </button>
-                  <button
-                    onClick={() => { onEdit ? onEdit(confirmItem) : onItemClick?.(confirmItem); setConfirmItem(null); }}
-                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-surface hover:bg-surface-2 text-foreground text-sm font-medium transition-colors"
-                  >
-                    仅加载为输入
-                  </button>
-                  <button
-                    onClick={() => { onSubmitEdit?.(confirmItem, confirmInput); setConfirmItem(null); setConfirmInput(""); }}
-                    disabled={!confirmInput.trim()}
-                    className="flex-1 px-4 py-2 rounded-lg border border-default bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    继续编辑并发送
-                  </button>
-                </div>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-default">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setConfirmItem(null)} className="px-3 py-2 text-sm rounded-md text-muted-foreground hover:bg-surface-2">取消</button>
+                <button
+                  onClick={() => { onEdit ? onEdit(confirmItem) : onItemClick?.(confirmItem); setConfirmItem(null); }}
+                  className="px-3 py-2 text-sm rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground"
+                >
+                  仅加载为输入
+                </button>
+                <button
+                  onClick={() => { onSubmitEdit?.(confirmItem, confirmInput); setConfirmItem(null); setConfirmInput(""); }}
+                  disabled={!confirmInput.trim()}
+                  className="px-3 py-2 text-sm rounded-md bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  继续编辑并发送
+                </button>
               </div>
             </div>
           </div>
