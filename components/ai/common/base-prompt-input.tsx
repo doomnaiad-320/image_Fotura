@@ -14,6 +14,7 @@ export interface BasePromptInputProps {
   className?: string;
   onHeightChange?: (height: number) => void;
   onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
+  minHeightPx?: number; // external min height control (e.g., drag to resize)
 }
 
 /**
@@ -32,7 +33,8 @@ export default function BasePromptInput({
   rowsMax = 10,
   className = "",
   onHeightChange,
-  onPaste
+  onPaste,
+  minHeightPx
 }: BasePromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,7 +44,8 @@ export default function BasePromptInput({
     if (!el) return;
     el.style.height = "auto";
     const lineHeight = 20; // 近似行高
-    const minH = rowsMin * lineHeight + 16; // padding 近似
+    const minHBase = rowsMin * lineHeight + 16; // padding 近似
+    const minH = typeof minHeightPx === 'number' ? Math.max(minHeightPx, minHBase) : minHBase;
     const maxH = rowsMax * lineHeight + 16;
     const next = Math.max(minH, Math.min(el.scrollHeight, maxH));
     el.style.height = `${next}px`;
@@ -51,7 +54,7 @@ export default function BasePromptInput({
       const evt = new Event("input-area-resized");
       window.dispatchEvent(evt);
     } catch {}
-  }, [value, rowsMin, rowsMax, onHeightChange]);
+  }, [value, rowsMin, rowsMax, onHeightChange, minHeightPx]);
 
   // 自动聚焦
   useEffect(() => {
@@ -94,7 +97,7 @@ export default function BasePromptInput({
       disabled={disabled}
       rows={rowsMin}
       className={baseClass}
-      style={{ minHeight: 24 * rowsMin, maxHeight: 24 * rowsMax }}
+      style={{ minHeight: (minHeightPx ?? 24 * rowsMin), maxHeight: 24 * rowsMax }}
     />
   );
 }

@@ -79,24 +79,13 @@ export function MessageItem({
       }`}
       style={{ contentVisibility: 'auto' as any, containIntrinsicSize: '300px' as any }}
     >
-      {/* 助手头像 */}
-      {isAssistant && (
-        <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-primary-foreground shadow-lg">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-        </div>
-      )}
-
-      {/* 消息内容 - ChatGPT 风格：用户消息限制 70%，AI 消息全宽 */}
+      {/* 消息内容：用户为气泡，AI 与背景融合 */}
       <div
         className={`${
-          isContentJSON
-            ? 'flex-1 bg-card/80 backdrop-blur-sm text-foreground border border-border'
-            : isUser 
-              ? 'max-w-[65%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground' 
-              : 'flex-1 bg-card/80 backdrop-blur-sm text-foreground border border-border'
-        } rounded-2xl shadow-lg ${isAssistant ? 'ml-[-12px]' : ''}`}
+          isUser
+            ? 'max-w-[65%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground rounded-2xl shadow-lg'
+            : 'flex-1 bg-transparent text-foreground'
+        }`}
       >
         {/* 文本内容 */}
         <div className="px-3 py-3 sm:px-4">
@@ -164,7 +153,7 @@ export function MessageItem({
           <div className="px-4 pb-4 space-y-3 sm:space-y-4">
             {/* 图片 */}
             <div 
-              className="relative rounded-lg overflow-hidden border border-border shadow-xl group cursor-pointer bg-black/5 w-[68%] sm:w-[60%] lg:w-[52%] mx-auto aspect-square"
+              className="relative rounded-lg overflow-hidden group cursor-pointer bg-transparent w-[68%] sm:w-[60%] lg:w-[52%] mx-auto aspect-square"
               onClick={() => !message.isGenerating && setShowLightbox(true)}
               role="button"
               tabIndex={0}
@@ -302,15 +291,6 @@ export function MessageItem({
         )}
       </div>
 
-      {/* 用户头像 */}
-      {isUser && (
-        <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-primary-foreground shadow-lg">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-      )}
-      
       {/* Lightbox 预览 */}
       {showLightbox && message.imageUrl && (
         <ImageLightbox

@@ -118,9 +118,6 @@ export function InputArea({
     const newHeight = Math.min(Math.max(dragStartHeight.current + deltaY, 48), 600);
     
     setCustomHeight(newHeight);
-    if (textareaRef.current) {
-      textareaRef.current.style.height = `${newHeight}px`;
-    }
   }, [isDragging]);
 
   const handleDragEnd = useCallback(() => {
@@ -224,11 +221,9 @@ export function InputArea({
       onDrop={handleDrop}
       onDragLeave={handleDragLeave}
     >
-      {/* 渐变遮罩层 */}
-      <div className="absolute inset-x-0 -top-12 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
       
       {/* 输入区容器 */}
-      <div className="bg-background py-4 sm:py-6">
+      <div className="bg-transparent py-4 sm:py-6">
         <div className="space-y-3">
         {/* 编辑模式提示 */}
         {isEditMode && inheritedPrompt && (
@@ -253,17 +248,13 @@ export function InputArea({
 
         {/* 主输入容器 */}
         <div
-          className={`relative rounded-2xl bg-white dark:bg-black border-2 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.35)] transition-all duration-200 ${
-            isFocused
-              ? 'border-orange-500 shadow-[0_-8px_24px_rgba(251,146,60,0.15)] dark:shadow-[0_-8px_24px_rgba(251,146,60,0.25)]'
-              : 'border-[#e5e5e5] dark:border-[#505050] hover:border-[#d5d5d5] dark:hover:border-[#5a5a5a] hover:shadow-[0_-6px_20px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_-6px_20px_rgba(0,0,0,0.45)]'
-          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`relative rounded-2xl bg-transparent dark:bg-transparent border border-border focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 shadow-none dark:shadow-none transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {/* 拖动手柄 */}
           <div
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
-            className={`absolute top-0 left-0 right-0 h-5 flex items-center justify-center cursor-ns-resize group rounded-t-2xl transition-all ${
+            className={`absolute top-0 left-0 right-0 h-5 flex items-center justify-center cursor-ns-resize group rounded-t-2xl transition-all z-10 ${
               isDragging 
                 ? 'bg-orange-500/15 border-b border-orange-500/30' 
                 : 'hover:bg-muted'
@@ -322,6 +313,7 @@ export function InputArea({
               rowsMax={25}
               onPaste={handlePaste}
               onHeightChange={(h)=>{ setCustomHeight(h); }}
+              minHeightPx={customHeight}
               className="pt-0 px-0"
             />
           </div>

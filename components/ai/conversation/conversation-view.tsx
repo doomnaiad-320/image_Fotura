@@ -1020,8 +1020,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
               />
             </div>
 
-            {/* 输入区域：吸附底部，保持可见（去边框） */}
-            <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-app/95 backdrop-blur supports-[backdrop-filter]:bg-app/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            {/* 输入区域：吸附底部，保持可见 */}
+            <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-transparent backdrop-blur-0 supports-[backdrop-filter]:bg-transparent" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
               <div 
                 className="max-w-3xl mx-auto px-4 sm:px-6 transition-all duration-300"
                 style={{ marginRight: isHistoryOpen ? '420px' : 'auto' }}
