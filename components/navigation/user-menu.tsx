@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 
 import type { CurrentUser } from "@/lib/auth";
 import { useBgTheme } from "@/components/theme/background-provider";
-import UserCircleIcon from "@/components/icons/user-circle";
+import { UserStar } from "lucide-react";
 
 type Props = {
   user: CurrentUser;
@@ -62,7 +62,7 @@ export function UserMenu({ user }: Props) {
 className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
             onClick={() => setOpen(false)}
           >
-            <UserCircleIcon className="h-4 w-4" />
+            <UserStar className="h-4 w-4" />
             个人主页
           </Link>
           <Link

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import type { Conversation } from '@/types/conversation';
 import type { CurrentUser } from '@/lib/auth';
-import UserCircleIcon from '@/components/icons/user-circle';
+import { UserStar } from 'lucide-react';
 
 interface ConversationSidebarProps {
   conversations: Conversation[];
@@ -311,7 +311,7 @@ export function ConversationSidebar({
                     href="/me"
                     className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg transition-colors"
                   >
-                    <UserCircleIcon className="w-4 h-4" />
+                    <UserStar className="w-4 h-4" />
                     个人主页
                   </Link>
                   

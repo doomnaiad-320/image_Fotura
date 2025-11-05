@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import ImageLightbox from './image-lightbox';
 import type { ConversationMessage } from '@/types/conversation';
+import { IterationCw } from 'lucide-react';
 
 interface MessageItemProps {
   message: ConversationMessage;
@@ -71,22 +72,50 @@ export function MessageItem({
   // 统一获取要展示/复制的完整 Prompt（兼容旧字段）
   const promptText = message.editChain?.currentFullPrompt ?? message.editChain?.fullPrompt ?? '';
 
+  const timeStr = new Date(message.timestamp).toLocaleString(undefined, {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+  const modelName = (message.generationParams?.modelName ?? 'AI').toString();
+  const modelInitial = (modelName.trim().charAt(0) || 'A').toUpperCase();
+
   return (
     <div
       id={`msg-${message.id}`}
-      className={`flex gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+      className={`flex animate-in fade-in slide-in-from-bottom-4 duration-300 ${
         isUser ? 'justify-end' : 'justify-start'
       }`}
       style={{ contentVisibility: 'auto' as any, containIntrinsicSize: '300px' as any }}
     >
-      {/* 消息内容：用户为气泡，AI 与背景融合 */}
-      <div
-        className={`${
-          isUser
-            ? 'max-w-[65%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground rounded-2xl shadow-lg'
-            : 'flex-1 bg-transparent text-foreground'
-        }`}
-      >
+      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} gap-2 w-full`}>
+        {/* 头像/名称/时间布局 */}
+        {isAssistant ? (
+          // AI：icon | (名称+时间) 左右排列，名称与时间为一组且左对齐
+          <div className="flex items-start gap-2">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-orange-500 to-orange-600 text-primary-foreground">
+              <span className="text-[12px] font-semibold">{modelInitial}</span>
+            </div>
+            <div className="flex flex-col items-start gap-0.5">
+              <div className="text-[12px] font-medium text-orange-400 leading-tight">
+                {modelName}
+              </div>
+              <div className="text-[11px] text-muted-foreground leading-tight">
+                {timeStr}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <></>
+        )}
+
+        {/* 内容区域：用户为气泡，AI 与背景融合；始终位于头像下方 */}
+        <div
+          className={`${
+            isUser
+              ? 'max-w-[65%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground rounded-2xl shadow-lg'
+              : 'flex-1 rounded-2xl bg-card/80 text-foreground shadow-none'
+          }`}
+        >
         {/* 文本内容 */}
         <div className="px-3 py-3 sm:px-4">
           {/* 用户输入/助手生成提示词展示 */}
@@ -213,9 +242,7 @@ export function MessageItem({
                   onClick={() => onRetry()}
                   className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v6h6M20 20v-6h-6M20 4l-6 6M4 20l6-6" />
-                  </svg>
+                  <IterationCw className="w-3.5 h-3.5" />
                   重新生成
                 </button>
               </div>
@@ -289,6 +316,8 @@ export function MessageItem({
             </div>
           </div>
         )}
+        </div>
+        {/* 列容器结束 */}
       </div>
 
       {/* Lightbox 预览 */}

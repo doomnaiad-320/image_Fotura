@@ -10,9 +10,9 @@ import {
   FileText,
   ImageIcon,
   RefreshCw,
-  Heart
+  Heart,
+  UserStar
 } from "lucide-react";
-import UserCircleIcon from "@/components/icons/user-circle";
 
 import { ensureAdmin } from "@/lib/ai/guards";
 import { getCurrentUser } from "@/lib/auth";
@@ -48,7 +48,7 @@ const navItems: Array<{ name: string; href: string; icon: any; sub?: boolean }> 
   {
     name: "个人主页",
     href: "/admin/me",
-    icon: UserCircleIcon,
+    icon: UserStar,
   },
   {
     name: "已发布",
