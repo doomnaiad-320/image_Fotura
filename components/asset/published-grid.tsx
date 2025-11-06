@@ -61,6 +61,7 @@ export function PublishedGrid({ initialItems, isAuthenticated }: PublishedGridPr
                 width={100}
                 height={100}
                 className="h-[100px] w-[100px] object-cover"
+                unoptimized
               />
             )}
           </div>

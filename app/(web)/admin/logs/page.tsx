@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import { Select } from "@/components/ui/select";
 
 type User = {
   id: string;
@@ -179,17 +180,17 @@ export default function AdminCreditLogsPage() {
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-muted-foreground">状态筛选：</label>
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-background border border-input rounded-lg text-foreground text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="w-48"
           >
             <option value="all">全部</option>
             <option value="success">成功</option>
             <option value="pending">处理中</option>
             <option value="failed">失败</option>
             <option value="refunded">已退款</option>
-          </select>
+          </Select>
         </div>
       </div>
 

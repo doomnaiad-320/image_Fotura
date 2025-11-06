@@ -2,6 +2,7 @@
 
 import React from 'react';
 import BasePromptInput from "./common/base-prompt-input";
+import { Select } from "@/components/ui/select";
 
 // 简化尺寸预设（与 InputArea 保持一致）
 const RATIO_OPTIONS = ["1:1","3:4","4:3","9:16","16:9"] as const;
@@ -278,130 +279,6 @@ const HistoryItem: React.FC<{
           </div>
         </div>
       </div>
-
-      {/* 回退确认弹窗 */
-      {confirmNode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-sm animate-in fade-in duration-200" role="dialog" aria-modal="true">
-          <div className="bg-card rounded-2xl shadow-2xl border border-default w-[min(680px,92vw)] animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-default">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
-                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">回退到第{confirmStep}步 <span className="text-[11px] font-normal text-muted-foreground">不会删除历史</span></h3>
-              </div>
-              <button onClick={() => setConfirmNode(null)} className="p-2 rounded-md hover:bg-surface-2 text-muted-foreground" aria-label="关闭">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-            {/* Body */}
-            <div className="p-5 space-y-4">
-              <div className="flex gap-4">
-                <img src={confirmNode.url} alt="目标缩略图" className="w-44 h-44 rounded-lg object-cover border border-default flex-shrink-0" />
-                <div className="flex-1 min-w-0 space-y-3">
-                  <div>
-<label className="text-[11px] text-muted-foreground mb-1 block">节点提示词</label>
-                    <div className="max-h-28 overflow-auto rounded-md bg-surface-2 border border-default p-2 text-xs text-muted-foreground whitespace-pre-wrap">
-                      {(confirmNode.prompt || confirmNode.title || '').slice(0, 200)}{(confirmNode.prompt && confirmNode.prompt.length > 200) ? '…' : ''}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-muted-foreground mb-1 block">二次编辑指令</label>
-                    <BasePromptInput
-                      value={confirmInput}
-                      onChange={setConfirmInput}
-                      onSubmit={(txt)=>{
-                        onSubmitEdit?.(confirmNode.url, txt, confirmNode.id, confirmNode.threadId, { images: uploadedFiles, options: { size: imageSize, aspectRatio } });
-                        setConfirmNode(null); setConfirmInput(""); setUploadedFiles([]); setPreviewUrls([]);
-                      }}
-                      rowsMin={3}
-                      rowsMax={8}
-                      autoFocus
-                      placeholder="描述需要修改的内容，例如：增强光影，对焦主体，去背景。"
-                      className="px-3 py-2 rounded-md bg-surface border border-default"
-                    />
-                  </div>
-
-                  {/* 图片上传与预览 */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        id="modal-file-input"
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(e)=>{
-                          const files = Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/'));
-                          if (files.length===0) return;
-                          setUploadedFiles(prev=>[...prev, ...files]);
-                          files.forEach(file=>{
-                            const reader = new FileReader();
-                            reader.onload = (ev)=> setPreviewUrls(prev=>[...prev, String(ev.target?.result||'')]);
-                            reader.readAsDataURL(file);
-                          });
-                          e.currentTarget.value='';
-                        }}
-                      />
-                      <button onClick={()=>document.getElementById('modal-file-input')?.click()} className="px-2.5 py-1.5 text-xs rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground">上传图片{uploadedFiles.length>0?` (${uploadedFiles.length})`:''}</button>
-                      {uploadedFiles.length>0 && (
-                        <button onClick={()=>{ setUploadedFiles([]); setPreviewUrls([]); }} className="px-2.5 py-1.5 text-xs rounded-md bg-red-500/15 text-red-500 hover:bg-red-500/25 border border-red-500/30">清空</button>
-                      )}
-                      <button onClick={()=>setShowAdvanced(s=>!s)} className={`ml-auto px-2.5 py-1.5 text-xs rounded-md border ${showAdvanced? 'bg-orange-500/20 text-orange-500 border-orange-500/30':'bg-surface text-muted-foreground border-default hover:bg-surface-2'}`}>{showAdvanced?'隐藏高级':'高级选项'}</button>
-                    </div>
-                    {previewUrls.length>0 && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {previewUrls.map((url,idx)=> (
-                          <div key={idx} className="relative inline-block rounded-lg overflow-hidden border border-default">
-                            <img src={url} alt={`预览${idx+1}`} className="h-16 w-16 object-cover" />
-                            <button onClick={()=>{ setUploadedFiles(prev=>prev.filter((_,i)=>i!==idx)); setPreviewUrls(prev=>prev.filter((_,i)=>i!==idx)); }} className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-red-600">
-                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {showAdvanced && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-[11px] text-muted-foreground">图片比例</label>
-                          <select value={aspectRatio} onChange={(e)=>{ setAspectRatio(e.target.value); const sizes = SIZE_PRESETS[e.target.value]||[]; if (sizes.length>0) setImageSize(sizes[0]); }} className="w-full rounded-md bg-surface border border-default px-2 py-1.5 text-sm">
-                            {RATIO_OPTIONS.map(r=> (<option key={r} value={r}>{r}</option>))}
-                          </select>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[11px] text-muted-foreground">图像尺寸</label>
-                          <select value={imageSize} onChange={(e)=>setImageSize(e.target.value)} className="w-full rounded-md bg-surface border border-default px-2 py-1.5 text-sm">
-                            {(SIZE_PRESETS[aspectRatio]||[]).map(s=> (<option key={s} value={s}>{s}</option>))}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-default">
-              <div className="flex items-center gap-2">
-                <button onClick={() => setConfirmNode(null)} className="px-3 py-2 text-sm rounded-md text-muted-foreground hover:bg-surface-2">取消</button>
-                <button
-                  onClick={() => { onUseImage(confirmNode.url); setConfirmNode(null); }}
-                  className="px-3 py-2 text-sm rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground"
-                >
-                  仅加载为输入
-                </button>
-                <button
-                  onClick={() => { onSubmitEdit?.(confirmNode.url, confirmInput, confirmNode.id, confirmNode.threadId, { images: uploadedFiles, options: { size: imageSize, aspectRatio } }); setConfirmNode(null); setConfirmInput(""); setUploadedFiles([]); setPreviewUrls([]); }}
-                  disabled={!confirmInput.trim()}
-                  className="px-3 py-2 text-sm rounded-md bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  继续编辑并发送
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -509,6 +386,130 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ isOpen, onClose, history, o
           )}
         </div>
       </div>
+
+      {/* 回退确认弹窗 */}
+      {confirmNode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-sm animate-in fade-in duration-200" role="dialog" aria-modal="true">
+          <div className="bg-card rounded-2xl shadow-2xl border border-default w-[min(680px,92vw)] animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-default">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">回退到第{confirmStep}步 <span className="text-[11px] font-normal text-muted-foreground">不会删除历史</span></h3>
+              </div>
+              <button onClick={() => setConfirmNode(null)} className="p-2 rounded-md hover:bg-surface-2 text-muted-foreground" aria-label="关闭">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              <div className="flex gap-4">
+                <img src={confirmNode.url} alt="目标缩略图" className="w-44 h-44 rounded-lg object-cover border border-default flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">节点提示词</label>
+                    <div className="max-h-28 overflow-auto rounded-md bg-surface-2 border border-default p-2 text-xs text-muted-foreground whitespace-pre-wrap">
+                      {(confirmNode.prompt || confirmNode.title || '').slice(0, 200)}{(confirmNode.prompt && confirmNode.prompt.length > 200) ? '…' : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">二次编辑指令</label>
+                    <BasePromptInput
+                      value={confirmInput}
+                      onChange={setConfirmInput}
+                      onSubmit={(txt)=>{
+                        onSubmitEdit?.(confirmNode.url, txt, confirmNode.id, confirmNode.threadId, { images: uploadedFiles, options: { size: imageSize, aspectRatio } });
+                        setConfirmNode(null); setConfirmInput(""); setUploadedFiles([]); setPreviewUrls([]);
+                      }}
+                      rowsMin={3}
+                      rowsMax={8}
+                      autoFocus
+                      placeholder="描述需要修改的内容，例如：增强光影，对焦主体，去背景。"
+                      className="px-3 py-2 rounded-md bg-surface border border-default"
+                    />
+                  </div>
+
+                  {/* 图片上传与预览 */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="modal-file-input"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e)=>{
+                          const files = Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/'));
+                          if (files.length===0) return;
+                          setUploadedFiles(prev=>[...prev, ...files]);
+                          files.forEach(file=>{
+                            const reader = new FileReader();
+                            reader.onload = (ev)=> setPreviewUrls(prev=>[...prev, String(ev.target?.result||'')]);
+                            reader.readAsDataURL(file);
+                          });
+                          e.currentTarget.value='';
+                        }}
+                      />
+                      <button onClick={()=>document.getElementById('modal-file-input')?.click()} className="px-2.5 py-1.5 text-xs rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground">上传图片{uploadedFiles.length>0?` (${uploadedFiles.length})`:''}</button>
+                      {uploadedFiles.length>0 && (
+                        <button onClick={()=>{ setUploadedFiles([]); setPreviewUrls([]); }} className="px-2.5 py-1.5 text-xs rounded-md bg-red-500/15 text-red-500 hover:bg-red-500/25 border border-red-500/30">清空</button>
+                      )}
+                      <button onClick={()=>setShowAdvanced(s=>!s)} className={`ml-auto px-2.5 py-1.5 text-xs rounded-md border ${showAdvanced? 'bg-orange-500/20 text-orange-500 border-orange-500/30':'bg-surface text-muted-foreground border-default hover:bg-surface-2'}`}>{showAdvanced?'隐藏高级':'高级选项'}</button>
+                    </div>
+                    {previewUrls.length>0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {previewUrls.map((url,idx)=> (
+                          <div key={idx} className="relative inline-block rounded-lg overflow-hidden border border-default">
+                            <img src={url} alt={`预览${idx+1}`} className="h-16 w-16 object-cover" />
+                            <button onClick={()=>{ setUploadedFiles(prev=>prev.filter((_,i)=>i!==idx)); setPreviewUrls(prev=>prev.filter((_,i)=>i!==idx)); }} className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-red-600">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {showAdvanced && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-muted-foreground">图片比例</label>
+                          <Select value={aspectRatio} onChange={(e)=>{ setAspectRatio(e.target.value); const sizes = SIZE_PRESETS[e.target.value]||[]; if (sizes.length>0) setImageSize(sizes[0]); }} className="w-full bg-surface border-default px-2 py-1.5 text-sm">
+                            {RATIO_OPTIONS.map(r=> (<option key={r} value={r}>{r}</option>))}
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] text-muted-foreground">图像尺寸</label>
+                          <Select value={imageSize} onChange={(e)=>setImageSize(e.target.value)} className="w-full bg-surface border-default px-2 py-1.5 text-sm">
+                            {(SIZE_PRESETS[aspectRatio]||[]).map(s=> (<option key={s} value={s}>{s}</option>))}
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-default">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setConfirmNode(null)} className="px-3 py-2 text-sm rounded-md text-muted-foreground hover:bg-surface-2">取消</button>
+                <button
+                  onClick={() => { onUseImage(confirmNode.url); setConfirmNode(null); }}
+                  className="px-3 py-2 text-sm rounded-md border border-default bg-surface hover:bg-surface-2 text-foreground"
+                >
+                  仅加载为输入
+                </button>
+                <button
+                  onClick={() => { onSubmitEdit?.(confirmNode.url, confirmInput, confirmNode.threadId ? confirmNode.id : confirmNode.id, confirmNode.threadId, { images: uploadedFiles, options: { size: imageSize, aspectRatio } }); setConfirmNode(null); setConfirmInput(""); setUploadedFiles([]); setPreviewUrls([]); }}
+                  disabled={!confirmInput.trim()}
+                  className="px-3 py-2 text-sm rounded-md bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  继续编辑并发送
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

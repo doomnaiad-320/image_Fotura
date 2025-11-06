@@ -9,6 +9,11 @@ export default function AdminSettingsPage() {
   const [registrationBonus, setRegistrationBonus] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // 复用积分设置
+  const [reuseMin, setReuseMin] = useState("");
+  const [reuseMax, setReuseMax] = useState("");
+  const [reuseCurrent, setReuseCurrent] = useState("");
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -16,12 +21,20 @@ export default function AdminSettingsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/settings");
-      if (!response.ok) {
-        throw new Error("获取设置失败");
+      const [basicRes, reuseRes] = await Promise.all([
+        fetch("/api/admin/settings"),
+        fetch("/api/settings/reuse-points")
+      ]);
+      if (!basicRes.ok) throw new Error("获取设置失败");
+      const basic = await basicRes.json();
+      setRegistrationBonus(String(basic.settings.registration_bonus_credits));
+
+      if (reuseRes.ok) {
+        const reuse = await reuseRes.json();
+        setReuseMin(String(reuse.min ?? 10));
+        setReuseMax(String(reuse.max ?? 100));
+        setReuseCurrent(String(reuse.current ?? 50));
       }
-      const data = await response.json();
-      setRegistrationBonus(String(data.settings.registration_bonus_credits));
     } catch (error) {
       setMessage({
         type: "error",
@@ -89,11 +102,10 @@ export default function AdminSettingsPage() {
       </header>
 
       <div className="bg-card border border-border rounded-lg p-6">
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="space-y-8">
           {/* 注册奖励设置 */}
           <div className="space-y-4">
             <h2 className="text-xl font-medium text-foreground">用户注册</h2>
-            
             <div className="space-y-2">
               <label htmlFor="registrationBonus" className="block text-sm font-medium text-muted-foreground">
                 新用户注册赠送积分
@@ -111,6 +123,79 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-muted-foreground">
                 新用户注册后将自动获得该数量的积分，首位用户（管理员）固定为 100,000 积分
               </p>
+            </div>
+          </div>
+
+          {/* 复用积分默认设置 */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-medium text-foreground">复用积分（默认区间）</h2>
+            <p className="text-xs text-muted-foreground">用于新作品默认复用积分的合理范围与当前默认值，首页瀑布流的复用价格也参考该值。</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-muted-foreground">最小值</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={reuseMin}
+                  onChange={(e) => setReuseMin(e.target.value)}
+                  className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-muted-foreground">最大值</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={reuseMax}
+                  onChange={(e) => setReuseMax(e.target.value)}
+                  className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-muted-foreground">当前默认</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={reuseCurrent}
+                  onChange={(e) => setReuseCurrent(e.target.value)}
+                  className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground"
+                />
+              </div>
+            </div>
+            <div>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  try {
+                    setSaving(true);
+                    setMessage(null);
+                    const body = {
+                      min: parseInt(reuseMin, 10),
+                      max: parseInt(reuseMax, 10),
+                      current: parseInt(reuseCurrent, 10),
+                    };
+                    const res = await fetch("/api/settings/reuse-points", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(body),
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(json.error || "保存失败");
+                    setMessage({ type: "success", text: "复用积分设置已保存" });
+                  } catch (e) {
+                    setMessage({ type: "error", text: e instanceof Error ? e.message : "保存失败" });
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="mt-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded-lg"
+              >
+                保存复用积分设置
+              </button>
             </div>
           </div>
 

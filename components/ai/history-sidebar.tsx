@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Download, Edit, Share2, Trash2 } from "lucide-react";
 import BasePromptInput from "./common/base-prompt-input";
+import { Select } from "@/components/ui/select";
 
 // 高级选项预设（与对话页一致）
 const RATIO_OPTIONS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
@@ -364,15 +365,15 @@ export function HistorySidebar({
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-[11px] text-muted-foreground">图片比例</label>
-                          <select value={aspectRatio} onChange={(e)=>{ setAspectRatio(e.target.value); const sizes = SIZE_PRESETS[e.target.value]||[]; if (sizes.length>0) setImageSize(sizes[0]); }} className="w-full rounded-md bg-surface border border-default px-2 py-1.5 text-sm">
+                          <Select value={aspectRatio} onChange={(e)=>{ setAspectRatio(e.target.value); const sizes = SIZE_PRESETS[e.target.value]||[]; if (sizes.length>0) setImageSize(sizes[0]); }} className="w-full bg-surface border-default px-2 py-1.5 text-sm">
                             {RATIO_OPTIONS.map(r=> (<option key={r} value={r}>{r}</option>))}
-                          </select>
+                          </Select>
                         </div>
                         <div className="space-y-1">
                           <label className="text-[11px] text-muted-foreground">图像尺寸</label>
-                          <select value={imageSize} onChange={(e)=>setImageSize(e.target.value)} className="w-full rounded-md bg-surface border border-default px-2 py-1.5 text-sm">
+                          <Select value={imageSize} onChange={(e)=>setImageSize(e.target.value)} className="w-full bg-surface border-default px-2 py-1.5 text-sm">
                             {(SIZE_PRESETS[aspectRatio]||[]).map(s=> (<option key={s} value={s}>{s}</option>))}
-                          </select>
+                          </Select>
                         </div>
                       </div>
                     )}

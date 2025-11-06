@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useBgTheme, type BgTheme } from "@/components/theme/background-provider";
+import { Select } from "@/components/ui/select";
 
 const THEMES: { key: BgTheme; name: string; previewClass: string; desc: string }[] = [
   { key: "auto", name: "自动", previewClass: "", desc: "根据本地时间 7:00-19:00 浅色，其余深色" },
@@ -15,15 +16,15 @@ export function AppearanceSelector() {
   return (
     <div className="space-y-3">
       <label className="text-sm text-muted-foreground">选择主题</label>
-      <select
+      <Select
         value={theme}
         onChange={(e) => setTheme(e.target.value as BgTheme)}
-        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+        className="w-full"
       >
         {THEMES.map((t) => (
           <option key={t.key} value={t.key}>{t.name}</option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }

@@ -118,6 +118,7 @@ export default async function AssetDetailPage({ params }: { params: { id: string
               width={1200}
               height={1200 / asset.aspectRatio}
               className="w-full h-auto object-cover"
+              unoptimized
             />
           )}
         </div>

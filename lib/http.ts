@@ -64,11 +64,28 @@ export async function httpFetch<T>(path: string, options: HttpOptions = {}): Pro
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const contentType = response.headers.get('content-type') || '';
+  let payload: any = null;
 
-  if (!response.ok) {
-    throw new HttpError(response.status, payload?.message ?? response.statusText, payload);
+  if (contentType.includes('application/json')) {
+    try {
+      payload = text ? JSON.parse(text) : null;
+    } catch {
+      // JSON 声明但解析失败
+      payload = null;
+    }
+  } else {
+    // 非 JSON（可能是 HTML 错误页或纯文本）
+    payload = text;
   }
 
-  return payload as T;
+  if (!response.ok) {
+    const message = (payload && typeof payload === 'object')
+      ? (payload.message || payload.error || response.statusText)
+      : (typeof payload === 'string' && payload ? payload.slice(0, 300) : response.statusText);
+    throw new HttpError(response.status, message, payload);
+  }
+
+  // 成功：优先返回 JSON；否则返回文本
+  return (payload as T);
 }

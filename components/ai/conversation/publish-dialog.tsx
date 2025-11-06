@@ -46,14 +46,24 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
       const uploadResp = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
+        headers: { Accept: 'application/json' },
       });
 
-      if (!uploadResp.ok) {
-        const error = await uploadResp.json();
-        throw new Error(error.error || '上传失败');
+      const text = await uploadResp.text();
+      let data: any = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // 非 JSON（例如开发环境 HTML 错误页）
       }
 
-      const { url } = await uploadResp.json();
+      if (!uploadResp.ok) {
+        const msg = data?.error || data?.message || `上传失败（${uploadResp.status}）`;
+        throw new Error(msg);
+      }
+
+      const url = data?.url as string | undefined;
+      if (!url) throw new Error('上传返回无效');
       return url;
     } catch (err: any) {
       console.error('[PublishDialog] upload error', err);

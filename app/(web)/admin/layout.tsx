@@ -36,6 +36,11 @@ const navItems: Array<{ name: string; href: string; icon: any; sub?: boolean }> 
     icon: Users,
   },
   {
+    name: "作品管理",
+    href: "/admin/assets",
+    icon: ImageIcon,
+  },
+  {
     name: "积分日志",
     href: "/admin/logs",
     icon: Receipt,

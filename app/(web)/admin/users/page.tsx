@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Search, Loader2, UserPlus, CoinsIcon } from "lucide-react";
+import { Select } from "@/components/ui/select";
 
 type User = {
   id: string;
@@ -210,14 +211,14 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground">角色</label>
-                  <select
+                  <Select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as "user" | "admin")}
-                    className="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none"
+                    className="w-full"
                   >
                     <option value="user">普通用户</option>
                     <option value="admin">管理员</option>
-                  </select>
+                  </Select>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <label className="text-sm text-muted-foreground">密码</label>

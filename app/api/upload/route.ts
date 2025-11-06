@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { uploadToR2, uploadBufferToR2 } from '@/lib/r2';
 
+// 明确使用 Node.js 运行时，避免 Edge 运行时导致的 Buffer/crypto 等问题
+export const runtime = 'nodejs';
+// 强制动态，防止被缓存
+export const dynamic = 'force-dynamic';
+
 /**
  * 上传图片到 Cloudflare R2
  * POST /api/upload
@@ -48,9 +53,11 @@ export async function POST(request: Request) {
     let useSharp = true;
     let sharp: any = null;
     try {
-      // 动态加载，避免构建时强依赖
-      // @ts-ignore
-      sharp = (await import('sharp')).default || (await import('sharp'));
+      // 运行时动态导入，避免在构建阶段解析到 'sharp' 导致 Module not found
+      const pkg = ['sh', 'arp'].join('');
+      const dynamicImport = new Function('m', 'return import(m)');
+      const mod: any = await (dynamicImport as any)(pkg);
+      sharp = mod?.default || mod;
     } catch {
       useSharp = false;
     }
