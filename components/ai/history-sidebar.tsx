@@ -135,7 +135,7 @@ export function HistorySidebar({
         className={`fixed right-0 top-1/2 z-50 -translate-y-1/2 rounded-l-xl border border-r-0 border-default bg-surface-2 p-2 backdrop-blur-sm transition-all hover:bg-surface ${
           isOpen ? "translate-x-0" : "translate-x-0"
         } relative`}
-        style={{ right: isOpen ? "560px" : "0" }}
+        style={{ right: 0 }}
         aria-label={isOpen ? "收起历史记录" : "展开历史记录"}
       >
         {/* 保持按钮始终可见；提示已按需禁用 */}
