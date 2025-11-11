@@ -40,6 +40,9 @@ type Props = {
   onItemClick?: (item: HistoryItem) => void;
   // 新增：提交二次编辑（会话/工作台实现发送给 AI）
   onSubmitEdit?: (item: HistoryItem, instruction: string, payload?: { images?: File[]; options?: { size?: string; aspectRatio?: string } }) => void;
+  // 俏皮提示配置：在隐藏时显示在右侧固定按钮上
+  showPlayfulHint?: boolean;
+  playfulHintText?: string;
 };
 
 // 根据 parentHistoryId 向上回溯构建当前项的编辑链（基础 -> 当前）
@@ -104,7 +107,9 @@ export function HistorySidebar({
   onShare,
   onDelete,
   onItemClick,
-  onSubmitEdit
+  onSubmitEdit,
+  showPlayfulHint,
+  playfulHintText
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmItem, setConfirmItem] = useState<HistoryItem | null>(null);
@@ -123,24 +128,22 @@ export function HistorySidebar({
 
   return (
     <>
-      {/* 遮罩层 */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
-          onClick={onToggle}
-          aria-label="关闭历史记录"
-        />
-      )}
 
-      {/* Toggle Button */}
+      {/* Toggle Button with playful hint when hidden */}
       <button
         onClick={onToggle}
-        className={`fixed right-0 top-1/2 z-40 -translate-y-1/2 rounded-l-xl border border-r-0 border-default bg-surface-2 p-2 backdrop-blur-sm transition-all hover:bg-surface ${
+        className={`fixed right-0 top-1/2 z-50 -translate-y-1/2 rounded-l-xl border border-r-0 border-default bg-surface-2 p-2 backdrop-blur-sm transition-all hover:bg-surface ${
           isOpen ? "translate-x-0" : "translate-x-0"
-        }`}
+        } relative`}
         style={{ right: isOpen ? "560px" : "0" }}
         aria-label={isOpen ? "收起历史记录" : "展开历史记录"}
       >
+        {/* 保持按钮始终可见；提示已按需禁用 */}
+        {false && !isOpen && showPlayfulHint && (
+          <span className="pointer-events-none absolute -left-2 -translate-x-full top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] text-orange-400 bg-orange-500/10 border border-orange-500/30 px-2 py-1 rounded-md shadow-sm">
+            {playfulHintText || "想我了吗？点我看看你的小作品～"}
+          </span>
+        )}
         <ChevronRight
           className={`h-5 w-5 text-muted-foreground transition-transform ${isOpen ? "rotate-0" : "rotate-180"}`}
         />
@@ -154,10 +157,20 @@ export function HistorySidebar({
       >
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="border-b border-default p-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-              生成历史
-            </h3>
+          <div className="relative border-b border-default p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                生成历史
+              </h3>
+              <button
+                onClick={onToggle}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-default text-muted-foreground hover:bg-surface"
+                aria-label="收起历史记录"
+                title="收起"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {items.length > 0 ? `共 ${items.length} 张图片` : "暂无历史记录"}
             </p>
@@ -217,7 +230,7 @@ export function HistorySidebar({
                           <div
                             className={`group flex-1 flex gap-3 rounded-xl border p-2 transition-all ${
                               isSelected
-                                ? 'border-default bg-surface'
+                                ? 'border-gold bg-surface-2 ring-1 ring-gold/20'
                                 : 'border-default bg-surface hover:bg-surface-2'
                             }`}
                           >

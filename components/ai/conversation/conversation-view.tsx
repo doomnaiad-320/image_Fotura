@@ -47,10 +47,16 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const [fusionBasePrompt, setFusionBasePrompt] = useState<string>("");
   const [fusionAsset, setFusionAsset] = useState<{ id: string; title: string; coverUrl?: string; size?: string } | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
     const saved = localStorage.getItem('conversation-history-sidebar-open');
-    return saved ? JSON.parse(saved) : true;
+    return saved ? JSON.parse(saved) : false;
   });
+  const [historyWasManuallyHidden, setHistoryWasManuallyHidden] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('conversation-history-manual-hidden');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const historyAutoOpenedRef = React.useRef(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -867,6 +873,14 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     setIsHistoryOpen((prev) => {
       const next = !prev;
       localStorage.setItem('conversation-history-sidebar-open', JSON.stringify(next));
+      // 记录是否用户手动隐藏，用于抑制自动展开
+      if (!next) {
+        setHistoryWasManuallyHidden(true);
+        localStorage.setItem('conversation-history-manual-hidden', 'true');
+      } else {
+        setHistoryWasManuallyHidden(false);
+        localStorage.setItem('conversation-history-manual-hidden', 'false');
+      }
       return next;
     });
   }, []);
@@ -887,6 +901,18 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
         step: m.editChain ? (m.editChain.edits?.length || 0) + 1 : 1
       }));
   }, [messages]);
+
+  // 首张图生成后自动展开历史（除非用户手动隐藏过）
+  useEffect(() => {
+    try {
+      if (historyAutoOpenedRef.current) return;
+      const count = historyItems.length;
+      if (count >= 1 && !historyWasManuallyHidden) {
+        setIsHistoryOpen(true);
+        historyAutoOpenedRef.current = true;
+      }
+    } catch {}
+  }, [historyItems.length, historyWasManuallyHidden]);
 
   const handleHistoryDownload = useCallback(async (item: HistoryItem) => {
     try {
@@ -957,7 +983,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       {/* 主内容区：全高（由 studio 布局控制视口高度） */}
       <div className="flex flex-col lg:ml-72 h-full min-h-0 overflow-hidden">
         {/* 顶部工具栏 */}
-<div className="border-b border-default shrink-0 flex items-center gap-3 py-3 px-4 sm:px-6">
+<div className="border-b border-default shrink-0 flex items-center gap-3 py-3 px-4 sm:px-6 transition-all duration-300" style={{ width: isHistoryOpen ? 'calc(100% - 560px)' : undefined }}>
           {/* 移动端菜单按钮 */}
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -969,13 +995,13 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             </svg>
           </button>
 
-          <ConversationHeader
-            models={models}
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
-            credits={balance?.credits}
-            onToggleHistory={handleToggleHistory}
-          />
+      <ConversationHeader
+        models={models}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+        credits={balance?.credits}
+        onToggleHistory={handleToggleHistory}
+      />
         </div>
 
         {/* 右侧内容区域 */}
@@ -1024,7 +1050,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-transparent backdrop-blur-0 supports-[backdrop-filter]:bg-transparent" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
               <div 
                 className="max-w-3xl mx-auto px-4 sm:px-6 transition-all duration-300"
-                style={{ marginRight: isHistoryOpen ? '420px' : 'auto' }}
+                style={{ width: isHistoryOpen ? 'calc(100% - 560px)' : undefined }}
               >
                 <InputArea
                   onSend={handleSend}
@@ -1124,6 +1150,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           setActiveView('conversation');
           void handleSend(instruction, payload?.images, payload?.options);
         }}
+        showPlayfulHint={false}
       />
     </div>
   );

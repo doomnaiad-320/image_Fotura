@@ -12,8 +12,13 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#111111",
-          accent: "#FFFFFF"
+          DEFAULT: "#000000",
+          accent: "#C49A6C"
+        },
+        // 古铜金色系
+        gold: {
+          DEFAULT: 'var(--color-gold)',
+          dark: 'var(--color-gold-dark)'
         },
         // 主题 CSS 变量（保留现有）
         app: 'var(--color-bg)',
@@ -50,7 +55,22 @@ const config: Config = {
         default: 'var(--color-border)'
       },
       fontFamily: {
-        sans: ["'Helvetica Neue'", "ui-sans-serif", "system-ui"]
+        sans: ["Inter", "'Helvetica Neue'", "ui-sans-serif", "system-ui"],
+        serif: ["'Playfair Display'", "Georgia", "'Times New Roman'", "serif"]
+      },
+      letterSpacing: {
+        'tighter': '-0.02em',
+        'tight': '-0.01em',
+        'normal': '0',
+        'wide': '0.01em',
+        'wider': '0.02em',
+        'widest': '0.1em'
+      },
+      lineHeight: {
+        'tight': '1.3',
+        'normal': '1.5',
+        'relaxed': '1.8',
+        'loose': '2.0'
       }
     }
   },

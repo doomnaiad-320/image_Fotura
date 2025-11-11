@@ -54,7 +54,7 @@ export function MessageList({
     <div 
       className="mx-auto max-w-3xl space-y-4 px-4 sm:px-6 transition-all duration-300"
       style={{ 
-        marginRight: isHistoryOpen ? '420px' : 'auto'
+        width: isHistoryOpen ? 'calc(100% - 560px)' : undefined
       }}
     >
       {hiddenCount > 0 && !showAll && (

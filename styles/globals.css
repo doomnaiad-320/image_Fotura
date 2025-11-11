@@ -2,40 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-
-/* Theme tokens (global): shadcn-like tokens + bridge to existing vars */
+/* 💎 高端金融系主题 - 黑白金配色方案 */
 :root {
   color-scheme: light;
-  /* HSL tokens - Edit0 Light 主题 */
-  --background: 0 0% 96%;  /* #f5f5f5 - 浅灰背景 */
-  --foreground: 0 0% 23%;  /* #3a3a3a - 深灰文字 */
+  /* Light 主题 - 纯白背景 + 低饱和度 */
+  --background: 0 0% 99%;       /* #FCFCFC - 接近纯白 */
+  --foreground: 0 0% 10%;       /* #1A1A1A - 深黑文字 */
 
-  --muted: 0 0% 96%;  /* #f5f5f5 */
-  --muted-foreground: 0 0% 50%;  /* #808080 - 中灰文字 */
+  --muted: 0 0% 97%;            /* #F9F9F9 - 辅助背景 */
+  --muted-foreground: 0 0% 40%; /* #666666 - 中灰文字 */
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 23%;
+  --popover-foreground: 0 0% 10%;
 
-  --card: 0 0% 100%;  /* 纯白卡片 */
-  --card-foreground: 0 0% 23%;
+  --card: 0 0% 100%;            /* 纯白卡片 */
+  --card-foreground: 0 0% 10%;
 
-  --border: 0 0% 88%;  /* #e0e0e0 - 浅灰边框 */
-  --input: 0 0% 90%;  /* #e5e5e5 */
+  --border: 0 0% 92%;           /* #EBEBEB - 浅灰边框 */
+  --input: 0 0% 96%;            /* #F5F5F5 */
 
-  --primary: 12 43% 59%;  /* #c17c68 - Edit0 橙红色 */
+  --primary: 30 35% 60%;        /* #C49A6C - 古铜金 */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 0 0% 10%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent: 30 35% 60%;         /* 与 primary 一致 */
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
 
-  --ring: 215 20.2% 65.1%;
-  --radius: 0.5rem;
+  --ring: 30 35% 60%;
+  --radius: 0.375rem;           /* 更小圆角，更正式 */
+
+  /* 古铜金强调色（直接 RGB 值） */
+  --gold: 196 154 108;          /* #C49A6C */
+  --gold-dark: 185 130 94;      /* #B9825E - 悬停态 */
 
   /* Bridge to existing project tokens */
   --color-bg: hsl(var(--background));
@@ -48,8 +51,10 @@
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-link: hsl(var(--primary));
   --color-nav-bg: hsl(var(--card));
-  --color-scrim: rgba(0,0,0,0.6);
+  --color-scrim: rgba(0, 0, 0, 0.75);
   --color-on-accent: hsl(var(--primary-foreground));
+  --color-gold: rgb(var(--gold));
+  --color-gold-dark: rgb(var(--gold-dark));
 }
 
 html[data-theme='light'] {
@@ -58,36 +63,36 @@ html[data-theme='light'] {
 
 html[data-theme='dark'] {
   color-scheme: dark;
-  /* Edit0 工作台 Dark 主题 - 更精确、更暗的匹配 */
-  --background: 0 0% 24%;       /* #3C3C3C - 主内容区背景 */
-  --foreground: 0 0% 88%;       /* #E0E0E0 - 主文字 */
+  /* 🖤 Dark 主题 - 纯黑背景 + 古铜金 */
+  --background: 0 0% 0%;        /* #000000 - 纯黑背景 */
+  --foreground: 0 0% 98%;       /* #FAFAFA - 接近纯白文字 */
 
-  --muted: 0 0% 18%;            /* #2E2E2E - 侧边栏背景 */
-  --muted-foreground: 0 0% 62%; /* #9E9E9E - 辅助文字 */
+  --muted: 0 0% 7%;             /* #111111 - 深灰背景 */
+  --muted-foreground: 0 0% 65%; /* #A6A6A6 - 辅助文字 */
 
-  --popover: 0 0% 18%;
-  --popover-foreground: 0 0% 88%;
+  --popover: 0 0% 4%;           /* #0A0A0A */
+  --popover-foreground: 0 0% 98%;
 
-  --card: 0 0% 24%;             /* #3C3C3C - 卡片背景 */
-  --card-foreground: 0 0% 88%;
+  --card: 0 0% 7%;              /* #111111 - 卡片背景 */
+  --card-foreground: 0 0% 98%;
 
-  --border: 0 0% 29%;           /* #4A4A4A - 边框 */
-  --input: 0 0% 0%;              /* #000000 - 输入框 */
+  --border: 0 0% 15%;           /* #262626 - 细线边框 */
+  --input: 0 0% 10%;            /* #1A1A1A - 输入框 */
 
-  --primary: 11 60% 64%;        /* #D9826D - 主按钮 */
-  --primary-foreground: 0 0% 100%;
+  --primary: 30 35% 60%;        /* #C49A6C - 古铜金（保持一致）*/
+  --primary-foreground: 0 0% 0%;
 
-  --secondary: 223 47% 11%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 98%;
 
-  --accent: 216 34% 17%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 30 35% 60%;
+  --accent-foreground: 0 0% 0%;
 
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
 
-  --ring: 216 34% 17%;
-  --radius: 0.5rem;
+  --ring: 30 35% 60%;
+  --radius: 0.375rem;
 
   /* Bridge mapping */
   --color-bg: hsl(var(--background));
@@ -100,16 +105,52 @@ html[data-theme='dark'] {
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-link: hsl(var(--primary));
   --color-nav-bg: hsl(var(--card));
-  --color-scrim: rgba(0,0,0,0.6);
+  --color-scrim: rgba(0, 0, 0, 0.9);
   --color-on-accent: hsl(var(--primary-foreground));
+  --color-gold: rgb(var(--gold));
+  --color-gold-dark: rgb(var(--gold-dark));
 }
 
 body {
   @apply antialiased;
-  font-family: "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+  /* 无衬线字体用于正文 */
+  font-family: "Inter", "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   background-color: var(--color-bg);
   color: var(--color-foreground);
+  line-height: 1.8; /* 更大行距，增强呼吸感 */
+  letter-spacing: 0.01em;
+}
+
+/* 🔤 标题使用衬线字体 - 权威感 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+h1 { @apply text-5xl md:text-6xl mb-6; }
+h2 { @apply text-3xl md:text-4xl mb-5; }
+h3 { @apply text-2xl md:text-3xl mb-4; }
+h4 { @apply text-xl md:text-2xl mb-3; }
+
+/* 段落间距 */
+p { @apply mb-4; }
+
+/* 金色下划线装饰（可用于标题） */
+.gold-underline {
+  position: relative;
+  display: inline-block;
+}
+.gold-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-dark));
 }
 
 @layer utilities {
@@ -117,11 +158,41 @@ body {
   .bg-app { background-color: var(--color-bg); }
   .bg-surface { background-color: var(--color-surface); }
   .bg-surface-2 { background-color: var(--color-surface-2); }
-  .bg-studio-dark { background-color: #272526; } /* Studio 对话页暗色背景 */
+  .bg-studio-dark { background-color: #000000; } /* 纯黑背景 */
   .text-foreground { color: var(--color-foreground); }
   .text-muted-foreground { color: var(--color-muted-foreground); }
   .text-link { color: var(--color-link); }
   .border-default { border-color: var(--color-border); }
+
+  /* 🎨 古铜金工具类 */
+  .text-gold { color: var(--color-gold); }
+  .bg-gold { background-color: var(--color-gold); }
+  .border-gold { border-color: var(--color-gold); }
+  .hover\:text-gold:hover { color: var(--color-gold-dark); }
+  .hover\:bg-gold:hover { background-color: var(--color-gold-dark); }
+
+  /* 极简按钮样式 - 黑底白字 / 白底黑字 */
+  .btn-minimal {
+    @apply px-6 py-3 border-2 transition-all duration-300;
+    @apply font-medium tracking-wider uppercase text-sm;
+  }
+  .btn-minimal-light {
+    @apply btn-minimal bg-white text-black border-black;
+    @apply hover:bg-black hover:text-white;
+  }
+  .btn-minimal-dark {
+    @apply btn-minimal bg-black text-white border-white;
+    @apply hover:bg-white hover:text-black;
+  }
+  .btn-gold {
+    @apply btn-minimal bg-gold text-black border-gold;
+    @apply hover:bg-gold-dark;
+  }
+
+  /* 大留白模块 */
+  .section-spacious {
+    @apply py-16 md:py-24 px-6 md:px-12;
+  }
 
   /* Hide scrollbars while keeping scrollability */
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -130,9 +201,16 @@ body {
 
 a {
   color: var(--color-link);
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
-a:hover { opacity: 0.9; }
+a:hover { 
+  color: var(--color-gold-dark);
+  opacity: 0.9; 
+}
 
 button {
-  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black;
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  @apply focus-visible:ring-gold focus-visible:ring-offset-black;
+  transition: all 0.3s ease;
 }
