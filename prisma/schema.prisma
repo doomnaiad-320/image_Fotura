@@ -53,6 +53,9 @@ model Asset {
   mode            String?
   editChain       String?     @default("{}")
   isPublic        Boolean     @default(true)
+  // 分类（两级）
+  categoryId      String?
+  category        Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   // 软删除字段
   isDeleted       Boolean     @default(false)
   deletedAt       DateTime?
@@ -69,6 +72,7 @@ model Asset {
   @@index([userId])
   @@index([isPublic])
   @@index([isDeleted])
+  @@index([categoryId])
 }
 
 model Favorite {
@@ -260,4 +264,25 @@ model ReuseRecord {
   @@unique([sourceWorkId, reuserId])
   @@index([sourceWorkId])
   @@index([reuserId])
+}
+
+// 分类（两级，管理员维护）
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  parent    Category?  @relation("CategoryParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryParent")
+  enabled   Boolean    @default(true)
+  sort      Int        @default(100)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // 作品关联
+  assets    Asset[]
+
+  @@index([parentId])
+  @@index([enabled])
+  @@index([sort])
 }

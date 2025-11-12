@@ -139,6 +139,21 @@ export async function runSeed(
     }
   }
 
+  // 初始化分类（仅当为空）
+  const catCount = await prisma.category.count();
+  if (catCount === 0) {
+    const root1 = await prisma.category.create({ data: { name: "摄影", slug: "photo", sort: 10 } });
+    await prisma.category.createMany({ data: [
+      { name: "人像", slug: "portrait", parentId: root1.id, sort: 10 },
+      { name: "风光", slug: "landscape", parentId: root1.id, sort: 20 }
+    ]});
+    const root2 = await prisma.category.create({ data: { name: "插画", slug: "illustration", sort: 20 } });
+    await prisma.category.createMany({ data: [
+      { name: "赛博", slug: "cyberpunk", parentId: root2.id, sort: 10 },
+      { name: "二次元", slug: "anime", parentId: root2.id, sort: 20 }
+    ]});
+  }
+
   for (const asset of seedAssets) {
     const hotScore = calculateHotScore({
       likes: asset.likes,

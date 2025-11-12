@@ -151,8 +151,14 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     fallbackData: { models: initialModels }
   });
 
-
-
+  // 渠道新增/编辑弹窗
+  const [providerModal, setProviderModal] = useState<{
+    open: boolean;
+    mode: "create" | "edit";
+    submitting: boolean;
+    initial: Partial<z.infer<typeof providerSchema>> | null;
+    editingSlug: string | null;
+  }>({ open: false, mode: "create", submitting: false, initial: null, editingSlug: null });
 
   const normalizeArray = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -236,9 +242,6 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
     }
   });
 
-  const [editingSlug, setEditingSlug] = useState<string | null>(null);
-
-  const [submitting, setSubmitting] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deletingModel, setDeletingModel] = useState<string | null>(null);
@@ -297,51 +300,65 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
 
   const providers: ProviderView[] = providersData?.providers ?? [];
 
-  // 个人主页数据
+  // 生成 slug（隐藏，不在 UI 中输入）
+  const slugify = (name: string) =>
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
 
-  const resetForm = () => {
-    form.reset({
-      slug: "",
-      name: "",
-      baseURL: "https://",
-      apiKey: "",
-      enabled: true
-    });
-    setEditingSlug(null);
+  const ensureUniqueSlug = (base: string) => {
+    const exists = new Set(providers.map((p) => p.slug));
+    let candidate = base || "channel";
+    let i = 2;
+    while (exists.has(candidate)) {
+      candidate = `${base}-${i++}`;
+    }
+    return candidate;
   };
 
-  const onSubmit = form.handleSubmit(async (values) => {
+  const openCreateProvider = () => {
+    setProviderModal({ open: true, mode: "create", submitting: false, initial: { name: "", baseURL: "https://", apiKey: "", enabled: true, slug: "" }, editingSlug: null });
+    form.reset({ slug: "", name: "", baseURL: "https://", apiKey: "", enabled: true });
+  };
+
+  const openEditProvider = (provider: ProviderView) => {
+    setProviderModal({
+      open: true,
+      mode: "edit",
+      submitting: false,
+      initial: { slug: provider.slug, name: provider.name, baseURL: provider.baseURL, apiKey: "", enabled: provider.enabled },
+      editingSlug: provider.slug
+    });
+    form.reset({ slug: provider.slug, name: provider.name, baseURL: provider.baseURL, apiKey: "", enabled: provider.enabled });
+  };
+
+  const submitProviderModal = form.handleSubmit(async (values) => {
     try {
-      setSubmitting(true);
-      await httpFetch("/api/providers", {
-        method: "POST",
-        body: JSON.stringify({
-          ...values,
-          slug: editingSlug ?? values.slug
-        })
-      });
-      toast.success(editingSlug ? "Provider 已更新" : "Provider 已创建");
+      setProviderModal((prev) => ({ ...prev, submitting: true }));
+      const payload = { ...values } as any;
+      if (providerModal.mode === "create") {
+        const generated = ensureUniqueSlug(slugify(values.name));
+        payload.slug = generated;
+      } else {
+        payload.slug = providerModal.editingSlug ?? values.slug;
+      }
+      await httpFetch("/api/providers", { method: "POST", body: JSON.stringify(payload) });
+      toast.success(providerModal.mode === "create" ? "渠道已创建" : "渠道已更新");
       await mutateProviders();
       await mutateModels();
-      resetForm();
+      setProviderModal({ open: false, mode: "create", submitting: false, initial: null, editingSlug: null });
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "保存失败");
-    } finally {
-      setSubmitting(false);
+      setProviderModal((prev) => ({ ...prev, submitting: false }));
     }
   });
 
-  const handleEditProvider = (provider: ProviderView) => {
-    form.reset({
-      slug: provider.slug,
-      name: provider.name,
-      baseURL: provider.baseURL,
-      apiKey: "",
-      enabled: provider.enabled
-    });
-    setEditingSlug(provider.slug);
-  };
+  const handleEditProvider = (provider: ProviderView) => openEditProvider(provider);
 
   const handleDeleteProvider = async (provider: ProviderView) => {
     if (!window.confirm(`确认删除 Provider ${provider.name} 吗？`)) {
@@ -353,9 +370,6 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
       toast.success("Provider 已删除");
       await mutateProviders();
       await mutateModels();
-      if (editingSlug === provider.slug) {
-        resetForm();
-      }
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "删除失败");
@@ -663,131 +677,61 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
 
   const providersTab = (
     <div className="space-y-8">
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <form
-          className="space-y-4 rounded-3xl border border-border bg-card/60 backdrop-blur-sm p-5"
-          onSubmit={onSubmit}
-        >
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Slug</label>
-            <Input
-              placeholder="openai"
-              disabled={Boolean(editingSlug)}
-              {...form.register("slug")}
-            />
-            {form.formState.errors.slug ? (
-              <p className="text-xs text-red-400">
-                {form.formState.errors.slug.message}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                只允许小写字母、数字和连字符，例如: openai, gpt-4-turbo
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">名称</label>
-            <Input placeholder="OpenRouter" {...form.register("name")} />
-            {form.formState.errors.name && (
-              <p className="text-xs text-red-400">
-                {form.formState.errors.name.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Base URL</label>
-            <Input placeholder="https://openrouter.ai/api" {...form.register("baseURL")} />
-            {form.formState.errors.baseURL && (
-              <p className="text-xs text-red-400">
-                {form.formState.errors.baseURL.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">API Key</label>
-            <Input
-              placeholder={editingSlug ? "留空保持原值" : "可选"}
-              type="password"
-              {...form.register("apiKey")}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">状态</label>
-            <Select
-              value={form.watch("enabled") ? "enabled" : "disabled"}
-              onChange={(event) => form.setValue("enabled", event.target.value === "enabled")}
+      <div className="space-y-4 rounded-3xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-foreground">渠道（Provider）</h3>
+          <Button size="sm" onClick={openCreateProvider}>添加渠道</Button>
+        </div>
+        <div className="space-y-3 text-sm">
+          {providers.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+              尚无渠道，点击右上角“添加渠道”创建。
+            </div>
+          )}
+          {providers.map((provider) => (
+            <div
+              key={provider.id}
+              className="space-y-3 rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-4"
             >
-              <option value="enabled">启用</option>
-              <option value="disabled">禁用</option>
-            </Select>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button type="submit" className="flex-1" loading={submitting}>
-              {editingSlug ? "更新 Provider" : "保存 Provider"}
-            </Button>
-            {editingSlug && (
-              <Button type="button" variant="secondary" onClick={resetForm}>
-                取消编辑
-              </Button>
-            )}
-          </div>
-        </form>
-
-        <div className="space-y-4 rounded-3xl border border-border bg-card p-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-foreground">现有 Provider</h3>
-          </div>
-          <div className="space-y-3 text-sm">
-            {providers.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-                尚无 Provider，先在左侧表单创建。
-              </div>
-            )}
-            {providers.map((provider) => (
-              <div
-                key={provider.id}
-                className="space-y-3 rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground">{provider.name}</p>
-                    <p className="text-xs text-muted-foreground">{provider.baseURL}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {provider.enabled ? "启用" : "禁用"}
-                  </span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-foreground">{provider.name}</p>
+                  <p className="text-xs text-muted-foreground">{provider.baseURL}</p>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <Button variant="secondary" size="sm" onClick={() => handleEditProvider(provider)}>
-                    编辑
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={syncing === provider.slug}
-                    onClick={() => handleSyncAll(provider.slug)}
-                  >
-                    同步全部
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => openModelSelector(provider)}
-                  >
-                    选择模型
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={deleting === provider.slug}
-                    onClick={() => handleDeleteProvider(provider)}
-                  >
-                    删除
-                  </Button>
-                </div>
+                <span className="text-xs text-muted-foreground">
+                  {provider.enabled ? "启用" : "禁用"}
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Button variant="secondary" size="sm" onClick={() => handleEditProvider(provider)}>
+                  编辑
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={syncing === provider.slug}
+                  onClick={() => handleSyncAll(provider.slug)}
+                >
+                  同步全部
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openModelSelector(provider)}
+                >
+                  选择模型
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={deleting === provider.slug}
+                  onClick={() => handleDeleteProvider(provider)}
+                >
+                  删除
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -850,7 +794,7 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
                           loading={togglingOptimizer === model.slug}
                           onClick={() => handleTogglePromptOptimizer(model.slug, model.isPromptOptimizer)}
                         >
-                          {model.isPromptOptimizer ? "✅ 优化器" : "设为优化器"}
+                          {model.isPromptOptimizer ? "优化器" : "设为优化器"}
                         </Button>
                         <Button
                           variant="secondary"
@@ -885,6 +829,61 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
   return (
     <div className="space-y-8">
       {providersTab}
+
+      {providerModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">
+          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-border bg-popover p-6">
+            <header className="space-y-1">
+              <h3 className="text-lg font-semibold text-foreground">
+                {providerModal.mode === "create" ? "添加渠道" : "编辑渠道"}
+              </h3>
+              {providerModal.mode === "edit" && providerModal.editingSlug && (
+                <p className="text-xs text-muted-foreground">Slug：{providerModal.editingSlug}</p>
+              )}
+            </header>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">渠道名称</label>
+                <Input placeholder="例如 OpenRouter" {...form.register("name")} />
+                {form.formState.errors.name && (
+                  <p className="text-xs text-red-400">{form.formState.errors.name.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Base URL</label>
+                <Input placeholder="https://openrouter.ai/api" {...form.register("baseURL")} />
+                {form.formState.errors.baseURL && (
+                  <p className="text-xs text-red-400">{form.formState.errors.baseURL.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">API Key</label>
+                <Input placeholder={providerModal.mode === "edit" ? "留空保持原值" : "可选"} type="password" {...form.register("apiKey")} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">状态</label>
+                <Select
+                  value={form.watch("enabled") ? "enabled" : "disabled"}
+                  onChange={(event) => form.setValue("enabled", event.target.value === "enabled")}
+                >
+                  <option value="enabled">启用</option>
+                  <option value="disabled">禁用</option>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setProviderModal({ open: false, mode: "create", submitting: false, initial: null, editingSlug: null })} disabled={providerModal.submitting}>
+                取消
+              </Button>
+              <Button onClick={submitProviderModal} loading={providerModal.submitting}>
+                保存
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {pricingModal.open && pricingModal.model && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4">

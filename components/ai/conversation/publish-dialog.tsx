@@ -13,12 +13,17 @@ export interface PublishDialogProps {
   onSuccess: (assetId: string) => void;
 }
 
+type PublicCategory = { id: string; name: string; slug: string; children?: Array<{ id: string; name: string; slug: string }> };
+
 export function PublishDialog({ open, message, onClose, onSuccess }: PublishDialogProps) {
   const [title, setTitle] = useState<string>(() => (message?.content ?? '').slice(0, 40) || 'AI 作品');
   const [tagsText, setTagsText] = useState<string>('');
   const [isPublic, setIsPublic] = useState<boolean>(true);
   const [reusePoints, setReusePoints] = useState<number>(50);
   const [submitting, setSubmitting] = useState(false);
+  const [categories, setCategories] = useState<PublicCategory[]>([]);
+  const [rootId, setRootId] = useState<string>("");
+  const [childId, setChildId] = useState<string>("");
   const [promptExpanded, setPromptExpanded] = useState(false);
 
   React.useEffect(() => {
@@ -29,6 +34,18 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
       setReusePoints(50);
       setSubmitting(false);
       setPromptExpanded(false);
+      // 拉取分类
+      fetch('/api/categories')
+        .then((r) => r.json())
+        .then((json) => {
+          const items = (json?.items || []) as PublicCategory[];
+          setCategories(items);
+          if (items.length > 0) {
+            setRootId(items[0].id);
+            setChildId(items[0].children?.[0]?.id || "");
+          }
+        })
+        .catch(() => {});
     }
   }, [open, message]);
 
@@ -100,6 +117,14 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
       const fullPrompt = message.editChain?.currentFullPrompt || message.editChain?.fullPrompt || message.content;
       const gen = message.generationParams;
 
+      const chosenRoot = categories.find((c) => c.id === rootId);
+      const chosenChild = chosenRoot?.children?.find((c) => c.id === childId);
+      const categoryId = (chosenChild?.id || chosenRoot?.id || '').trim();
+      if (!categoryId) {
+        toast.error('请选择分类');
+        return;
+      }
+
       const payload = {
         title: title.trim() || 'AI 作品',
         messageId: message.id,
@@ -113,7 +138,8 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
         mode: gen?.mode || 'txt2img',
         tags,
         isPublic,
-        reusePoints
+        reusePoints,
+        categoryId
       };
 
       const resp = await httpFetch<PublishResponse>(
@@ -246,6 +272,36 @@ export function PublishDialog({ open, message, onClose, onSuccess }: PublishDial
               value={tagsText}
               onChange={(e) => setTagsText(e.target.value)}
             />
+          </div>
+
+          {/* 分类选择 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">分类</label>
+            <div className="flex gap-2">
+              <select
+                className="flex-1 rounded-xl border border-input bg-background px-4 py-3"
+                value={rootId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setRootId(id);
+                  const root = categories.find((c) => c.id === id);
+                  setChildId(root?.children?.[0]?.id || "");
+                }}
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <select
+                className="flex-1 rounded-xl border border-input bg-background px-4 py-3"
+                value={childId}
+                onChange={(e) => setChildId(e.target.value)}
+              >
+                {(categories.find((c) => c.id === rootId)?.children || []).map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* 复用价格设置 */}

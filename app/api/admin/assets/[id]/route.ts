@@ -21,6 +21,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (typeof body.isPublic === "boolean") {
       data.isPublic = body.isPublic;
     }
+    if (typeof body.categoryId === "string") {
+      const cat = await prisma.category.findFirst({ where: { id: body.categoryId } });
+      if (!cat) return NextResponse.json({ error: "分类不存在" }, { status: 400 });
+      data.categoryId = body.categoryId;
+    }
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "无有效更新字段" }, { status: 400 });

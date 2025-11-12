@@ -27,7 +27,7 @@ export function ConversationHeader({
     <div className="flex items-center w-full">
       {/* 左侧 - 模型选择 */}
       <div className="flex items-center gap-3 min-w-0">
-        <span className="text-sm font-medium text-muted-foreground">模型</span>
+        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">模型</span>
 
         <Select
           value={selectedModel || ''}

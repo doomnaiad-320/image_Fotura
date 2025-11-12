@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
       mode: a.mode,
       reusePoints: a.reusePoints ?? 50,
       isPublic: a.isPublic,
+      categoryId: (a as any).categoryId,
       author: a.user,
     }));
 

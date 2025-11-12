@@ -17,7 +17,8 @@ const publishSchema = z.object({
   tags: z.array(z.string()).optional().default([]),
   isPublic: z.boolean().optional().default(true),
   title: z.string().optional(),
-  reusePoints: z.number().int().min(0).max(10000).optional().default(50)
+  reusePoints: z.number().int().min(0).max(10000).optional().default(50),
+  categoryId: z.string().min(1)
 });
 
 function parseAspectRatio(size: string): number {
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
       ? data.tags.map((t) => `${t}`.trim()).filter(Boolean)
       : [];
 
+    // 校验分类（必须为启用状态）
+    const category = await prisma.category.findFirst({ where: { id: data.categoryId, enabled: true } });
+    if (!category) {
+      return NextResponse.json({ error: "分类不存在或已禁用" }, { status: 400 });
+    }
+
     const created = await prisma.asset.create({
       data: {
         title,
@@ -74,7 +81,8 @@ export async function POST(request: Request) {
         mode: data.mode,
         editChain: data.editChain ? JSON.stringify(data.editChain) : "{}",
         isPublic: data.isPublic,
-        reusePoints: data.reusePoints
+        reusePoints: data.reusePoints,
+        categoryId: category.id
       }
     });
 

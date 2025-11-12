@@ -41,6 +41,11 @@ const navItems: Array<{ name: string; href: string; icon: any; sub?: boolean }> 
     icon: ImageIcon,
   },
   {
+    name: "分类管理",
+    href: "/admin/categories",
+    icon: FileText,
+  },
+  {
     name: "积分日志",
     href: "/admin/logs",
     icon: Receipt,

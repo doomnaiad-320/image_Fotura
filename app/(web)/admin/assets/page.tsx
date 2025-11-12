@@ -6,12 +6,14 @@ import Image from "next/image";
 import { Search, ShieldBan, ShieldCheck, Pencil, Trash2, Loader2 } from "lucide-react";
 
 import type { AssetListItem } from "@/lib/assets";
+import { EditAssetDialog } from "@/components/admin/edit-asset-dialog";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type AdminAsset = AssetListItem & {
   author?: { id: string; email: string; name: string | null } | null;
   isPublic: boolean;
+  categoryId?: string | null;
 };
 
 type ListResponse = {
@@ -25,6 +27,7 @@ export default function AdminAssetsPage() {
   const [items, setItems] = useState<AdminAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AdminAsset | null>(null);
 
   const queryKey = useMemo(() => `/api/admin/assets?limit=50${q ? `&q=${encodeURIComponent(q)}` : ""}${cursor ? `&cursor=${cursor}` : ""}`, [q, cursor]);
   const { data, isLoading } = useSWR<ListResponse>(queryKey, fetcher, { refreshInterval: 60_000 });
@@ -155,33 +158,14 @@ export default function AdminAssetsPage() {
                   </div>
                   <div className="mt-2 flex items-center gap-3 text-sm">
                     <label className="text-muted-foreground">复用积分：</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      defaultValue={a.reusePoints}
-                      onBlur={(e) => {
-                        const v = parseInt(e.currentTarget.value, 10);
-                        if (!Number.isFinite(v) || v < 0) {
-                          e.currentTarget.value = String(a.reusePoints);
-                          return;
-                        }
-                        if (v !== a.reusePoints) updateAsset(a.id, { reusePoints: v });
-                      }}
-                      className="w-24 px-2 py-1 bg-background border border-input rounded"
-                    />
+                    <span className="px-2 py-1 rounded bg-muted inline-block">{a.reusePoints}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-muted hover:bg-card text-foreground text-sm"
-                    title="编辑标题"
-                    onClick={async () => {
-                      const next = prompt("编辑标题", a.title);
-                      if (next && next.trim() && next !== a.title) {
-                        await updateAsset(a.id, { title: next.trim() });
-                      }
-                    }}
+                    title="编辑"
+                    onClick={() => setEditing(a)}
                     disabled={updatingId === a.id}
                   >
                     <Pencil className="w-4 h-4" /> 编辑
@@ -216,6 +200,17 @@ export default function AdminAssetsPage() {
           </button>
         </div>
       )}
+      {/* 编辑弹窗 */}
+      <EditAssetDialog
+        open={Boolean(editing)}
+        asset={editing ? { id: editing.id, title: editing.title, isPublic: editing.isPublic, prompt: editing.prompt, categoryId: (editing as any).categoryId } : null}
+        onClose={() => setEditing(null)}
+        onSaved={(patch) => {
+          if (!editing) return;
+          setItems((prev) => prev.map((it) => (it.id === editing.id ? { ...it, ...patch } as any : it)));
+          setEditing(null);
+        }}
+      />
     </div>
   );
 }

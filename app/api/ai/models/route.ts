@@ -54,6 +54,7 @@ export async function GET(request: Request) {
       pricing: true,
       rateLimit: true,
       tags: true,
+      isPromptOptimizer: true,
       provider: {
         select: {
           slug: true,
@@ -67,7 +68,8 @@ export async function GET(request: Request) {
     ...model,
     modalities: parseStringArray(model.modalities),
     tags: parseStringArray(model.tags),
-    pricing: normalizePricing(model.pricing)
+    pricing: normalizePricing(model.pricing),
+    isPromptOptimizer: model.isPromptOptimizer
   }));
 
   return NextResponse.json({ models: payload });

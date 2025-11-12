@@ -22,7 +22,7 @@ export default async function HomePage({
 }) {
   const sessionUser = await getCurrentUser();
   
-  // 已登录用户自动跳转到工作台
+  // 已登录用户自动跳转到创意工作室
   if (sessionUser) {
     redirect("/studio");
   }
