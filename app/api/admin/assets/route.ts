@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureAdmin } from "@/lib/ai/guards";
@@ -38,38 +40,110 @@ export async function GET(req: NextRequest) {
       nextCursor = next?.id ?? null;
     }
 
-    const items = records.map((a) => ({
-      id: a.id,
-      title: a.title,
-      type: a.type as any,
-      coverUrl: a.coverUrl,
-      videoUrl: a.videoUrl,
-      aspectRatio: a.aspectRatio,
-      durationSec: a.durationSec,
-      modelTag: a.modelTag,
-      tags: (() => {
-        try { return JSON.parse(a.tags as any) as string[]; } catch { return []; }
-      })(),
-      views: a.views,
-      likes: a.likes,
-      hotScore: a.hotScore,
-      createdAt: a.createdAt,
-      isFavorited: false,
-      prompt: a.prompt,
-      userId: a.userId,
-      model: a.model,
-      modelName: a.modelName,
-      size: a.size,
-      mode: a.mode,
-      reusePoints: a.reusePoints ?? 50,
-      isPublic: a.isPublic,
-      categoryId: (a as any).categoryId,
-      author: a.user,
-    }));
+    const items = records.map(mapAdminAsset);
 
     return NextResponse.json({ items, nextCursor });
   } catch (e: any) {
     console.error("[AdminAssets] GET", e);
     return NextResponse.json({ error: e.message || "获取失败" }, { status: 500 });
+  }
+}
+
+const createAssetSchema = z.object({
+  title: z.string().min(1, "标题不能为空"),
+  categoryId: z.string().min(1, "分类不能为空"),
+  prompt: z.string().optional().nullable(),
+  coverUrl: z.string().url("图片链接无效"),
+  isPublic: z.boolean().optional().default(true),
+  reusePoints: z.number().int().min(0).max(10000).optional().default(50)
+});
+
+function mapAdminAsset(a: any) {
+  return {
+    id: a.id,
+    title: a.title,
+    type: a.type as any,
+    coverUrl: a.coverUrl,
+    videoUrl: a.videoUrl,
+    aspectRatio: a.aspectRatio,
+    durationSec: a.durationSec,
+    modelTag: a.modelTag,
+    tags: (() => {
+      try {
+        return Array.isArray(a.tags) ? (a.tags as string[]) : JSON.parse(a.tags as any);
+      } catch {
+        return [] as string[];
+      }
+    })(),
+    views: a.views,
+    likes: a.likes,
+    hotScore: a.hotScore,
+    createdAt: a.createdAt,
+    isFavorited: false,
+    prompt: a.prompt,
+    userId: a.userId,
+    model: a.model,
+    modelName: a.modelName,
+    size: a.size,
+    mode: a.mode,
+    reusePoints: a.reusePoints ?? 50,
+    isPublic: a.isPublic,
+    // prisma 类型暂未生成 categoryId 字段，使用 any 访问
+    categoryId: (a as any).categoryId,
+    author: a.user,
+  };
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "未授权" }, { status: 401 });
+    ensureAdmin(user.role);
+
+    const json = await req.json();
+    const parsed = createAssetSchema.parse(json);
+
+    // 校验分类（必须启用）
+    const category = await prisma.category.findFirst({ where: { id: parsed.categoryId, enabled: true } });
+    if (!category) {
+      return NextResponse.json({ error: "分类不存在或已禁用" }, { status: 400 });
+    }
+
+    const created = await prisma.asset.create({
+      data: {
+        title: parsed.title.trim(),
+        type: "image",
+        coverUrl: parsed.coverUrl,
+        aspectRatio: 1.0,
+        modelTag: "示例", // 后台示例作品
+        tags: JSON.stringify([]),
+        prompt: parsed.prompt?.trim() || null,
+        // 后台示例默认归属于系统，占位内容，不参与作者奖励
+        userId: null,
+        isPublic: parsed.isPublic ?? true,
+        reusePoints: parsed.reusePoints ?? 50,
+        categoryId: category.id,
+      },
+      include: { user: { select: { id: true, email: true, name: true } } },
+    });
+
+    // 审计日志
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: "ADMIN_CREATE_ASSET",
+        description: `create asset ${created.id}`,
+        metadata: JSON.stringify({ categoryId: category.id }),
+      },
+    });
+
+    const item = mapAdminAsset(created as any);
+    return NextResponse.json({ item });
+  } catch (e: any) {
+    console.error("[AdminAssets] POST", e);
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ error: e.issues?.[0]?.message || "参数错误" }, { status: 400 });
+    }
+    return NextResponse.json({ error: e.message || "创建失败" }, { status: 500 });
   }
 }

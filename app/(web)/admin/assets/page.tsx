@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import Image from "next/image";
-import { Search, ShieldBan, ShieldCheck, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, ShieldBan, ShieldCheck, Pencil, Trash2, Loader2, Plus } from "lucide-react";
 
 import type { AssetListItem } from "@/lib/assets";
 import { EditAssetDialog } from "@/components/admin/edit-asset-dialog";
+import { CreateAssetDialog } from "@/components/admin/create-asset-dialog";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -28,6 +29,7 @@ export default function AdminAssetsPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminAsset | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const queryKey = useMemo(() => `/api/admin/assets?limit=50${q ? `&q=${encodeURIComponent(q)}` : ""}${cursor ? `&cursor=${cursor}` : ""}`, [q, cursor]);
   const { data, isLoading } = useSWR<ListResponse>(queryKey, fetcher, { refreshInterval: 60_000 });
@@ -84,9 +86,18 @@ export default function AdminAssetsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold text-foreground">作品管理</h1>
-        <p className="text-sm text-muted-foreground">管理首页瀑布流来源的公开作品：搜索、编辑、删除、屏蔽/解除屏蔽，以及调整复用积分。</p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold text-foreground">作品管理</h1>
+          <p className="text-sm text-muted-foreground">管理首页瀑布流来源的公开作品：搜索、编辑、删除、屏蔽/解除屏蔽，以及调整复用积分。</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-emerald-700"
+        >
+          <Plus className="w-4 h-4" /> 新增示例作品
+        </button>
       </header>
 
       {/* 搜索栏 */}
@@ -209,6 +220,15 @@ export default function AdminAssetsPage() {
           if (!editing) return;
           setItems((prev) => prev.map((it) => (it.id === editing.id ? { ...it, ...patch } as any : it)));
           setEditing(null);
+        }}
+      />
+      {/* 新增示例弹窗 */}
+      <CreateAssetDialog
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(asset) => {
+          setItems((prev) => [asset as AdminAsset, ...prev]);
+          setCreating(false);
         }}
       />
     </div>
