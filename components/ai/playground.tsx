@@ -134,11 +134,13 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
       setSelectedImageModel(null);
       return;
     }
+    // 只在已选模型不存在时清空，不自动选择第一个
     setSelectedImageModel((prev) => {
       if (prev && imageModels.some((model) => model.slug === prev)) {
         return prev;
       }
-      return imageModels[0]?.slug ?? null;
+      // 返回 null 而不是自动选择第一个模型
+      return null;
     });
   }, [imageModels]);
 
@@ -368,24 +370,27 @@ export function AIPlayground({ models, isAuthenticated }: Props) {
             </label>
             <Select
               value={selectedImageModel ?? ""}
-              onChange={(event) => setSelectedImageModel(event.target.value)}
+              onChange={(event) => setSelectedImageModel(event.target.value || null)}
               disabled={imageModels.length === 0}
             >
               {imageModels.length === 0 ? (
                 <option value="">暂无可用模型</option>
               ) : (
-                imageModels.map((model) => {
-                  const basePrice =
-                    model.pricing && model.pricing.unit === "image"
-                      ? (model.pricing as any).base
-                      : null;
-                  return (
-                    <option key={model.slug} value={model.slug}>
-                      {model.displayName}
-                      {basePrice ? ` · ${basePrice}豆/图` : ""}
-                    </option>
-                  );
-                })
+                <>
+                  <option value="">请选择模型</option>
+                  {imageModels.map((model) => {
+                    const basePrice =
+                      model.pricing && model.pricing.unit === "image"
+                        ? (model.pricing as any).base
+                        : null;
+                    return (
+                      <option key={model.slug} value={model.slug}>
+                        {model.displayName}
+                        {basePrice ? ` · ${basePrice}豆/图` : ""}
+                      </option>
+                    );
+                  })}
+                </>
               )}
             </Select>
           </div>

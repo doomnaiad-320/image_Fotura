@@ -14,14 +14,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { httpFetch } from "@/lib/http";
 
 const providerSchema = z.object({
-  slug: z
-    .string()
-    .min(2, "至少 2 个字符")
-    .max(40, "最多 40 个字符")
-    .regex(
-      /^[a-z0-9-]+$/,
-      "只允许小写字母、数字和连字符，例如: openai, gpt-4, claude-3"
-    ),
+  slug: z.union([
+    z.literal(""),
+    z
+      .string()
+      .min(2, "至少 2 个字符")
+      .max(40, "最多 40 个字符")
+      .regex(
+        /^[a-z0-9-]+$/,
+        "只允许小写字母、数字和连字符，例如: openai, gpt-4, claude-3"
+      )
+  ]),
   name: z.string().min(2, "至少 2 个字符"),
   baseURL: z.string().url("请输入有效的 URL"),
   apiKey: z.string().optional().nullable(),
@@ -445,13 +448,14 @@ export function AdminAIConsole({ initialProviders, initialModels }: Props) {
         `/api/providers/${provider.slug}/remote-models`
       );
       const remoteModels = response.models ?? [];
+      // 默认：全部不选中，交由管理员手动勾选
       setModelSelector({
         open: true,
         loading: false,
         importing: false,
         provider,
         models: remoteModels,
-        selected: new Set(remoteModels.map((model) => model.id))
+        selected: new Set()
       });
     } catch (error) {
       console.error(error);
