@@ -55,7 +55,8 @@ const createAssetSchema = z.object({
   prompt: z.string().optional().nullable(),
   coverUrl: z.string().url("图片链接无效"),
   isPublic: z.boolean().optional().default(true),
-  reusePoints: z.number().int().min(0).max(10000).optional().default(50)
+  reusePoints: z.number().int().min(0).max(10000).optional().default(50),
+  modelSlug: z.string().min(1).optional()
 });
 
 function mapAdminAsset(a: any) {
@@ -109,15 +110,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "分类不存在或已禁用" }, { status: 400 });
     }
 
+    // 解析模型（可选）
+    let modelSlug: string | null = null;
+    let modelName: string | null = null;
+    if (parsed.modelSlug) {
+      const model = await prisma.aiModel.findFirst({
+        where: { slug: parsed.modelSlug, enabled: true, provider: { enabled: true } },
+        select: { slug: true, displayName: true }
+      });
+      if (!model) {
+        return NextResponse.json({ error: "模型不存在或已禁用" }, { status: 400 });
+      }
+      modelSlug = model.slug;
+      modelName = model.displayName;
+    }
+
     const created = await prisma.asset.create({
       data: {
         title: parsed.title.trim(),
         type: "image",
         coverUrl: parsed.coverUrl,
         aspectRatio: 1.0,
-        modelTag: "示例", // 后台示例作品
+        modelTag: modelName || "示例", // 显示模型名，否则回退为示例
         tags: JSON.stringify([]),
         prompt: parsed.prompt?.trim() || null,
+        model: modelSlug,
+        modelName,
         // 将管理员创建的示例也视为“真实作品”，便于在灵感画廊中展示
         userId: user.id,
         isPublic: parsed.isPublic ?? true,

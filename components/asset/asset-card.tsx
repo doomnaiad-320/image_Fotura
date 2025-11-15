@@ -51,9 +51,9 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
   if (compact) {
     // 紧凑模式：只显示图片和基本信息
     return (
-<article className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-        <div 
-          className="relative w-full overflow-hidden cursor-pointer" 
+      <article className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <div
+          className="relative w-full overflow-hidden cursor-pointer"
           onClick={handleViewDetail}
         >
           {asset.type === "video" ? (
@@ -84,14 +84,14 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
           </div>
         </div>
         <div className="px-3 py-3">
-<h3 className="line-clamp-2 text-sm font-medium leading-tight text-foreground">{asset.title}</h3>
+          <h3 className="line-clamp-2 text-sm font-medium leading-tight text-foreground">{asset.title}</h3>
         </div>
       </article>
     );
   }
 
   return (
-<article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+    <article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       {/* 图片区域 */}
       <div 
         className="relative w-full overflow-hidden cursor-pointer" 
@@ -133,7 +133,7 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
               {asset.type === "video" ? "视频" : "图片"}
             </span>
             <span className="rounded-full border border-white/20 bg-white/5 px-2 py-0.5 text-white/80">
-              {asset.modelTag}
+              {asset.modelName || asset.modelTag}
             </span>
           </div>
         </div>

@@ -26,6 +26,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       if (!cat) return NextResponse.json({ error: "分类不存在" }, { status: 400 });
       data.categoryId = body.categoryId;
     }
+    if (typeof body.modelSlug === "string" && body.modelSlug.trim()) {
+      const model = await prisma.aiModel.findFirst({
+        where: { slug: body.modelSlug.trim(), enabled: true, provider: { enabled: true } },
+        select: { slug: true, displayName: true }
+      });
+      if (!model) return NextResponse.json({ error: "模型不存在或已禁用" }, { status: 400 });
+      data.model = model.slug;
+      data.modelName = model.displayName;
+      data.modelTag = model.displayName;
+    }
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "无有效更新字段" }, { status: 400 });

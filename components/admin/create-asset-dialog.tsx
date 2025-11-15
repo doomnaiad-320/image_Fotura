@@ -10,6 +10,12 @@ type PublicCategory = {
   children?: Array<{ id: string; name: string; slug: string }>;
 };
 
+type ModelOption = {
+  slug: string;
+  displayName: string;
+  provider: { slug: string; name: string };
+};
+
 export type CreateAssetDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -24,6 +30,8 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
   const [categories, setCategories] = React.useState<PublicCategory[]>([]);
   const [rootId, setRootId] = React.useState<string>("");
   const [childId, setChildId] = React.useState<string>("");
+  const [models, setModels] = React.useState<ModelOption[]>([]);
+  const [modelSlug, setModelSlug] = React.useState<string>("");
   const [coverUrl, setCoverUrl] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -38,8 +46,7 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
       setCoverUrl("");
       setFile(null);
       setSaving(false);
-
-      // 拉取分类
+       // 拉取分类
       fetch("/api/categories")
         .then((r) => r.json())
         .then((json) => {
@@ -49,6 +56,20 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
             setRootId(items[0].id);
             setChildId(items[0].children?.[0]?.id || "");
           }
+        })
+        .catch(() => {});
+
+      // 拉取模型列表
+      fetch("/api/ai/models")
+        .then((r) => r.json())
+        .then((json) => {
+          const list = (json?.models || []) as any[];
+          const opts: ModelOption[] = list.map((m) => ({
+            slug: m.slug,
+            displayName: m.displayName,
+            provider: m.provider,
+          }));
+          setModels(opts);
         })
         .catch(() => {});
     }
@@ -107,6 +128,11 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
       return;
     }
 
+    if (models.length > 0 && !modelSlug) {
+      toast.error("请选择模型");
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -139,6 +165,7 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
         coverUrl: finalCoverUrl,
         isPublic,
         reusePoints,
+        modelSlug: modelSlug || undefined,
       };
 
       const res = await fetch("/api/admin/assets", {
@@ -224,6 +251,22 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">模型</label>
+            <select
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
+              value={modelSlug}
+              onChange={(e) => setModelSlug(e.target.value)}
+            >
+              <option value="">{models.length === 0 ? "暂无可用模型" : "请选择模型"}</option>
+              {models.map((m) => (
+                <option key={m.slug} value={m.slug}>
+                  {m.provider?.name ? `${m.provider.name} · ${m.displayName}` : m.displayName}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">

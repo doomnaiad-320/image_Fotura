@@ -4,6 +4,12 @@ import React from "react";
 
 type PublicCategory = { id: string; name: string; slug: string; children?: Array<{ id: string; name: string; slug: string }> };
 
+type ModelOption = {
+  slug: string;
+  displayName: string;
+  provider: { slug: string; name: string };
+};
+
 export type EditAsset = {
   id: string;
   title: string;
@@ -11,6 +17,7 @@ export type EditAsset = {
   prompt?: string | null;
   categoryId?: string | null;
   reusePoints: number;
+  model?: string | null;
 };
 
 export function EditAssetDialog({ open, asset, onClose, onSaved }: {
@@ -25,6 +32,8 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
   const [categories, setCategories] = React.useState<PublicCategory[]>([]);
   const [rootId, setRootId] = React.useState<string>("");
   const [childId, setChildId] = React.useState<string>("");
+  const [models, setModels] = React.useState<ModelOption[]>([]);
+  const [modelSlug, setModelSlug] = React.useState<string>("");
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -32,6 +41,7 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
       setTitle(asset.title);
       setIsPublic(asset.isPublic);
       setReusePoints(asset.reusePoints ?? 50);
+      setModelSlug(asset.model || "");
       fetch('/api/categories')
         .then((r) => r.json())
         .then((json) => {
@@ -53,6 +63,20 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
           }
         })
         .catch(() => {});
+
+      // 拉取模型列表
+      fetch('/api/ai/models')
+        .then((r) => r.json())
+        .then((json) => {
+          const list = (json?.models || []) as any[];
+          const opts: ModelOption[] = list.map((m) => ({
+            slug: m.slug,
+            displayName: m.displayName,
+            provider: m.provider,
+          }));
+          setModels(opts);
+        })
+        .catch(() => {});
     }
   }, [open, asset]);
 
@@ -65,7 +89,7 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
       const child = root?.children?.find((c) => c.id === childId);
       const categoryId = (child?.id || root?.id || '').trim();
       const safePoints = Number.isNaN(Number(reusePoints)) ? asset.reusePoints : Math.max(0, Math.floor(reusePoints));
-      const payload: any = { title: title.trim() || asset.title, isPublic, categoryId, reusePoints: safePoints };
+      const payload: any = { title: title.trim() || asset.title, isPublic, categoryId, reusePoints: safePoints, modelSlug: modelSlug || undefined };
       const res = await fetch(`/api/admin/assets/${asset.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -73,7 +97,7 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || '保存失败');
-      onSaved({ title: payload.title, isPublic: payload.isPublic, categoryId: payload.categoryId, reusePoints: payload.reusePoints });
+      onSaved({ title: payload.title, isPublic: payload.isPublic, categoryId: payload.categoryId, reusePoints: payload.reusePoints, model: modelSlug || asset.model });
       onClose();
     } catch (e: any) {
       alert(e?.message || '保存失败');
@@ -125,6 +149,22 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
               <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="w-6 h-6 rounded-lg accent-orange-500" />
               <span className="text-sm">{isPublic ? '公开' : '屏蔽'}</span>
             </label>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">模型</label>
+            <select
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm"
+              value={modelSlug}
+              onChange={(e) => setModelSlug(e.target.value)}
+            >
+              <option value="">{models.length === 0 ? '暂无可用模型' : '请选择模型'}</option>
+              {models.map((m) => (
+                <option key={m.slug} value={m.slug}>
+                  {m.provider?.name ? `${m.provider.name} · ${m.displayName}` : m.displayName}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">
