@@ -10,6 +10,7 @@ export type EditAsset = {
   isPublic: boolean;
   prompt?: string | null;
   categoryId?: string | null;
+  reusePoints: number;
 };
 
 export function EditAssetDialog({ open, asset, onClose, onSaved }: {
@@ -20,6 +21,7 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
 }) {
   const [title, setTitle] = React.useState("");
   const [isPublic, setIsPublic] = React.useState(true);
+  const [reusePoints, setReusePoints] = React.useState<number>(50);
   const [categories, setCategories] = React.useState<PublicCategory[]>([]);
   const [rootId, setRootId] = React.useState<string>("");
   const [childId, setChildId] = React.useState<string>("");
@@ -29,6 +31,7 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
     if (open && asset) {
       setTitle(asset.title);
       setIsPublic(asset.isPublic);
+      setReusePoints(asset.reusePoints ?? 50);
       fetch('/api/categories')
         .then((r) => r.json())
         .then((json) => {
@@ -61,7 +64,8 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
       const root = categories.find((c) => c.id === rootId);
       const child = root?.children?.find((c) => c.id === childId);
       const categoryId = (child?.id || root?.id || '').trim();
-      const payload: any = { title: title.trim() || asset.title, isPublic, categoryId };
+      const safePoints = Number.isNaN(Number(reusePoints)) ? asset.reusePoints : Math.max(0, Math.floor(reusePoints));
+      const payload: any = { title: title.trim() || asset.title, isPublic, categoryId, reusePoints: safePoints };
       const res = await fetch(`/api/admin/assets/${asset.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -69,7 +73,7 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || '保存失败');
-      onSaved({ title: payload.title, isPublic: payload.isPublic, categoryId: payload.categoryId });
+      onSaved({ title: payload.title, isPublic: payload.isPublic, categoryId: payload.categoryId, reusePoints: payload.reusePoints });
       onClose();
     } catch (e: any) {
       alert(e?.message || '保存失败');
@@ -121,6 +125,23 @@ export function EditAssetDialog({ open, asset, onClose, onSaved }: {
               <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="w-6 h-6 rounded-lg accent-orange-500" />
               <span className="text-sm">{isPublic ? '公开' : '屏蔽'}</span>
             </label>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">应用所需积分</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min={0}
+                max={10000}
+                step={10}
+                className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                placeholder="设置为 0 表示免费应用"
+                value={reusePoints}
+                onChange={(e) => setReusePoints(Math.max(0, Number.isNaN(Number(e.target.value)) ? 0 : Number(e.target.value)))}
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">积分</span>
+            </div>
           </div>
 
           <div className="space-y-2">

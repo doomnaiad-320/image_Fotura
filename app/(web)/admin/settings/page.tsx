@@ -9,7 +9,7 @@ export default function AdminSettingsPage() {
   const [registrationBonus, setRegistrationBonus] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // 复用积分设置
+  // 应用积分设置
   const [reuseMin, setReuseMin] = useState("");
   const [reuseMax, setReuseMax] = useState("");
   const [reuseCurrent, setReuseCurrent] = useState("");
@@ -126,10 +126,10 @@ export default function AdminSettingsPage() {
             </div>
           </div>
 
-          {/* 复用积分默认设置 */}
+          {/* 应用积分默认设置 */}
           <div className="space-y-4">
-            <h2 className="text-xl font-medium text-foreground">复用积分（默认区间）</h2>
-            <p className="text-xs text-muted-foreground">用于新作品默认复用积分的合理范围与当前默认值，首页瀑布流的复用价格也参考该值。</p>
+            <h2 className="text-xl font-medium text-foreground">应用积分（默认区间）</h2>
+            <p className="text-xs text-muted-foreground">用于新作品默认应用积分的合理范围与当前默认值，首页瀑布流的应用价格也参考该值。</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-muted-foreground">最小值</label>
@@ -185,7 +185,7 @@ export default function AdminSettingsPage() {
                     });
                     const json = await res.json().catch(() => ({}));
                     if (!res.ok) throw new Error(json.error || "保存失败");
-                    setMessage({ type: "success", text: "复用积分设置已保存" });
+                    setMessage({ type: "success", text: "应用积分设置已保存" });
                   } catch (e) {
                     setMessage({ type: "error", text: e instanceof Error ? e.message : "保存失败" });
                   } finally {
@@ -194,7 +194,7 @@ export default function AdminSettingsPage() {
                 }}
                 className="mt-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded-lg"
               >
-                保存复用积分设置
+                保存应用积分设置
               </button>
             </div>
           </div>

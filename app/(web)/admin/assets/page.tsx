@@ -214,7 +214,7 @@ export default function AdminAssetsPage() {
       {/* 编辑弹窗 */}
       <EditAssetDialog
         open={Boolean(editing)}
-        asset={editing ? { id: editing.id, title: editing.title, isPublic: editing.isPublic, prompt: editing.prompt, categoryId: (editing as any).categoryId } : null}
+        asset={editing ? { id: editing.id, title: editing.title, isPublic: editing.isPublic, prompt: editing.prompt, categoryId: (editing as any).categoryId, reusePoints: editing.reusePoints } : null}
         onClose={() => setEditing(null)}
         onSaved={(patch) => {
           if (!editing) return;

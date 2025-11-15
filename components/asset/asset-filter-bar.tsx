@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, type ChangeEvent } from "react";
+import { useMemo } from "react";
 
 import type { AssetSort } from "@/lib/assets";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 
 export type AssetFilterState = {
   type: string | "all";
@@ -51,17 +50,24 @@ export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
       </div>
 <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <span className="hidden md:inline">排序</span>
-        <Select
-          value={value.sort}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange({ ...value, sort: event.target.value as AssetSort })}
-          className="w-32"
-        >
-          {sortOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
+        <div className="inline-flex rounded-full bg-muted p-1">
+          {sortOptions.map((option) => {
+            const isActive = value.sort === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onChange({ ...value, sort: option.value })}
+                className={cn(
+                  "px-3 py-1 text-xs rounded-full transition",
+                  isActive ? "bg-foreground text-background" : "text-muted-foreground"
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

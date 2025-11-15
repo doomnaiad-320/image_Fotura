@@ -74,10 +74,13 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
               className="h-auto w-full object-cover"
             />
           )}
-          <div className="absolute left-2 top-2">
-<Badge className="border-border bg-muted/90 text-foreground backdrop-blur-sm text-[10px]">
+          <div className="absolute left-2 top-2 flex items-center gap-2">
+            <Badge className="border-border bg-muted/90 text-foreground backdrop-blur-sm text-[10px]">
               {asset.type === "video" ? "视频" : "图片"}
             </Badge>
+            <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
+              {asset.reusePoints === 0 ? "免费应用" : `应用 ${asset.reusePoints} 积分`}
+            </span>
           </div>
         </div>
         <div className="px-3 py-3">
@@ -112,11 +115,14 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
           />
         )}
         <div className="absolute left-3 top-3 flex items-center gap-2 text-xs font-medium">
-<Badge className="border-border bg-muted text-foreground">
+          <Badge className="border-border bg-muted text-foreground">
             {asset.type === "video" ? "视频" : "图片"}
           </Badge>
-<span className="rounded-full bg-muted px-3 py-1 text-[11px] tracking-wide text-foreground border border-border">
+          <span className="rounded-full bg-muted px-3 py-1 text-[11px] tracking-wide text-foreground border border-border">
             {asset.modelTag}
+          </span>
+          <span className="rounded-full bg-black/60 px-2 py-0.5 text-[11px] text-white">
+            {asset.reusePoints === 0 ? "免费应用" : `应用 ${asset.reusePoints} 积分`}
           </span>
         </div>
       </div>

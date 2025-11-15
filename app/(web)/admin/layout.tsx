@@ -67,7 +67,7 @@ const navItems: Array<{ name: string; href: string; icon: any; sub?: boolean }> 
     sub: true,
   },
   {
-    name: "已复用",
+    name: "已应用",
     href: "/admin/me/reused",
     icon: RefreshCw,
     sub: true,

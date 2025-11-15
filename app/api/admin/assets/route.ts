@@ -118,8 +118,8 @@ export async function POST(req: NextRequest) {
         modelTag: "示例", // 后台示例作品
         tags: JSON.stringify([]),
         prompt: parsed.prompt?.trim() || null,
-        // 后台示例默认归属于系统，占位内容，不参与作者奖励
-        userId: null,
+        // 将管理员创建的示例也视为“真实作品”，便于在灵感画廊中展示
+        userId: user.id,
         isPublic: parsed.isPublic ?? true,
         reusePoints: parsed.reusePoints ?? 50,
         categoryId: category.id,

@@ -19,6 +19,7 @@ export type CreateAssetDialogProps = {
 export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialogProps) {
   const [title, setTitle] = React.useState("");
   const [prompt, setPrompt] = React.useState("");
+  const [reusePoints, setReusePoints] = React.useState<number>(50);
   const [isPublic, setIsPublic] = React.useState(true);
   const [categories, setCategories] = React.useState<PublicCategory[]>([]);
   const [rootId, setRootId] = React.useState<string>("");
@@ -32,6 +33,7 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
       // 重置表单
       setTitle("");
       setPrompt("");
+      setReusePoints(50);
       setIsPublic(true);
       setCoverUrl("");
       setFile(null);
@@ -136,6 +138,7 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
         prompt: prompt.trim() || undefined,
         coverUrl: finalCoverUrl,
         isPublic,
+        reusePoints,
       };
 
       const res = await fetch("/api/admin/assets", {
@@ -229,8 +232,25 @@ export function CreateAssetDialog({ open, onClose, onCreated }: CreateAssetDialo
               className="w-full rounded-xl border border-input bg-background px-4 py-3 min-h-[80px]"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="可选，用于复用时自动填充 Prompt"
+              placeholder="可选，用于应用时自动填充 Prompt"
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">应用所需积分</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min={0}
+                max={10000}
+                step={10}
+                className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                placeholder="设置为 0 表示免费应用"
+                value={reusePoints}
+                onChange={(e) => setReusePoints(Math.max(0, Number.isNaN(Number(e.target.value)) ? 0 : Number(e.target.value)))}
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">积分</span>
+            </div>
           </div>
 
           <div className="space-y-2">

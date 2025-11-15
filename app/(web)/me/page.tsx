@@ -17,7 +17,7 @@ export default async function MePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/auth/signin?redirect=/me");
 
-  // 已复用（已购买）列表
+  // 已应用（已购买）列表
   const reused = await prisma.reuseRecord.findMany({
     where: { reuserId: user.id },
     include: {
@@ -148,7 +148,7 @@ export default async function MePage() {
     <div className="space-y-6">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold text-foreground">个人主页</h1>
-        <p className="text-sm text-muted-foreground">已发布 · 已复用 · 收藏</p>
+        <p className="text-sm text-muted-foreground">已发布 · 已应用 · 收藏</p>
       </header>
 
       <MeDashboard
