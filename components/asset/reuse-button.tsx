@@ -39,8 +39,8 @@ export function ReuseButton({
   return (
     <>
       <Button
-        variant="ghost"
-        className="flex-1"
+        variant="primary"
+        className="flex-1 min-h-[40px] rounded-full bg-orange-600 text-white hover:bg-orange-500 text-sm font-medium"
         onClick={handleClick}
       >
         <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

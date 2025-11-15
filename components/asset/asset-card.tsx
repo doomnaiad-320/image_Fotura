@@ -91,7 +91,8 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
   }
 
   return (
-<article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card shadow transition hover:-translate-y-1">
+<article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+      {/* 图片区域 */}
       <div 
         className="relative w-full overflow-hidden cursor-pointer" 
         onClick={handleViewDetail}
@@ -114,44 +115,54 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
             className="h-auto w-full object-cover"
           />
         )}
-        <div className="absolute left-3 top-3 flex items-center gap-2 text-xs font-medium">
-          <Badge className="border-border bg-muted text-foreground">
-            {asset.type === "video" ? "视频" : "图片"}
-          </Badge>
-          <span className="rounded-full bg-muted px-3 py-1 text-[11px] tracking-wide text-foreground border border-border">
-            {asset.modelTag}
-          </span>
-          <span className="rounded-full bg-black/60 px-2 py-0.5 text-[11px] text-white">
+
+        {/* 顶部价签（轻微倾斜） */}
+        <div className="absolute right-3 top-3 origin-top-right -rotate-2">
+          <span className="inline-flex items-center rounded-full bg-amber-400 px-3 py-1 text-[11px] font-semibold text-black shadow-md">
             {asset.reusePoints === 0 ? "免费应用" : `应用 ${asset.reusePoints} 积分`}
           </span>
         </div>
+
+        {/* 底部信息条：标题 + 类型 + 模型，标题浮在图片上 */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent px-3 pb-3 pt-4">
+          <p className="line-clamp-2 text-[13px] sm:text-sm font-semibold leading-snug text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+            {asset.title}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px]">
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-white/85">
+              {asset.type === "video" ? "视频" : "图片"}
+            </span>
+            <span className="rounded-full border border-white/20 bg-white/5 px-2 py-0.5 text-white/80">
+              {asset.modelTag}
+            </span>
+          </div>
+        </div>
       </div>
-      <div className="space-y-4 px-5 py-5">
-        <div className="space-y-2">
-<h3 className="text-lg font-semibold leading-tight text-foreground">{asset.title}</h3>
-<div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            {asset.tags.map((tag) => (
+
+      {/* 信息区 */}
+      <div className="space-y-3 px-4 py-4">
+        {/* 标签（可选） */}
+        {asset.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+            {asset.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.2em]"
+className="rounded-full border border-border px-3 py-1 uppercase tracking-[0.2em]"
               >
                 {tag}
               </span>
             ))}
           </div>
-        </div>
-<div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-热度 <strong className="text-foreground">{asset.hotScore.toFixed(1)}</strong>
-          </span>
-          <span>
-            👍 {asset.likes} · 👁️ {asset.views}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
+        )}
+
+        {/* 操作按钮 */}
+        <div className="flex items-center gap-3 pt-1">
           <Button
             variant={favorited ? "primary" : "secondary"}
-            className={cn("flex-1", favorited && "bg-white text-black")}
+            className={cn(
+              "flex-1 min-h-[38px] rounded-full text-xs font-medium",
+              favorited && "bg-white text-black"
+            )}
             onClick={handleFavorite}
           >
             {favorited ? "已收藏" : "收藏"}
