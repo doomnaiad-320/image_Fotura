@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ReuseButton } from "@/components/asset/reuse-button";
 
-export type AssetCardProps = {
+export type AssetCardBProps = {
   asset: AssetListItem;
   onToggleFavorite?: (assetId: string, nextState: boolean) => Promise<void>;
   isAuthenticated?: boolean;
@@ -18,7 +18,7 @@ export type AssetCardProps = {
   compact?: boolean;
 };
 
-export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredits = 0, compact = false }: AssetCardProps) {
+export function AssetCardB({ asset, onToggleFavorite, isAuthenticated, userCredits = 0, compact = false }: AssetCardBProps) {
   const router = useRouter();
   const [optimisticFavorite, setOptimisticFavorite] = useState(asset.isFavorited);
   const favorited = optimisticFavorite;
@@ -43,13 +43,12 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
     }
   };
 
-
   const handleViewDetail = () => {
     router.push(`/assets/${asset.id}`);
   };
 
   if (compact) {
-    // 紧凑模式：只显示图片和基本信息
+    // 紧凑模式：与原版保持接近，仅做轻微优化
     return (
       <article className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
         <div
@@ -74,16 +73,6 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
               className="h-auto w-full object-cover"
             />
           )}
-          <div className="absolute left-2 top-2 flex items-center gap-2">
-            <Badge className="border-border bg-muted/90 text-foreground backdrop-blur-sm text-[10px]">
-              {asset.type === "video" ? "视频" : "图片"}
-            </Badge>
-            <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
-              {asset.reusePoints === 0
-                ? "灵感免费解锁"
-                : `解锁灵感 · ${asset.reusePoints} 积分`}
-            </span>
-          </div>
         </div>
         <div className="px-3 py-3">
           <h3 className="line-clamp-2 text-sm font-medium leading-tight text-foreground">{asset.title}</h3>
@@ -94,7 +83,7 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
 
   return (
     <article className="mb-6 break-inside-avoid overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-      {/* 图片区域 */}
+      {/* 图片区域：仅展示模型信息 */}
       <div
         className="relative w-full overflow-hidden cursor-pointer"
         onClick={handleViewDetail}
@@ -118,15 +107,6 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
           />
         )}
 
-        {/* 左上角标题卡片 */}
-        <div className="absolute left-3 top-3 max-w-[72%]">
-          <div className="inline-flex flex-col gap-1 rounded-2xl bg-white/95 px-3 py-2 shadow-md">
-            <span className="line-clamp-2 text-[13px] sm:text-sm font-semibold text-black">
-              {asset.title}
-            </span>
-          </div>
-        </div>
-
         {/* 顶部价签（轻微倾斜） */}
         <div className="absolute right-3 top-3 origin-top-right -rotate-2">
           <span className="inline-flex items-center rounded-full bg-amber-400 px-3 py-1 text-[11px] font-semibold text-black shadow-md">
@@ -136,16 +116,25 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
           </span>
         </div>
 
-        {/* 右下角模型胶囊 */}
-        <div className="absolute right-3 bottom-3">
-          <span className="inline-flex items-center rounded-full bg-black/60 px-3 py-1 text-[11px] text-white backdrop-blur-sm">
-            {asset.modelName || asset.modelTag}
-          </span>
+        {/* 底部模型胶囊 + 类型 */}
+        <div className="absolute inset-x-0 bottom-0 px-3 pb-3 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[10px]">
+            <span className="inline-flex items-center rounded-full bg-black/60 px-3 py-1 text-[11px] text-white backdrop-blur-sm">
+              {asset.modelName || asset.modelTag}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-black/50 px-3 py-1 text-[10px] text-white/85 backdrop-blur-sm">
+              {asset.type === "video" ? "视频" : "图片"}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* 信息区 */}
+        {/* 信息区：标题放在卡片下半部分 */}
       <div className="space-y-3 px-4 py-4">
+        <h3 className="line-clamp-2 text-[17px] md:text-[18px] font-semibold leading-snug text-foreground">
+          {asset.title}
+        </h3>
+
         {/* 标签（可选） */}
         {asset.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
@@ -166,7 +155,7 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
             variant={favorited ? "primary" : "secondary"}
             className={cn(
               "flex-1 min-h-[38px] rounded-full text-xs font-medium",
-              favorited && "bg-white text-black"
+              favorited && "bg-white text-black",
             )}
             onClick={handleFavorite}
           >
@@ -184,3 +173,5 @@ export function AssetCard({ asset, onToggleFavorite, isAuthenticated, userCredit
     </article>
   );
 }
+
+export default AssetCardB;

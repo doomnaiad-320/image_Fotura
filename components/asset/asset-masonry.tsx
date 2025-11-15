@@ -2,7 +2,8 @@
 
 import type { AssetListItem } from "@/lib/assets";
 
-import { AssetCard } from "./asset-card";
+// 临时使用方案 B 卡片进行视觉对比，如需切回方案 A 改回为 ./asset-card
+import { AssetCardB as AssetCard } from "./asset-card-b";
 
 export type AssetMasonryProps = {
   assets: AssetListItem[];
