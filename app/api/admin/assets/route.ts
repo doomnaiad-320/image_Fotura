@@ -91,6 +91,8 @@ function mapAdminAsset(a: any) {
     isPublic: a.isPublic,
     // prisma 类型暂未生成 categoryId 字段，使用 any 访问
     categoryId: (a as any).categoryId,
+    categoryName: ((a as any).category as any)?.name ?? null,
+    categorySlug: ((a as any).category as any)?.slug ?? null,
     author: a.user,
   };
 }

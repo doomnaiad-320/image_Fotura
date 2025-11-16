@@ -135,6 +135,13 @@ export function AssetCardB({ asset, onToggleFavorite, isAuthenticated, userCredi
           {asset.title}
         </h3>
 
+        {/* 分类名称 */}
+        {asset.categoryName && (
+          <div className="text-xs text-muted-foreground">
+            {asset.categoryName}
+          </div>
+        )}
+
         {/* 标签（可选） */}
         {asset.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">

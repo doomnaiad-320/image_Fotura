@@ -28,6 +28,10 @@ export type AssetListItem = {
   hotScore: number;
   createdAt: Date;
   isFavorited: boolean;
+  // 分类信息（可选）
+  categoryId?: string | null;
+  categoryName?: string | null;
+  categorySlug?: string | null;
   // AI 生成相关信息 (可选)
   prompt?: string | null;
   userId?: string | null;
@@ -50,6 +54,7 @@ type AssetWithFavorite = Prisma.AssetGetPayload<{
         id: true;
       };
     };
+    category: true;
   };
 }>;
 
@@ -92,17 +97,20 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
     userId: { not: null }
   };
 
+  const realInclude: any = {
+    category: true
+  };
+  if (userId) {
+    realInclude.favorites = {
+      where: { userId },
+      select: { id: true }
+    };
+  }
+
   const realAssets = await prisma.asset.findMany({
     where: realAssetsWhere,
     orderBy,
-    include: userId
-      ? {
-          favorites: {
-            where: { userId },
-            select: { id: true }
-          }
-        }
-      : undefined,
+    include: realInclude,
     take: limit + 1,
     skip: cursor ? 1 : undefined,
     cursor: cursor ? { id: cursor } : undefined
@@ -118,17 +126,20 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
       userId: null
     };
 
+    const placeholderInclude: any = {
+      category: true
+    };
+    if (userId) {
+      placeholderInclude.favorites = {
+        where: { userId },
+        select: { id: true }
+      };
+    }
+
     const placeholders = await prisma.asset.findMany({
       where: placeholderWhere,
       orderBy,
-      include: userId
-        ? {
-            favorites: {
-              where: { userId },
-              select: { id: true }
-            }
-          }
-        : undefined,
+      include: placeholderInclude,
       take: limit - realAssets.length + 1
     });
 
@@ -144,7 +155,9 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
   // 映射数据
   const items: AssetListItem[] = assets.map((asset) => {
     const parsedTags = Array.isArray(asset.tags) ? (asset.tags as string[]) : [];
-    const favorites = (asset as AssetWithFavorite).favorites ?? [];
+    const withRelations = asset as AssetWithFavorite;
+    const favorites = withRelations.favorites ?? [];
+    const category = withRelations.category ?? null;
 
     return {
       id: asset.id,
@@ -161,6 +174,10 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
       hotScore: asset.hotScore,
       createdAt: asset.createdAt,
       isFavorited: userId ? favorites.length > 0 : false,
+      // 分类信息
+      categoryId: category?.id ?? null,
+      categoryName: category?.name ?? null,
+      categorySlug: category?.slug ?? null,
       // AI 生成相关信息
       prompt: asset.prompt,
       userId: asset.userId,
