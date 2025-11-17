@@ -68,7 +68,8 @@ export async function POST(request: Request) {
       const crypto = await import('crypto');
       const hash = crypto.createHash('sha1').update(inputBuffer).digest('hex').slice(0, 12);
 
-      const base = sharp(inputBuffer, { failOn: 'none' }).rotate().removeMetadata();
+      // sharp 默认会移除大部分元数据（EXIF/IPTC），无需显式调用 removeMetadata
+      const base = sharp(inputBuffer, { failOn: 'none' }).rotate();
       const widths = [320, 1024, 2048];
       const quality = 75;
       const userPrefix = `images/${user.id}/${hash}`;
