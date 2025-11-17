@@ -1,17 +1,18 @@
 "use client";
 
-import { AssetType } from "@prisma/client";
+import type { AssetType } from "@prisma/client";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 import type { AssetFilterState } from "@/components/asset/asset-filter-bar";
 import { AssetFilterBar } from "@/components/asset/asset-filter-bar";
 import { AssetMasonry } from "@/components/asset/asset-masonry";
+import { GalleryCategoryList } from "@/components/asset/gallery-category-list";
+import { Button } from "@/components/ui/button";
 import type { AssetListItem, AssetListResponse } from "@/lib/assets";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export type AssetFeedProps = {
   initialItems: AssetListItem[];
@@ -21,11 +22,13 @@ export type AssetFeedProps = {
   userCredits?: number;
   basePath?: string; // 新增：用于更新 URL 时的基础路径（默认首页）
   compact?: boolean; // 紧凑模式，隐藏筛选栏和自动加载
+  syncUrl?: boolean; // 是否将筛选状态同步到 URL（在 /studio 内应关闭）
 };
 
 const DEFAULT_STATE: AssetFilterState = {
   type: "all",
-  sort: "hot"
+  sort: "hot",
+  categoryId: null
 };
 
 export function AssetFeed({
@@ -35,7 +38,8 @@ export function AssetFeed({
   isAuthenticated,
   userCredits,
   basePath = "/",
-  compact = false
+  compact = false,
+  syncUrl = true
 }: AssetFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,8 +48,8 @@ export function AssetFeed({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const queryKey = useMemo(
-    () => ["assets", filterState.type, filterState.sort],
-    [filterState.type, filterState.sort]
+    () => ["assets", filterState.type, filterState.sort, filterState.categoryId],
+    [filterState.type, filterState.sort, filterState.categoryId]
   );
 
   const fetchAssets = useCallback(
@@ -53,6 +57,9 @@ export function AssetFeed({
       const params = new URLSearchParams();
       params.set("type", filterState.type);
       params.set("sort", filterState.sort);
+      if (filterState.categoryId) {
+        params.set("categoryId", filterState.categoryId);
+      }
       if (pageParam) {
         params.set("cursor", pageParam);
       }
@@ -72,7 +79,9 @@ export function AssetFeed({
   );
 
   const isInitialFilter =
-    filterState.type === initialState.type && filterState.sort === initialState.sort;
+    filterState.type === initialState.type &&
+    filterState.sort === initialState.sort &&
+    (filterState.categoryId ?? null) === (initialState.categoryId ?? null);
 
   const initialQueryData = useMemo(() => {
     if (!isInitialFilter) {
@@ -134,25 +143,49 @@ export function AssetFeed({
   useEffect(() => {
     const typeParam = (searchParams.get("type") as AssetType | "all" | null) ?? "all";
     const sortParam = (searchParams.get("sort") as "hot" | "new" | null) ?? "hot";
-    setFilterState({ type: typeParam, sort: sortParam });
+    const categoryParam = searchParams.get("categoryId");
+    setFilterState({
+      type: typeParam,
+      sort: sortParam,
+      categoryId: categoryParam
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateUrl = useCallback(
     (state: AssetFilterState) => {
+      // 在某些嵌入场景（例如 Studio 的灵感画廊）不需要同步到 URL，避免在渲染期间触发 Router 更新告警
+      if (!syncUrl) return;
+
       const params = new URLSearchParams(searchParams.toString());
       params.set("type", state.type);
       params.set("sort", state.sort);
+      if (state.categoryId) {
+        params.set("categoryId", state.categoryId);
+      } else {
+        params.delete("categoryId");
+      }
       params.delete("cursor");
       router.replace(`${basePath}?${params.toString()}`);
     },
-    [router, searchParams, basePath]
+    [router, searchParams, basePath, syncUrl]
   );
 
   const handleFilterChange = useCallback(
     (state: AssetFilterState) => {
       setFilterState(state);
       updateUrl(state);
+    },
+    [updateUrl]
+  );
+
+  const handleCategoryChange = useCallback(
+    (categoryId: string | null) => {
+      setFilterState((prev) => {
+        const nextState = { ...prev, categoryId };
+        updateUrl(nextState);
+        return nextState;
+      });
     },
     [updateUrl]
   );
@@ -184,7 +217,15 @@ export function AssetFeed({
 
   return (
     <div className="space-y-6">
-      {!compact && <AssetFilterBar value={filterState} onChange={handleFilterChange} />}
+      {!compact && (
+        <>
+          <AssetFilterBar value={filterState} onChange={handleFilterChange} />
+          <GalleryCategoryList
+            value={filterState.categoryId ?? null}
+            onChange={handleCategoryChange}
+          />
+        </>
+      )}
       <AssetMasonry
         assets={items}
         onToggleFavorite={handleToggleFavorite}

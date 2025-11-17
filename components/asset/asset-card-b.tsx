@@ -136,9 +136,13 @@ export function AssetCardB({ asset, onToggleFavorite, isAuthenticated, userCredi
         </h3>
 
         {/* 分类名称 */}
-        {asset.categoryName && (
+        {(asset.categoryName || asset.categoryParentName) && (
           <div className="text-xs text-muted-foreground">
-            {asset.categoryName}
+            {asset.categoryParentName
+              ? asset.categoryName
+                ? `${asset.categoryParentName} · ${asset.categoryName}`
+                : asset.categoryParentName
+              : asset.categoryName}
           </div>
         )}
 

@@ -2,13 +2,14 @@
 
 import { useMemo } from "react";
 
+import { Button } from "@/components/ui/button";
 import type { AssetSort } from "@/lib/assets";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export type AssetFilterState = {
   type: string | "all";
   sort: AssetSort;
+  categoryId?: string | null;
 };
 
 export type AssetFilterBarProps = {
@@ -41,7 +42,13 @@ export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
               variant={isActive ? "primary" : "secondary"}
               size="sm"
               className={cn("rounded-full px-4", !isActive && "bg-transparent")}
-              onClick={() => onChange({ ...value, type: option.value })}
+              onClick={() =>
+                onChange({
+                  ...value,
+                  type: option.value,
+                  categoryId: null
+                })
+              }
             >
               {option.label}
             </Button>
@@ -59,7 +66,7 @@ export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
                 type="button"
                 onClick={() => onChange({ ...value, sort: option.value })}
                 className={cn(
-                  "px-3 py-1 text-xs rounded-full transition",
+                  "rounded-full px-3 py-1 text-xs transition",
                   isActive ? "bg-foreground text-background" : "text-muted-foreground"
                 )}
               >

@@ -1,9 +1,12 @@
-import { AssetType } from "@prisma/client";
 import { z } from "zod";
+
+// Prisma 中 Asset.type 使用的是字符串字段（"image" | "video"），而不是枚举类型
+// 这里直接用 z.enum 约束可选值，避免运行时 AssetType 为 undefined 导致错误
+const AssetTypeSchema = z.enum(["image", "video"]);
 
 export const assetQuerySchema = z.object({
   type: z
-    .union([z.literal("all"), z.nativeEnum(AssetType)])
+    .union([z.literal("all"), AssetTypeSchema])
     .optional()
     .default("all"),
   sort: z
@@ -11,6 +14,14 @@ export const assetQuerySchema = z.object({
     .optional()
     .default("hot"),
   cursor: z.string().optional().nullable(),
+  categoryId: z
+    .string()
+    .optional()
+    .transform((value) => {
+      if (!value) return undefined;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }),
   limit: z
     .union([z.string(), z.number()])
     .optional()

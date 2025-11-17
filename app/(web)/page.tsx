@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AssetFeed } from "@/components/asset/asset-feed";
 import { TypewriterHero } from "@/components/home/typewriter-hero";
@@ -30,13 +30,16 @@ export default async function HomePage({
   const parsed = assetQuerySchema.parse({
     type: typeof searchParams?.type === "string" ? searchParams.type : undefined,
     sort: typeof searchParams?.sort === "string" ? searchParams.sort : undefined,
-    cursor: typeof searchParams?.cursor === "string" ? searchParams.cursor : undefined
+    cursor: typeof searchParams?.cursor === "string" ? searchParams.cursor : undefined,
+    categoryId:
+      typeof searchParams?.categoryId === "string" ? searchParams.categoryId : undefined
   });
 
   const assetResult = await getAssets({
     type: parsed.type,
     sort: parsed.sort,
     cursor: parsed.cursor,
+    categoryId: parsed.categoryId,
     limit: 8, // 减少首页展示数量
     userId: null
   });
@@ -62,7 +65,11 @@ export default async function HomePage({
           <AssetFeed
             initialItems={assetResult.items}
             initialCursor={assetResult.nextCursor}
-            initialState={{ type: parsed.type, sort: parsed.sort }}
+            initialState={{
+              type: parsed.type,
+              sort: parsed.sort,
+              categoryId: parsed.categoryId ?? null
+            }}
             isAuthenticated={false}
             userCredits={0}
           />

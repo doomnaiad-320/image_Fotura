@@ -1,4 +1,4 @@
-import { AssetType, type Prisma } from "@prisma/client";
+import type { AssetType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -11,6 +11,7 @@ export type AssetQuery = {
   sort?: AssetSort;
   userId?: string | null;
   search?: string;
+  categoryId?: string | null;
 };
 
 export type AssetListItem = {
@@ -32,6 +33,9 @@ export type AssetListItem = {
   categoryId?: string | null;
   categoryName?: string | null;
   categorySlug?: string | null;
+  categoryParentId?: string | null;
+  categoryParentName?: string | null;
+  categoryParentSlug?: string | null;
   // AI 生成相关信息 (可选)
   prompt?: string | null;
   userId?: string | null;
@@ -54,7 +58,11 @@ type AssetWithFavorite = Prisma.AssetGetPayload<{
         id: true;
       };
     };
-    category: true;
+    category: {
+      include: {
+        parent: true;
+      };
+    };
   };
 }>;
 
@@ -65,7 +73,8 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
     type = "all",
     sort = "hot",
     userId,
-    search
+    search,
+    categoryId
   } = query;
 
   // 基础查询条件
@@ -85,66 +94,45 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
     ];
   }
 
-  // 排序规则
+  if (categoryId) {
+    baseWhere.categoryId = categoryId;
+  }
+
+  // 排序规则（保留热门/最新逻辑）
   const orderBy: Prisma.AssetOrderByWithRelationInput[] =
     sort === "hot"
       ? [{ hotScore: "desc" }, { createdAt: "desc" }]
       : [{ createdAt: "desc" }];
 
-  // 第一步：优先查询用户发布的真实内容（userId 不为 null）
-  const realAssetsWhere: Prisma.AssetWhereInput = {
-    ...baseWhere,
-    userId: { not: null }
-  };
+  // 作品列表：目前对所有公开且未删除的作品开放（包括管理员示例、历史作品等）
+  // 如需区分 seed 占位图，可在未来增加专门标记字段再过滤
+  const realAssetsWhere: Prisma.AssetWhereInput = baseWhere;
 
-  const realInclude: any = {
-    category: true
+  const include: Prisma.AssetInclude = {
+    category: {
+      include: {
+        parent: true
+      }
+    }
   };
   if (userId) {
-    realInclude.favorites = {
+    include.favorites = {
       where: { userId },
       select: { id: true }
     };
   }
 
-  const realAssets = await prisma.asset.findMany({
+  const records = await prisma.asset.findMany({
     where: realAssetsWhere,
     orderBy,
-    include: realInclude,
+    include,
     take: limit + 1,
     skip: cursor ? 1 : undefined,
     cursor: cursor ? { id: cursor } : undefined
   });
 
-  let assets = realAssets;
+  const assets = records;
   let nextCursor: string | null = null;
-
-  // 如果真实内容不足，补充占位图片（仅在无 cursor 时）
-  if (!cursor && realAssets.length < limit) {
-    const placeholderWhere: Prisma.AssetWhereInput = {
-      ...baseWhere,
-      userId: null
-    };
-
-    const placeholderInclude: any = {
-      category: true
-    };
-    if (userId) {
-      placeholderInclude.favorites = {
-        where: { userId },
-        select: { id: true }
-      };
-    }
-
-    const placeholders = await prisma.asset.findMany({
-      where: placeholderWhere,
-      orderBy,
-      include: placeholderInclude,
-      take: limit - realAssets.length + 1
-    });
-
-    assets = [...realAssets, ...placeholders];
-  }
 
   // 处理分页
   if (assets.length > limit) {
@@ -158,6 +146,7 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
     const withRelations = asset as AssetWithFavorite;
     const favorites = withRelations.favorites ?? [];
     const category = withRelations.category ?? null;
+    const parentCategory = category?.parent ?? null;
 
     return {
       id: asset.id,
@@ -178,6 +167,9 @@ export async function getAssets(query: AssetQuery = {}): Promise<AssetListRespon
       categoryId: category?.id ?? null,
       categoryName: category?.name ?? null,
       categorySlug: category?.slug ?? null,
+      categoryParentId: parentCategory?.id ?? null,
+      categoryParentName: parentCategory?.name ?? null,
+      categoryParentSlug: parentCategory?.slug ?? null,
       // AI 生成相关信息
       prompt: asset.prompt,
       userId: asset.userId,

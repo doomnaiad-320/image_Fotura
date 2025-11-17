@@ -1077,6 +1077,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                   isAuthenticated={isAuthenticated}
                   userCredits={balance?.credits}
                   basePath="/studio"
+                  syncUrl={false}
                 />
               )}
             </div>

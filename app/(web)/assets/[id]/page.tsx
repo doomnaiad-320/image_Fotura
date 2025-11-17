@@ -83,11 +83,19 @@ export default async function AssetDetailPage({ params }: { params: { id: string
   // Prompt 可见性：作者、免费作品、或已复用
   const promptVisible = isAuthor || asset.reusePoints === 0 || hasReused;
 
-  const tags = Array.isArray(asset.tags)
-    ? (asset.tags as string[])
-    : typeof asset.tags === "string"
-      ? JSON.parse(asset.tags || "[]")
-      : [];
+  let tags: string[] = [];
+  if (Array.isArray(asset.tags)) {
+    tags = asset.tags as string[];
+  } else if (typeof asset.tags === "string") {
+    try {
+      const parsed = JSON.parse(asset.tags || "[]");
+      if (Array.isArray(parsed)) {
+        tags = parsed as string[];
+      }
+    } catch {
+      tags = [];
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
