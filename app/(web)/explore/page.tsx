@@ -76,7 +76,7 @@ className="space-y-3 rounded-3xl border border-border bg-card p-5"
         <AssetFeed
           initialItems={assetResult.items}
           initialCursor={assetResult.nextCursor}
-          initialState={{ type: "all", sort: "new" }}
+          initialState={{ type: "image", sort: "new", categoryId: null }}
           isAuthenticated={Boolean(user)}
           userCredits={user?.credits}
         />

@@ -1,15 +1,16 @@
 "use client";
 
-import type { AssetType } from "@prisma/client";
+
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
-import type { AssetFilterState } from "@/components/asset/asset-filter-bar";
-import { AssetFilterBar } from "@/components/asset/asset-filter-bar";
+import {
+  InspirationCategoryNav,
+  InspirationFilterState
+} from "@/components/asset/inspiration-category-nav";
 import { AssetMasonry } from "@/components/asset/asset-masonry";
-import { GalleryCategoryList } from "@/components/asset/gallery-category-list";
 import { Button } from "@/components/ui/button";
 import type { AssetListItem, AssetListResponse } from "@/lib/assets";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,7 @@ import { cn } from "@/lib/utils";
 export type AssetFeedProps = {
   initialItems: AssetListItem[];
   initialCursor: string | null;
-  initialState: AssetFilterState;
+  initialState: InspirationFilterState;
   isAuthenticated?: boolean;
   userCredits?: number;
   basePath?: string; // 新增：用于更新 URL 时的基础路径（默认首页）
@@ -25,10 +26,10 @@ export type AssetFeedProps = {
   syncUrl?: boolean; // 是否将筛选状态同步到 URL（在 /studio 内应关闭）
 };
 
-const DEFAULT_STATE: AssetFilterState = {
-  type: "all",
+const DEFAULT_STATE: InspirationFilterState = {
+  type: "image",
   sort: "hot",
-  categoryId: null
+  categoryId: null,
 };
 
 export function AssetFeed({
@@ -43,7 +44,7 @@ export function AssetFeed({
 }: AssetFeedProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [filterState, setFilterState] = useState<AssetFilterState>(initialState);
+  const [filterState, setFilterState] = useState<InspirationFilterState>(initialState);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -141,7 +142,7 @@ export function AssetFeed({
   }, [query.isError, query.error]);
 
   useEffect(() => {
-    const typeParam = (searchParams.get("type") as AssetType | "all" | null) ?? "all";
+    const typeParam = (searchParams.get("type") as string | "all" | null) ?? "all";
     const sortParam = (searchParams.get("sort") as "hot" | "new" | null) ?? "hot";
     const categoryParam = searchParams.get("categoryId");
     setFilterState({
@@ -153,7 +154,7 @@ export function AssetFeed({
   }, []);
 
   const updateUrl = useCallback(
-    (state: AssetFilterState) => {
+    (state: InspirationFilterState) => {
       // 在某些嵌入场景（例如 Studio 的灵感画廊）不需要同步到 URL，避免在渲染期间触发 Router 更新告警
       if (!syncUrl) return;
 
@@ -172,23 +173,14 @@ export function AssetFeed({
   );
 
   const handleFilterChange = useCallback(
-    (state: AssetFilterState) => {
+    (state: InspirationFilterState) => {
       setFilterState(state);
       updateUrl(state);
     },
     [updateUrl]
   );
 
-  const handleCategoryChange = useCallback(
-    (categoryId: string | null) => {
-      setFilterState((prev) => {
-        const nextState = { ...prev, categoryId };
-        updateUrl(nextState);
-        return nextState;
-      });
-    },
-    [updateUrl]
-  );
+
 
   const handleToggleFavorite = useCallback(
     async (assetId: string, nextState: boolean) => {
@@ -219,11 +211,7 @@ export function AssetFeed({
     <div className="space-y-6">
       {!compact && (
         <>
-          <AssetFilterBar value={filterState} onChange={handleFilterChange} />
-          <GalleryCategoryList
-            value={filterState.categoryId ?? null}
-            onChange={handleCategoryChange}
-          />
+          <InspirationCategoryNav value={filterState} onChange={handleFilterChange} />
         </>
       )}
       <AssetMasonry

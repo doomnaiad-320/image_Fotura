@@ -2,10 +2,8 @@
 
 import { useMemo } from "react";
 
-import { Button } from "@/components/ui/button";
 import type { AssetSort } from "@/lib/assets";
 import { cn } from "@/lib/utils";
-
 export type AssetFilterState = {
   type: string | "all";
   sort: AssetSort;
@@ -30,44 +28,28 @@ const SORT_OPTIONS: { value: AssetSort; label: string }[] = [
 
 export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
   const sortOptions = useMemo(() => SORT_OPTIONS, []);
-
   return (
-<div className="flex flex-col gap-4 rounded-3xl border border-default bg-surface px-4 py-3 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-2">
       <div className="flex items-center gap-2">
-        {TYPE_OPTIONS.map((option) => {
-          const isActive = value.type === option.value;
-          return (
-            <Button
-              key={option.value}
-              variant={isActive ? "primary" : "secondary"}
-              size="sm"
-              className={cn("rounded-full px-4", !isActive && "bg-transparent")}
-              onClick={() =>
-                onChange({
-                  ...value,
-                  type: option.value,
-                  categoryId: null
-                })
-              }
-            >
-              {option.label}
-            </Button>
-          );
-        })}
-      </div>
-<div className="flex items-center gap-3 text-sm text-muted-foreground">
-        <span className="hidden md:inline">排序</span>
-        <div className="inline-flex rounded-full bg-muted p-1">
-          {sortOptions.map((option) => {
-            const isActive = value.sort === option.value;
+        <div className="inline-flex items-center rounded-full bg-muted/70 p-1 text-[11px] md:text-xs">
+          {TYPE_OPTIONS.map((option) => {
+            const isActive = value.type === option.value;
             return (
               <button
                 key={option.value}
                 type="button"
-                onClick={() => onChange({ ...value, sort: option.value })}
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    type: option.value,
+                    categoryId: null,
+                  })
+                }
                 className={cn(
-                  "rounded-full px-3 py-1 text-xs transition",
-                  isActive ? "bg-foreground text-background" : "text-muted-foreground"
+                  "rounded-full px-3 py-1 font-medium transition-colors",
+                  isActive
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {option.label}
@@ -75,6 +57,25 @@ export function AssetFilterBar({ value, onChange }: AssetFilterBarProps) {
             );
           })}
         </div>
+      </div>
+
+      <div className="flex items-center gap-1 text-[11px] text-muted-foreground md:text-xs">
+        {sortOptions.map((option) => {
+          const isActive = value.sort === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange({ ...value, sort: option.value })}
+              className={cn(
+                "rounded-full px-2.5 py-1 transition-colors",
+                isActive ? "bg-muted text-foreground" : "hover:text-foreground",
+              )}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

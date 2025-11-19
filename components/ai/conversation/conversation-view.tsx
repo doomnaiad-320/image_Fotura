@@ -983,7 +983,10 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       {/* 主内容区：全高（由 studio 布局控制视口高度） */}
       <div className="flex flex-col lg:ml-72 h-full min-h-0 overflow-hidden">
         {/* 顶部工具栏 */}
-<div className="border-b border-default shrink-0 flex items-center gap-3 py-3 px-4 sm:px-6 transition-all duration-300" style={{ width: isHistoryOpen ? 'calc(100% - 560px)' : undefined }}>
+        <div
+          className="border-b border-default shrink-0 flex items-center gap-3 py-3 px-4 sm:px-6 transition-all duration-300"
+          style={{ width: isHistoryOpen ? 'calc(100% - 560px)' : undefined }}
+        >
           {/* 移动端菜单按钮 */}
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -995,13 +998,15 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             </svg>
           </button>
 
-      <ConversationHeader
-        models={models}
-        selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
-        credits={balance?.credits}
-        onToggleHistory={handleToggleHistory}
-      />
+          {activeView === 'conversation' && (
+            <ConversationHeader
+              models={models}
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              credits={balance?.credits}
+              onToggleHistory={handleToggleHistory}
+            />
+          )}
         </div>
 
         {/* 右侧内容区域 */}
@@ -1073,7 +1078,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                 <AssetFeed
                   initialItems={exploreInit.items}
                   initialCursor={exploreInit.cursor}
-                  initialState={{ type: 'all', sort: 'hot' }}
+                  initialState={{ type: 'image', sort: 'hot', categoryId: null }}
                   isAuthenticated={isAuthenticated}
                   userCredits={balance?.credits}
                   basePath="/studio"
