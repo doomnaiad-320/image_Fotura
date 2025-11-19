@@ -29,7 +29,7 @@ const SIZE_PRESETS: Record<string, string[]> = {
   '16:9': ['1280x720', '1536x864']
 };
 
-export function InputArea({
+function InputArea({
   onSend,
   disabled = false,
   placeholder = '描述你想要的画面，例如：一只赛博朋克风格的猫...',

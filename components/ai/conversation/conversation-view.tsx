@@ -1,25 +1,27 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import useSWR from 'swr';
-import toast from 'react-hot-toast';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import useSWR from "swr";
 
-import ConversationHeader from './conversation-header';
-import ConversationSidebar from './conversation-sidebar';
-import MessageList from './message-list';
-import InputArea from './input-area';
-import PromptFusionDialog from './prompt-fusion-dialog';
-import type { ConversationMessage, Conversation, PublishResponse } from '@/types/conversation';
-import type { ModelOption } from '../playground';
-import { httpFetch } from '@/lib/http';
-import { createEditChain, generateConversationTitle } from '@/lib/ai/prompt-chain';
-import { useLocalHistory } from '@/lib/hooks/useLocalHistory';
-import { getConversationDB, isConversationDBSupported } from '@/lib/storage/conversation-db';
-import { imageBlobStore } from '@/lib/storage/image-blob';
-import PublishDialog from './publish-dialog';
-import { AssetFeed } from '@/components/asset/asset-feed';
-import type { AssetListItem, AssetListResponse } from '@/lib/assets';
-import { HistorySidebar, type HistoryItem } from '../history-sidebar';
+import { AssetFeed } from "@/components/asset/asset-feed";
+import { createEditChain, generateConversationTitle } from "@/lib/ai/prompt-chain";
+import type { AssetListItem, AssetListResponse } from "@/lib/assets";
+import { useLocalHistory } from "@/lib/hooks/useLocalHistory";
+import { httpFetch } from "@/lib/http";
+import { getConversationDB, isConversationDBSupported } from "@/lib/storage/conversation-db";
+import { imageBlobStore } from "@/lib/storage/image-blob";
+import type { Conversation, ConversationMessage } from "@/types/conversation";
+
+import { HistorySidebar, type HistoryItem } from "../history-sidebar";
+import type { ModelOption } from "../playground";
+
+import ConversationHeader, { StudioTopBarActions } from "./conversation-header";
+import ConversationSidebar from "./conversation-sidebar";
+import InputArea from "./input-area";
+import MessageList from "./message-list";
+import PromptFusionDialog from "./prompt-fusion-dialog";
+import PublishDialog from "./publish-dialog";
 
 interface ConversationViewProps {
   models: ModelOption[];
@@ -27,7 +29,18 @@ interface ConversationViewProps {
   user?: { email: string; credits: number; role: string; };
 }
 
-const fetcher = (url: string) => httpFetch<any>(url);
+const fetcher = <T = unknown>(url: string) => httpFetch<T>(url);
+
+const isAbortError = (error: unknown): boolean => {
+  if (error instanceof DOMException) {
+    return error.name === "AbortError";
+  }
+  if (typeof error === "object" && error !== null && "name" in error) {
+    const name = (error as { name?: unknown }).name;
+    return typeof name === "string" && name === "AbortError";
+  }
+  return false;
+};
 
 export function ConversationView({ models, isAuthenticated, user }: ConversationViewProps) {
   // 状态管理
@@ -458,7 +471,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return input;
       const obj = JSON.parse(trimmed);
       const kv: string[] = [];
-      const walk = (val: any, path: string[]) => {
+      const walk = (val: unknown, path: string[]) => {
         if (val == null) return;
         if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
           kv.push(`${path.join('.')} : ${String(val)}`);
@@ -469,7 +482,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
           return;
         }
         if (typeof val === 'object') {
-          for (const k of Object.keys(val)) walk(val[k], [...path, k]);
+          Object.entries(val as Record<string, unknown>).forEach(([key, value]) =>
+            walk(value, [...path, key])
+          );
         }
       };
       if (Array.isArray(obj)) {
@@ -712,7 +727,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     } catch (error) {
       console.error('[ConversationView] 生成失败:', error);
       
-      const isAbort = (error as any)?.name === 'AbortError';
+      const isAbort = isAbortError(error);
 
       // 更新错误/取消状态
       setMessages(prev => prev.map(m =>
@@ -738,12 +753,11 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     ensureLogin,
     selectedModel,
     models,
-    parentMessageId,
     messages,
     currentConversationId,
     addHistory,
     refreshBalance,
-    isAuthenticated
+    saveMessageToDB
   ]);
 
   // 处理"作为输入"
@@ -954,9 +968,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   // 加载中状态
   if (isLoadingConversation) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-app">
+      <div className="flex h-screen flex-col items-center justify-center bg-app">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="size-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
           <p className="text-sm text-muted-foreground">正在恢复对话...</p>
         </div>
       </div>
@@ -964,7 +978,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   }
 
   return (
-    <div className="h-full bg-app dark:bg-studio-dark">
+    <div className="dark:bg-studio-dark h-full bg-app">
       {/* 侧边栏（固定，桌面常显，移动遮罩抽屉） */}
       <ConversationSidebar
         conversations={conversations}
@@ -981,31 +995,38 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       />
 
       {/* 主内容区：全高（由 studio 布局控制视口高度） */}
-      <div className="flex flex-col lg:ml-72 h-full min-h-0 overflow-hidden">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden lg:ml-72">
         {/* 顶部工具栏 */}
         <div
-          className="border-b border-default shrink-0 flex items-center gap-3 py-3 px-4 sm:px-6 transition-all duration-300"
+          className="flex shrink-0 items-center gap-3 border-b border-default px-4 py-3 transition-all duration-300 sm:px-6"
           style={{ width: isHistoryOpen ? 'calc(100% - 560px)' : undefined }}
         >
           {/* 移动端菜单按钮 */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden p-2 hover:bg-surface-2 rounded-lg transition-colors"
+            className="rounded-lg p-2 transition-colors hover:bg-surface-2 lg:hidden"
             aria-label="打开侧边栏"
           >
-            <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="size-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
 
-          {activeView === 'conversation' && (
+          {activeView === 'conversation' ? (
             <ConversationHeader
               models={models}
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
-              credits={balance?.credits}
               onToggleHistory={handleToggleHistory}
             />
+          ) : (
+            <div className="flex w-full items-center">
+              <div className="flex min-w-0 flex-col">
+                <span className="text-sm font-semibold text-foreground">灵感画廊</span>
+                <span className="text-xs text-muted-foreground">精选社区作品与热门风格</span>
+              </div>
+              <StudioTopBarActions onToggleHistory={handleToggleHistory} />
+            </div>
           )}
         </div>
 
@@ -1015,7 +1036,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             {/* 消息列表（唯一滚动容器） */}
             <div
               ref={scrollRef}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 no-scrollbar"
+              className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain py-6"
               style={{ paddingBottom: `${bottomPad}px` }}
             >
               <MessageList
@@ -1054,7 +1075,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             {/* 输入区域：吸附底部，保持可见 */}
             <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-transparent backdrop-blur-0 supports-[backdrop-filter]:bg-transparent" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
               <div 
-                className="max-w-3xl mx-auto px-4 sm:px-6 transition-all duration-300"
+                className="mx-auto max-w-3xl px-4 transition-all duration-300 sm:px-6"
                 style={{ width: isHistoryOpen ? 'calc(100% - 560px)' : undefined }}
               >
                 <InputArea
@@ -1067,9 +1088,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
             </div>
           </>
         ) : (
-          // 探索视图
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-6 no-scrollbar">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          // 探索视图（灵感画廊）
+          <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain py-6">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6">
               {!exploreInit ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">
                   {exploreLoading ? '正在加载...' : '暂无内容'}

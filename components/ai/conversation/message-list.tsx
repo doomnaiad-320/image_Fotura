@@ -15,7 +15,7 @@ interface MessageListProps {
   isHistoryOpen?: boolean;
 }
 
-export function MessageList({
+function MessageList({
   messages,
   onUseAsInput,
   onPublish,

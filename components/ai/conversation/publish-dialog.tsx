@@ -15,7 +15,7 @@ export interface PublishDialogProps {
 
 type PublicCategory = { id: string; name: string; slug: string; children?: Array<{ id: string; name: string; slug: string }> };
 
-export function PublishDialog({ open, message, onClose, onSuccess }: PublishDialogProps) {
+function PublishDialog({ open, message, onClose, onSuccess }: PublishDialogProps) {
   const [title, setTitle] = useState<string>(() => (message?.content ?? '').slice(0, 40) || 'AI 作品');
   const [tagsText, setTagsText] = useState<string>('');
   const [isPublic, setIsPublic] = useState<boolean>(true);

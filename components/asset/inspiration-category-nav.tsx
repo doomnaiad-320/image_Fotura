@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import type { AssetSort } from "@/lib/assets";
 import { cn } from "@/lib/utils";
-import { AssetSort } from "@/lib/assets";
 
 // Types
 type PublicCategory = {
@@ -65,11 +66,10 @@ export function InspirationCategoryNav({
     loadCategories();
   }, []);
 
-  // 当前选中的顶级/二级分类
-  const activeTopCategory = categories.find((cat) => {
-    if (cat.id === value.categoryId) return true;
-    return cat.children.some((child) => child.id === value.categoryId);
-  });
+  const imageRoot = useMemo(
+    () => categories.find((cat) => cat.slug === "image") ?? null,
+    [categories],
+  );
 
   const handleCategoryChange = useCallback(
     (id: string | null) => {
@@ -80,27 +80,29 @@ export function InspirationCategoryNav({
 
   const handleTypeClick = useCallback(
     (type: string) => {
-      // 全部：重置分类，仅切换内容类型
       if (type === "all") {
         onChange({ ...value, type, categoryId: null });
         return;
       }
 
-      // 图片：如果存在二级分类，默认选中第一个二级分类
       if (type === "image") {
-        let nextCategoryId = value.categoryId;
-        const top = activeTopCategory ?? categories[0];
-        if (top && top.children.length > 0) {
-          nextCategoryId = top.children[0]?.id ?? null;
-        }
-        onChange({ ...value, type, categoryId: nextCategoryId ?? null });
+        const root = imageRoot ?? categories[0] ?? null;
+        const hasExisting = Boolean(
+          value.categoryId && root?.children?.some((child) => child.id === value.categoryId),
+        );
+        const nextCategoryId = hasExisting ? value.categoryId : root?.children?.[0]?.id ?? null;
+        onChange({ ...value, type, categoryId: nextCategoryId });
         return;
       }
 
-      // 视频：仅切换内容类型
+      if (type === "video") {
+        onChange({ ...value, type });
+        return;
+      }
+
       onChange({ ...value, type });
     },
-    [onChange, value, activeTopCategory, categories],
+    [categories, imageRoot, onChange, value],
   );
 
   const handleSortClick = useCallback(
@@ -110,9 +112,28 @@ export function InspirationCategoryNav({
     [onChange, value],
   );
 
-  if (loading) return null;
+  // 当类型切到图片时，如果没有选中的二级分类，默认选中 imageRoot 的第一个子类
+  useEffect(() => {
+    if (loading) return;
+    if (value.type !== "image") return;
+    if (!imageRoot || !imageRoot.children.length) return;
 
-  const hasCategories = categories.length > 0;
+    const belongsToImage = value.categoryId
+      ? imageRoot.children.some((child) => child.id === value.categoryId)
+      : false;
+    if (belongsToImage) return;
+
+    const fallbackChild = imageRoot.children[0]?.id ?? null;
+    if (!fallbackChild) return;
+
+    onChange({
+      type: "image",
+      sort: value.sort,
+      categoryId: fallbackChild,
+    });
+  }, [imageRoot, loading, onChange, value.categoryId, value.sort, value.type]);
+
+  if (loading) return null;
 
   return (
     <section
@@ -166,10 +187,10 @@ export function InspirationCategoryNav({
         </div>
       </div>
 
-      {/* 二级分类：在主容器下方单独一行展示，仅在图片模式下显示 */}
-      {value.type === "image" && activeTopCategory && activeTopCategory.children.length > 0 && (
+      {/* 二级分类：仅在图片模式下展示，直接基于 imageRoot */}
+      {value.type === "image" && imageRoot && imageRoot.children.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2 text-[11px] md:text-xs">
-          {activeTopCategory.children.map((child) => {
+          {imageRoot.children.map((child) => {
             const isChildActive = value.categoryId === child.id;
             return (
               <button
@@ -177,10 +198,10 @@ export function InspirationCategoryNav({
                 type="button"
                 onClick={() => handleCategoryChange(child.id)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 transition-colors",
+                  "focus-visible:ring-foreground/40 rounded-full border px-3 py-1.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                   isChildActive
-                    ? "bg-foreground/80 text-background shadow-sm"
-                    : "text-muted-foreground/80 hover:bg-muted/70 hover:text-foreground",
+                    ? "border-foreground bg-foreground text-background shadow-sm"
+                    : "hover:border-foreground/50 border-border/60 bg-background/70 text-muted-foreground hover:bg-muted/70 hover:text-foreground dark:bg-surface-2 dark:hover:bg-surface",
                 )}
               >
                 {child.name}

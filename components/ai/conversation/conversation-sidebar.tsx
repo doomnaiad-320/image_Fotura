@@ -31,7 +31,7 @@ interface ConversationSidebarProps {
  * - 删除对话
  * - 移动端响应式（可折叠）
  */
-export function ConversationSidebar({
+function ConversationSidebar({
   conversations,
   currentConversationId,
   onSelectConversation,

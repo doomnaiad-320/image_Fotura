@@ -6,11 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
-import {
-  InspirationCategoryNav,
+import { AssetMasonry } from "@/components/asset/asset-masonry";
+import type {
   InspirationFilterState
 } from "@/components/asset/inspiration-category-nav";
-import { AssetMasonry } from "@/components/asset/asset-masonry";
+import {
+  InspirationCategoryNav
+} from "@/components/asset/inspiration-category-nav";
 import { Button } from "@/components/ui/button";
 import type { AssetListItem, AssetListResponse } from "@/lib/assets";
 import { cn } from "@/lib/utils";
@@ -141,7 +143,10 @@ export function AssetFeed({
     }
   }, [query.isError, query.error]);
 
+  const searchParamsKey = searchParams.toString();
+
   useEffect(() => {
+    if (!syncUrl) return;
     const typeParam = (searchParams.get("type") as string | "all" | null) ?? "all";
     const sortParam = (searchParams.get("sort") as "hot" | "new" | null) ?? "hot";
     const categoryParam = searchParams.get("categoryId");
@@ -150,8 +155,7 @@ export function AssetFeed({
       sort: sortParam,
       categoryId: categoryParam
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, searchParamsKey, syncUrl]);
 
   const updateUrl = useCallback(
     (state: InspirationFilterState) => {
