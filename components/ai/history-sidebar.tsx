@@ -128,33 +128,27 @@ export function HistorySidebar({
 
   return (
     <>
-
-      {/* Toggle Button with playful hint when hidden */}
-      <button
-        onClick={onToggle}
-        className={`fixed right-0 top-1/2 z-50 -translate-y-1/2 rounded-l-xl border border-r-0 border-default bg-surface-2 p-2 backdrop-blur-sm transition-all hover:bg-surface ${
-          isOpen ? "translate-x-0" : "translate-x-0"
-        } relative`}
-        style={{ right: 0 }}
-        aria-label={isOpen ? "收起历史记录" : "展开历史记录"}
-      >
-        {/* 保持按钮始终可见；提示已按需禁用 */}
-        {false && !isOpen && showPlayfulHint && (
-          <span className="pointer-events-none absolute -left-2 -translate-x-full top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] text-orange-400 bg-orange-500/10 border border-orange-500/30 px-2 py-1 rounded-md shadow-sm">
-            {playfulHintText || "想我了吗？点我看看你的小作品～"}
-          </span>
-        )}
-        <ChevronRight
-          className={`h-5 w-5 text-muted-foreground transition-transform ${isOpen ? "rotate-0" : "rotate-180"}`}
-        />
-      </button>
-
-      {/* Sidebar Panel */}
+      {/* Sidebar Panel + attached handle */}
       <aside
         className={`fixed right-0 top-0 z-30 h-screen w-[560px] border-l border-default bg-card backdrop-blur-xl transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
+        {/* 竖排“历史记录”把手，始终吸附在抽屉左侧 */}
+        <button
+          onClick={onToggle}
+          className="history-handle absolute left-0 top-1/2 hidden -translate-x-full -translate-y-1/2 items-center justify-center rounded-l-2xl px-1.5 py-4 text-[11px] backdrop-blur-sm transition-colors lg:flex"
+          aria-label={isOpen ? "收起历史记录" : "展开历史记录"}
+          title={isOpen ? "收起历史记录" : "展开历史记录"}
+        >
+          <span
+            className="select-none tracking-[0.35em]"
+            style={{ writingMode: "vertical-rl", textOrientation: "upright" }}
+          >
+            历史记录
+          </span>
+        </button>
+
         <div className="flex h-full flex-col">
           {/* Header */}
           <div className="relative border-b border-default p-4">

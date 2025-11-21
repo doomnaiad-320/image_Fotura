@@ -214,3 +214,21 @@ button {
   @apply focus-visible:ring-gold focus-visible:ring-offset-black;
   transition: all 0.3s ease;
 }
+
+/* 历史记录侧边把手：Light / Dark 不同配色 */
+.history-handle {
+  border-width: 1px;
+  border-right-width: 0;
+}
+
+html[data-theme='light'] .history-handle {
+  background-color: rgba(196, 154, 108, 0.05); /* 淡金色底 */
+  border-color: rgba(196, 154, 108, 0.45);
+  color: var(--color-foreground);
+}
+
+html[data-theme='dark'] .history-handle {
+  background-color: rgba(196, 154, 108, 0.18); /* Dark 模式下稍强的金色块 */
+  border-color: rgba(196, 154, 108, 0.7);
+  color: var(--color-foreground);
+}

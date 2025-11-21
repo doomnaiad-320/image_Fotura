@@ -164,10 +164,10 @@ function ConversationSidebar({
                 return (
                   <div
                     key={conv.id}
-                    className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                    className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all border ${
                       isActive
-                        ? 'bg-accent text-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'border-gold bg-surface text-foreground shadow-sm'
+                        : 'border-transparent text-muted-foreground hover:border-gold/70 hover:bg-surface-2 hover:text-foreground/90'
                     }`}
                     onMouseEnter={() => setHoverId(conv.id)}
                     onMouseLeave={() => setHoverId(null)}
@@ -180,7 +180,7 @@ function ConversationSidebar({
                     }}
                   >
                     {/* 图标 */}
-                    <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 flex-shrink-0 text-muted-foreground group-hover:text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
 
@@ -197,12 +197,14 @@ function ConversationSidebar({
                             if (e.key === 'Escape') setEditingId(null);
                           }}
                           onBlur={commitEdit}
-                          className="w-full text-sm rounded-md bg-background border border-input px-2 py-1 text-foreground"
+                          className="w-full text-xs sm:text-sm rounded-md bg-background border border-input px-2 py-1 text-foreground"
                         />
                       ) : (
                         <>
-                          <p className="text-sm font-medium truncate">{conv.title}</p>
-                          <div className="flex items-center gap-2 mt-0.5 text-xs opacity-60">
+                          <p className={`truncate font-medium ${isActive ? 'text-[13px] sm:text-sm text-foreground' : 'text-[13px] sm:text-sm text-muted-foreground group-hover:text-foreground'}`}>
+                            {conv.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground/80">
                             <span>{conv.imageCount || 0} 张图片</span>
                             <span>•</span>
                             <span>{new Date(conv.updatedAt).toLocaleDateString()}</span>
