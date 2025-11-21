@@ -68,16 +68,18 @@ function ConversationSidebar({
       {/* 移动端遮罩 */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-scrim backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 z-40 bg-scrim backdrop-blur-sm animate-in fade-in-0 duration-200 lg:hidden"
           onClick={onToggle}
         />
       )}
 
       {/* 侧边栏 */}
       <div
-        className={`fixed top-0 left-0 h-screen bg-surface-2 border-r border-border flex flex-col z-40 transition-transform duration-300 lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } w-72`}
+        className={`fixed top-0 left-0 z-40 flex h-screen w-72 flex-col border-r border-border bg-surface-2 will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:translate-x-0 ${
+          isOpen
+            ? 'translate-x-0 shadow-2xl shadow-black/25 animate-in slide-in-from-left fade-in-0'
+            : '-translate-x-full shadow-none animate-out slide-out-to-left fade-out-0'
+        }`}
       >
         {/* Logo 区域 */}
         <div className="p-4 border-b border-border flex items-center justify-between">

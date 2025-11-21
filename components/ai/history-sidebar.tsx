@@ -130,8 +130,10 @@ export function HistorySidebar({
     <>
       {/* Sidebar Panel + attached handle */}
       <aside
-        className={`fixed right-0 top-0 z-30 h-screen w-[560px] border-l border-default bg-card backdrop-blur-xl transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed right-0 top-0 z-30 h-screen w-[560px] border-l border-default bg-card/95 backdrop-blur-xl will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isOpen
+            ? "translate-x-0 shadow-2xl shadow-black/30 animate-in slide-in-from-right fade-in-0"
+            : "translate-x-full shadow-none animate-out slide-out-to-right fade-out-0"
         }`}
       >
         {/* 竖排“历史记录”把手，始终吸附在抽屉左侧 */}
@@ -149,9 +151,21 @@ export function HistorySidebar({
           </span>
         </button>
 
-        <div className="flex h-full flex-col">
+        <div
+          className={`flex h-full flex-col transform-gpu transition-all duration-500 ease-[cubic-bezier(0.18,0.89,0.32,1.28)] ${
+            isOpen
+              ? 'opacity-100 translate-x-0 scale-100'
+              : 'pointer-events-none opacity-0 translate-x-8 scale-[0.96]'
+          }`}
+        >
           {/* Header */}
-          <div className="relative border-b border-default p-4">
+          <div
+            className={`relative border-b border-default p-4 transition-all duration-500 ${
+              isOpen
+                ? 'shadow-[0_12px_24px_rgba(0,0,0,0.18)]/5 animate-in slide-in-from-top-2 fade-in-0'
+                : 'opacity-0 -translate-y-1'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
                 生成历史
@@ -175,7 +189,13 @@ export function HistorySidebar({
           </div>
 
           {/* History List */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div
+            className={`flex-1 overflow-y-auto p-4 transition-all duration-500 ${
+              isOpen
+                ? 'animate-in slide-in-from-right-4 fade-in-0 delay-100'
+                : 'opacity-0 translate-x-4'
+            }`}
+          >
             {items.length === 0 ? (
               <div className="flex h-full items-center justify-center">
                 <p className="text-center text-xs text-gray-500">
