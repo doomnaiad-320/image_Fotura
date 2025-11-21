@@ -81,7 +81,8 @@ export function InspirationCategoryNav({
   const handleTypeClick = useCallback(
     (type: string) => {
       if (type === "all") {
-        onChange({ ...value, type, categoryId: null });
+        // 在“全部”模式下也支持二级分类筛选，所以不再强制清空 categoryId
+        onChange({ ...value, type });
         return;
       }
 
@@ -187,8 +188,10 @@ export function InspirationCategoryNav({
         </div>
       </div>
 
-      {/* 二级分类：仅在图片模式下展示，直接基于 imageRoot */}
-      {value.type === "image" && imageRoot && imageRoot.children.length > 0 && (
+      {/* 二级分类：在“全部”和“图片”模式下展示，直接基于 imageRoot */}
+      {(value.type === "image" || value.type === "all") &&
+        imageRoot &&
+        imageRoot.children.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2 text-[11px] md:text-xs">
           {imageRoot.children.map((child) => {
             const isChildActive = value.categoryId === child.id;
