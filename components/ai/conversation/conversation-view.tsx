@@ -1049,7 +1049,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
               </div>
 
               {/* 输入区域：吸附底部，保持可见 */}
-              <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-transparent backdrop-blur-0 supports-[backdrop-filter]:bg-transparent" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+              <div ref={inputStickyRef} className="sticky bottom-0 z-20 bg-gradient-to-t from-background via-background/95 to-transparent pb-safe pt-4">
                 <div
                   className="mx-auto max-w-3xl px-4 transition-all duration-300 sm:px-6"
                 >
@@ -1065,7 +1065,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
             {/* 右侧历史画廊区域 (Side-by-Side) */}
             {isHistoryOpen && (
-              <div className="w-1/2 border-l border-default bg-surface-1 flex flex-col min-w-[400px]">
+              <div className="w-auto border-l border-border/50 bg-surface-1/50 backdrop-blur-sm flex flex-col flex-shrink-0 transition-[width] duration-300 ease-in-out shadow-xl z-10">
                 <HistoryGalleryView
                   items={historyItems}
                   onUseAsInput={(itemId) => {

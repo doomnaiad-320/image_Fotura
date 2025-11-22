@@ -47,6 +47,15 @@ export function HistoryGalleryView({
         [items, selectedId]
     );
 
+    const [targetWidth, targetHeight] = useMemo(() => {
+        if (!selectedItem?.size) return [512, 512];
+        const parts = selectedItem.size.split('x').map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            return [parts[0] / 2, parts[1] / 2];
+        }
+        return [512, 512];
+    }, [selectedItem]);
+
     if (!selectedItem) {
         return (
             <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
@@ -56,12 +65,18 @@ export function HistoryGalleryView({
     }
 
     return (
-        <div className="flex h-full flex-col bg-background animate-in fade-in duration-300 overflow-hidden">
+        <div
+            className="flex h-full flex-col bg-transparent animate-in fade-in duration-300 overflow-hidden"
+            style={{ width: Math.max(targetWidth + 364, 400) }}
+        >
             {/* Main Content Area (Vertical Layout for Side Pane) */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 {/* Image Preview Area */}
                 <div className="flex-1 bg-muted/30 flex items-center justify-center p-4 relative group min-h-0">
-                    <div className="relative w-full h-full flex items-center justify-center">
+                    <div
+                        className="relative w-full h-full flex items-center justify-center"
+                        style={{ maxWidth: targetWidth, maxHeight: targetHeight }}
+                    >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={selectedItem.url}
@@ -139,36 +154,43 @@ export function HistoryGalleryView({
                 </div>
             </div>
 
-            {/* Bottom: Timeline Strip */}
-            <div className="h-24 border-t border-border bg-surface-2 flex-shrink-0">
-                <ScrollArea className="h-full w-full whitespace-nowrap p-2">
-                    <div className="flex gap-2 px-2">
-                        {items.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => setSelectedId(item.id)}
-                                className={cn(
-                                    "relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all duration-200 group",
-                                    selectedId === item.id
-                                        ? "border-orange-500 ring-2 ring-orange-500/20 scale-105 z-10"
-                                        : "border-transparent opacity-70 hover:opacity-100 hover:scale-105"
-                                )}
-                            >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={item.url}
-                                    alt=""
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                />
-                                {selectedId === item.id && (
-                                    <div className="absolute inset-0 bg-orange-500/10 pointer-events-none" />
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                </ScrollArea>
+            {/* Bottom: Timeline Grid (Wrapped) */}
+            <div className="border-t border-border bg-surface-2 flex-shrink-0 max-h-48 overflow-y-auto p-4">
+                <div className="flex flex-wrap gap-2 justify-center">
+                    {items.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => setSelectedId(item.id)}
+                            className={cn(
+                                "relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all duration-200 group",
+                                selectedId === item.id
+                                    ? "border-orange-500 ring-2 ring-orange-500/20 scale-105 z-10"
+                                    : "border-transparent opacity-70 hover:opacity-100 hover:scale-105"
+                            )}
+                        >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={item.url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                            />
+                            {selectedId === item.id && (
+                                <div className="absolute inset-0 bg-orange-500/10 pointer-events-none" />
+                            )}
+
+                            {/* 编辑标签 */}
+                            <div className={cn(
+                                "absolute bottom-0 left-0 right-0 text-[10px] font-medium text-center py-0.5 transition-colors duration-200",
+                                selectedId === item.id
+                                    ? "bg-orange-500 text-white"
+                                    : "bg-black/50 text-white/80 group-hover:bg-black/70"
+                            )}>
+                                编辑
+                            </div>
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );

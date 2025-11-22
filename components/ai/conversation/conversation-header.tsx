@@ -17,17 +17,7 @@ export function StudioTopBarActions({ onToggleHistory }: TopBarActionsProps) {
 
   return (
     <div className="ml-auto flex items-center gap-2 sm:gap-3">
-      <button
-        onClick={onToggleHistory}
-        className="flex h-8 items-center gap-2 rounded-md border border-orange-500/30 bg-orange-500/10 px-3 transition-colors hover:bg-orange-500/20"
-        title="打开生成历史"
-        type="button"
-      >
-        <svg className="size-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span className="text-sm font-medium text-orange-400">历史记录</span>
-      </button>
+
 
       <span className="hidden h-5 w-px bg-border sm:block" />
 
