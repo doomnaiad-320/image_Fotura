@@ -168,8 +168,8 @@ function ConversationSidebar({
                     key={conv.id}
                     className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all border ${
                       isActive
-                        ? 'border-gold bg-surface text-foreground shadow-sm'
-                        : 'border-transparent text-muted-foreground hover:border-gold/70 hover:bg-surface-2 hover:text-foreground/90'
+                        ? 'border-gold bg-surface text-foreground shadow-sm dark:border-border dark:bg-border'
+                        : 'border-transparent text-muted-foreground hover:border-gold/70 hover:bg-surface-2 hover:text-foreground/90 dark:hover:bg-border/80'
                     }`}
                     onMouseEnter={() => setHoverId(conv.id)}
                     onMouseLeave={() => setHoverId(null)}

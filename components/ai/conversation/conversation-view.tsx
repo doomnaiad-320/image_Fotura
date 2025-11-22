@@ -977,6 +977,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     );
   }
 
+  const userDisplayName = user?.email ?? '用户';
+  const userAvatarInitial = (userDisplayName.trim().charAt(0) || 'U').toUpperCase();
+
   return (
     <div className="dark:bg-studio-dark h-full bg-app">
       {/* 侧边栏（固定，桌面常显，移动遮罩抽屉） */}
@@ -1069,6 +1072,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                   }
                 }}
                 isHistoryOpen={isHistoryOpen}
+                userDisplayName={userDisplayName}
+                userAvatarInitial={userAvatarInitial}
               />
             </div>
 

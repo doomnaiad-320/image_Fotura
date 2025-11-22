@@ -13,6 +13,8 @@ interface MessageListProps {
   onCancel?: (messageId: string) => void;
   onImageLoad?: (messageId: string) => void;
   isHistoryOpen?: boolean;
+  userDisplayName?: string;
+  userAvatarInitial?: string;
 }
 
 function MessageList({
@@ -23,7 +25,9 @@ function MessageList({
   onRetry,
   onCancel,
   onImageLoad,
-  isHistoryOpen = false
+  isHistoryOpen = false,
+  userDisplayName,
+  userAvatarInitial
 }: MessageListProps) {
   if (messages.length === 0) {
     return (
@@ -81,6 +85,8 @@ function MessageList({
           onRetry={onRetry ? () => onRetry(message.id) : undefined}
           onCancel={onCancel ? () => onCancel(message.id) : undefined}
           onImageLoad={onImageLoad ? () => onImageLoad(message.id) : undefined}
+          userDisplayName={userDisplayName}
+          userAvatarInitial={userAvatarInitial}
         />
       ))}
     </div>

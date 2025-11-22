@@ -13,6 +13,8 @@ interface MessageItemProps {
   onRetry?: () => void;
   onCancel?: () => void;
   onImageLoad?: () => void;
+  userDisplayName?: string;
+  userAvatarInitial?: string;
 }
 
 export function MessageItem({
@@ -23,6 +25,8 @@ export function MessageItem({
   onRetry,
   onCancel,
   onImageLoad,
+  userDisplayName,
+  userAvatarInitial,
 }: MessageItemProps) {
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
@@ -89,7 +93,7 @@ export function MessageItem({
     >
       <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} gap-2 w-full`}>
         {/* 头像/名称/时间布局 */}
-        {isAssistant ? (
+        {isAssistant && (
           // AI：icon | (名称+时间) 左右排列，名称与时间为一组且左对齐
           <div className="flex items-start gap-2">
             <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-orange-500 to-orange-600 text-primary-foreground">
@@ -104,16 +108,33 @@ export function MessageItem({
               </div>
             </div>
           </div>
-        ) : (
-          <></>
+        )}
+
+        {isUser && (
+          // 用户：名称 + 时间在右侧，头像在最右
+          <div className="flex w-full items-start justify-end gap-2">
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="text-[12px] font-medium text-foreground leading-tight">
+                {userDisplayName || '用户'}
+              </div>
+              <div className="text-[11px] text-muted-foreground leading-tight">
+                {timeStr}
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500 text-primary-foreground">
+              <span className="text-[12px] font-semibold">
+                {userAvatarInitial || 'U'}
+              </span>
+            </div>
+          </div>
         )}
 
         {/* 内容区域：用户为气泡，AI 与背景融合；始终位于头像下方 */}
         <div
           className={`${
             isUser
-              ? 'max-w-[65%] bg-gradient-to-r from-blue-500 to-blue-600 text-primary-foreground rounded-2xl shadow-lg'
-              : 'flex-1 rounded-2xl bg-card/80 text-foreground shadow-none'
+              ? 'max-w-[65%] rounded-2xl bg-card/80 text-foreground shadow-none'
+              : 'flex-1 rounded-2xl bg-card text-foreground shadow-sm dark:bg-card/80 dark:shadow-none'
           }`}
         >
         {/* 文本内容 */}
