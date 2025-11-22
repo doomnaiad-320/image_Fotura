@@ -6,6 +6,7 @@ import { HistoryItem } from '../history-sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '../../ui/scroll-area';
 import { cn } from '@/lib/utils';
+import PromptFusionDialog from './prompt-fusion-dialog';
 
 interface HistoryGalleryViewProps {
     items: HistoryItem[];
@@ -13,7 +14,6 @@ interface HistoryGalleryViewProps {
     onPublish: (itemId: string) => void;
     onDownload: (item: HistoryItem) => void;
     onDelete: (item: HistoryItem) => void;
-    onClose: () => void;
 }
 
 export function HistoryGalleryView({
@@ -24,6 +24,7 @@ export function HistoryGalleryView({
     onDelete
 }: HistoryGalleryViewProps) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [showEditDialog, setShowEditDialog] = useState(false);
 
     // Initialize selection with the most recent item
     useEffect(() => {
@@ -122,9 +123,7 @@ export function HistoryGalleryView({
                     {/* Actions */}
                     <div className="grid grid-cols-2 gap-2">
                         <Button
-                            onClick={() => {
-                                onUseAsInput(selectedItem.id);
-                            }}
+                            onClick={() => setShowEditDialog(true)}
                             className="w-full bg-orange-500 hover:bg-orange-600 text-white h-8 text-xs"
                         >
                             <svg className="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,6 +191,21 @@ export function HistoryGalleryView({
                     ))}
                 </div>
             </div>
+
+            {/* 编辑弹窗 */}
+            <PromptFusionDialog
+                open={showEditDialog}
+                basePrompt={selectedItem.title}
+                assetTitle={selectedItem.title}
+                coverUrl={selectedItem.url}
+                onClose={() => setShowEditDialog(false)}
+                onConfirm={(userPrompt) => {
+                    onUseAsInput(selectedItem.id);
+                    setShowEditDialog(false);
+                }}
+            />
         </div>
     );
 }
+
+export default HistoryGalleryView;
