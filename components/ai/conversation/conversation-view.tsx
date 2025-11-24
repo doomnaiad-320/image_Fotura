@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import useSWR from "swr";
 
@@ -63,6 +63,14 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const [fusionBasePrompt, setFusionBasePrompt] = useState<string>("");
   const [fusionAsset, setFusionAsset] = useState<{ id: string; title: string; coverUrl?: string; size?: string } | null>(null);
   const [showHistory, setShowHistory] = useState(true);
+
+  const selectableModels = useMemo(() => models.filter(model => !model.isPromptOptimizer), [models]);
+
+  useEffect(() => {
+    if (selectedModel && !selectableModels.some(model => model.slug === selectedModel)) {
+      setSelectedModel(selectableModels[0]?.slug ?? null);
+    }
+  }, [selectableModels, selectedModel]);
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -141,9 +149,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
             // 如果有模型信息，尝试设置
             if (prefillData.modelSlug) {
-              const matchedModel = models.find(m => m.slug === prefillData.modelSlug);
+              const matchedModel = selectableModels.find(m => m.slug === prefillData.modelSlug);
               if (matchedModel) {
-                setSelectedModel(prefillData.modelSlug);
+                setSelectedModel(matchedModel.slug);
               }
             }
 
@@ -169,7 +177,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
     setTimeout(async () => {
       await checkReusePrefill();
     }, 500);
-  }, [models]);
+  }, [selectableModels]);
 
   // 初始化：恢复最后的对话
   useEffect(() => {
@@ -211,9 +219,10 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
           setMessages(restoredMsgs);
 
-          // 恢复最后使用的模型
+          // 恢复最后使用的模型（过滤优化器）
           if (lastConv.lastActiveModel) {
-            setSelectedModel(lastConv.lastActiveModel);
+            const matchedModel = selectableModels.find(m => m.slug === lastConv.lastActiveModel);
+            setSelectedModel(matchedModel ? matchedModel.slug : selectableModels[0]?.slug ?? null);
           }
 
           console.log('[ConversationView] 已恢复', restoredMsgs.length, '条消息');
@@ -366,9 +375,10 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       // 切换回对话视图
       setActiveView('conversation');
 
-      // 恢复模型选择
+      // 恢复模型选择，避免展示优化器
       if (conv.lastActiveModel) {
-        setSelectedModel(conv.lastActiveModel);
+        const matchedModel = selectableModels.find(m => m.slug === conv.lastActiveModel);
+        setSelectedModel(matchedModel ? matchedModel.slug : selectableModels[0]?.slug ?? null);
       }
 
       console.log('[ConversationView] 已切换到对话:', conversationId);
@@ -376,7 +386,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       console.error('[ConversationView] 切换对话失败:', error);
       toast.error('切换对话失败');
     }
-  }, [dbSupported, currentConversationId]);
+  }, [dbSupported, currentConversationId, selectableModels]);
 
   // 删除对话
   const handleDeleteConversation = useCallback(async (conversationId: string) => {
@@ -998,7 +1008,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
           {activeView === 'conversation' ? (
             <ConversationHeader
-              models={models}
+              models={selectableModels}
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
             />

@@ -24,6 +24,7 @@ export type ModelOption = {
   tags: string[];
   supportsStream: boolean;
   pricing?: any;
+  isPromptOptimizer?: boolean;
 };
 
 type Props = {

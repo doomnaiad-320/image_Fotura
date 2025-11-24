@@ -20,6 +20,7 @@ export type ModelOption = {
   modalities: string[];
   tags: string[];
   supportsStream: boolean;
+  isPromptOptimizer?: boolean;
 };
 
 type Props = {

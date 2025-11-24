@@ -156,6 +156,7 @@ export async function listEnabledModelsForPlayground() {
       modalities: true,
       tags: true,
       supportsStream: true,
+      isPromptOptimizer: true,
       provider: {
         select: {
           slug: true,
@@ -171,7 +172,8 @@ export async function listEnabledModelsForPlayground() {
     provider: model.provider,
     modalities: parseStringArrayValue(model.modalities),
     tags: parseStringArrayValue(model.tags),
-    supportsStream: model.supportsStream
+    supportsStream: model.supportsStream,
+    isPromptOptimizer: model.isPromptOptimizer
   }));
 }
 
