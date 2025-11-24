@@ -2,8 +2,9 @@
 
 import React from "react";
 
+import { Sparkles, Zap, Image as ImageIcon, Box } from "lucide-react";
 import { useBgTheme } from "@/components/theme/background-provider";
-import { Select } from "@/components/ui/select";
+import { Select, SelectItem } from "@/components/ui/select";
 
 import type { ModelOption } from "../playground";
 
@@ -49,6 +50,13 @@ interface ConversationHeaderProps {
   onToggleHistory?: () => void;
 }
 
+function getModelIcon(slug: string) {
+  if (slug.includes("pro") || slug.includes("ultra")) return <Sparkles className="size-4 text-orange-500" />;
+  if (slug.includes("schnell") || slug.includes("turbo") || slug.includes("flash")) return <Zap className="size-4 text-yellow-500" />;
+  if (slug.includes("dev")) return <ImageIcon className="size-4 text-blue-500" />;
+  return <Box className="size-4 text-muted-foreground" />;
+}
+
 function ConversationHeader({
   models,
   selectedModel,
@@ -58,20 +66,21 @@ function ConversationHeader({
   return (
     <div className="flex w-full items-center">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">模型</span>
-
         <Select
           value={selectedModel || ""}
           onChange={(e) => onModelChange(e.target.value)}
-          className="max-w-xs flex-1"
+          className="min-w-[200px] w-auto rounded-full bg-background/60 backdrop-blur-md border-border/40 shadow-sm hover:bg-accent/50 transition-colors"
         >
-          <option value="" disabled>
-            请选择模型...
-          </option>
+          <SelectItem value="" disabled>
+            <span className="text-muted-foreground">请选择模型...</span>
+          </SelectItem>
           {models.map((model) => (
-            <option key={model.slug} value={model.slug}>
-              {model.displayName}
-            </option>
+            <SelectItem key={model.slug} value={model.slug}>
+              <div className="flex items-center gap-2">
+                {getModelIcon(model.slug)}
+                <span className="font-medium">{model.displayName}</span>
+              </div>
+            </SelectItem>
           ))}
         </Select>
       </div>

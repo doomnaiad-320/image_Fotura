@@ -15,7 +15,11 @@ import { cn } from "@/lib/utils";
 type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, "onChange"> & {
   variant?: "solid" | "ghost";
   onChange?: (e: { target: { value: string } }) => void;
+  placeholder?: string;
 };
+
+export const SelectItem = ({ children, ...props }: React.HTMLAttributes<HTMLDivElement> & { value: string; disabled?: boolean }) => <div {...props}>{children}</div>;
+SelectItem.displayName = "SelectItem";
 
 export function Select({
   className,
@@ -39,9 +43,15 @@ export function Select({
     const arr: { value: string; label: React.ReactNode; disabled?: boolean }[] = [];
     React.Children.forEach(children, (child) => {
       if (!React.isValidElement(child)) return;
+
       // Support native <option>
       if (typeof child.type === "string" && child.type.toLowerCase() === "option") {
         const v = child.props.value ?? child.props.children ?? "";
+        arr.push({ value: String(v), label: child.props.children, disabled: Boolean(child.props.disabled) });
+      }
+      // Support custom SelectItem
+      else if ((child.type as any).displayName === "SelectItem") {
+        const v = child.props.value;
         arr.push({ value: String(v), label: child.props.children, disabled: Boolean(child.props.disabled) });
       }
     });
@@ -145,7 +155,7 @@ export function Select({
   };
 
   return (
-    <div className="relative w-full" {...rest}>
+    <div className="relative w-full" {...(rest as any)}>
       {/* For forms */}
       {name ? <input type="hidden" name={name} value={String(value ?? options[currentIndex]?.value ?? "")} /> : null}
 
@@ -164,7 +174,7 @@ export function Select({
         onClick={() => !disabled && setOpen((o) => !o)}
         onKeyDown={handleKeyDown}
       >
-        <span className={cn(!value && "text-muted-foreground")}>{currentLabel}</span>
+        <span className={cn(!value && "text-muted-foreground", "text-left whitespace-nowrap")}>{currentLabel}</span>
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       </button>
 
@@ -175,7 +185,7 @@ export function Select({
           role="listbox"
           tabIndex={-1}
           className={cn(
-            "absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-md border border-default bg-popover p-1 shadow-xl focus:outline-none",
+            "absolute z-50 mt-2 max-h-60 min-w-full w-max overflow-auto rounded-md border border-default bg-popover p-1 shadow-xl focus:outline-none",
             "backdrop-blur supports-[backdrop-filter]:bg-popover/90"
           )}
         >
@@ -205,7 +215,7 @@ export function Select({
                     requestAnimationFrame(() => buttonRef.current?.focus());
                   }}
                 >
-                  <span className="flex-1 truncate">{opt.label}</span>
+                  <span className="flex-1 whitespace-nowrap">{opt.label}</span>
                   {selected && <Check className="h-4 w-4 text-foreground" />}
                 </div>
               );
