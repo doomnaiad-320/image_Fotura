@@ -53,7 +53,7 @@ export default function BasePromptInput({
     try {
       const evt = new Event("input-area-resized");
       window.dispatchEvent(evt);
-    } catch {}
+    } catch { }
   }, [value, rowsMin, rowsMax, onHeightChange, minHeightPx]);
 
   // 自动聚焦
@@ -77,7 +77,7 @@ export default function BasePromptInput({
     () =>
       [
         "w-full resize-none bg-transparent px-3 py-2 text-sm sm:text-base",
-        "text-foreground placeholder:text-muted-foreground",
+        "text-foreground placeholder:text-zinc-400 dark:placeholder:text-zinc-500",
         "focus:outline-none disabled:cursor-not-allowed",
         "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent",
         className

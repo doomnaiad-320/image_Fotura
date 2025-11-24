@@ -62,6 +62,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
   const [isFusionOpen, setIsFusionOpen] = useState(false);
   const [fusionBasePrompt, setFusionBasePrompt] = useState<string>("");
   const [fusionAsset, setFusionAsset] = useState<{ id: string; title: string; coverUrl?: string; size?: string } | null>(null);
+  const [showHistory, setShowHistory] = useState(true);
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -894,6 +895,15 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
       }));
   }, [messages]);
 
+  // 自动打开历史画廊：当有新图片生成时
+  const prevHistoryLength = useRef(0);
+  useEffect(() => {
+    if (historyItems.length > prevHistoryLength.current) {
+      setShowHistory(true);
+    }
+    prevHistoryLength.current = historyItems.length;
+  }, [historyItems.length]);
+
   const isHistoryOpen = historyItems.length > 0;
 
 
@@ -1006,7 +1016,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
         {/* 右侧内容区域 */}
         {activeView === 'conversation' ? (
-          <div className="flex flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-1 min-h-0 overflow-hidden relative">
             {/* 左侧聊天区域 */}
             <div className="flex flex-1 flex-col min-w-0">
               {/* 消息列表（唯一滚动容器） */}
@@ -1042,7 +1052,7 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
                     }
                   }}
-                  isHistoryOpen={isHistoryOpen}
+                  isHistoryOpen={isHistoryOpen && showHistory}
                   userDisplayName={userDisplayName}
                   userAvatarInitial={userAvatarInitial}
                 />
@@ -1063,19 +1073,48 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
               </div>
             </div>
 
-            {/* 右侧历史画廊区域 (Side-by-Side) */}
-            {isHistoryOpen && (
-              <div className="w-auto border-l border-border/50 bg-surface-1/50 backdrop-blur-sm flex flex-col flex-shrink-0 transition-[width] duration-300 ease-in-out shadow-xl z-10">
+            {/* 右侧历史画廊区域 (Responsive: Side-by-Side on Desktop, Overlay on Mobile) */}
+            {isHistoryOpen && showHistory && (
+              <div className="fixed inset-0 z-50 flex flex-col bg-background lg:static lg:z-auto lg:w-auto lg:border-l lg:border-border/50 lg:bg-surface-1/50 lg:backdrop-blur-sm lg:flex-shrink-0 lg:shadow-xl lg:flex">
+                {/* Mobile Header with Close Button */}
+                <div className="flex items-center justify-between border-b border-border p-4 lg:hidden">
+                  <span className="font-semibold">生成历史</span>
+                  <button
+                    onClick={() => setShowHistory(false)}
+                    className="rounded-full p-2 hover:bg-accent"
+                  >
+                    <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
                 <HistoryGalleryView
                   items={historyItems}
                   onUseAsInput={(itemId) => {
                     handleUseAsInput(itemId);
+                    // On mobile, close history after selecting to return to chat
+                    if (window.innerWidth < 1024) {
+                      setShowHistory(false);
+                    }
                   }}
                   onPublish={handlePublish}
                   onDownload={handleHistoryDownload}
                   onDelete={handleHistoryDelete}
                 />
               </div>
+            )}
+
+            {/* Mobile Floating History Toggle (when history exists but is hidden) */}
+            {isHistoryOpen && !showHistory && (
+              <button
+                onClick={() => setShowHistory(true)}
+                className="fixed bottom-24 right-4 z-30 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg lg:hidden"
+              >
+                <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
             )}
           </div>
         ) : (

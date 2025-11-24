@@ -67,8 +67,10 @@ export function HistoryGalleryView({
 
     return (
         <div
-            className="flex h-full flex-col bg-transparent animate-in fade-in duration-300 overflow-hidden"
-            style={{ width: Math.max(targetWidth + 364, 400) }}
+            className="flex h-full flex-col bg-transparent animate-in fade-in duration-300 overflow-hidden w-full lg:w-[var(--gallery-width)]"
+            style={{
+                '--gallery-width': `${Math.max(targetWidth + 364, 400)}px`
+            } as React.CSSProperties}
         >
             {/* Main Content Area (Vertical Layout for Side Pane) */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

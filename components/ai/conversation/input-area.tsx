@@ -248,22 +248,22 @@ function InputArea({
 
           {/* 主输入容器 */}
           <div
-            className={`relative rounded-2xl bg-background/80 backdrop-blur-md border border-border/50 focus-within:border-orange-500/50 focus-within:ring-4 focus-within:ring-orange-500/10 shadow-2xl transition-all duration-300 ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-orange-500/30 hover:shadow-orange-500/5'}`}
+            className={`relative rounded-2xl bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 focus-within:border-orange-500 dark:focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/20 shadow-2xl transition-all duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-orange-500/50 hover:shadow-orange-500/10'}`}
           >
             {/* 拖动手柄 */}
             <div
               onMouseDown={handleDragStart}
               onTouchStart={handleDragStart}
               className={`absolute top-0 left-0 right-0 h-5 flex items-center justify-center cursor-ns-resize group rounded-t-2xl transition-all z-10 ${isDragging
-                  ? 'bg-orange-500/15 border-b border-orange-500/30'
-                  : 'hover:bg-muted'
+                ? 'bg-orange-500/15 border-b border-orange-500/30'
+                : 'hover:bg-muted'
                 }`}
               title="拖动调整高度"
             >
               {/* 拖动图标 - 上下箭头 */}
               <div className={`flex items-center justify-center transition-all ${isDragging
-                  ? 'opacity-70 scale-110'
-                  : 'opacity-30 group-hover:opacity-60'
+                ? 'opacity-70 scale-110'
+                : 'opacity-30 group-hover:opacity-60'
                 }`}>
                 <svg
                   className="w-4 h-4 text-muted-foreground"
@@ -375,8 +375,8 @@ function InputArea({
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${uploadedImages.length > 0
-                      ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     }`}
                   title="上传图片（可多选）"
                 >
@@ -392,8 +392,8 @@ function InputArea({
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${showAdvanced
-                      ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     }`}
                   title="高级选项"
                 >
@@ -423,8 +423,8 @@ function InputArea({
                   onClick={handleSubmit}
                   disabled={disabled || !prompt.trim()}
                   className={`flex items-center justify-center gap-2 px-4 sm:px-5 py-2 rounded-xl font-medium text-sm transition-all ${disabled || !prompt.trim()
-                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                      : 'bg-gradient-to-r from-orange-500 to-orange-600 text-primary-foreground hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 active:scale-95'
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-gradient-to-r from-orange-500 to-orange-600 text-primary-foreground hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 active:scale-95'
                     }`}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
