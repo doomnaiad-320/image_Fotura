@@ -1022,40 +1022,42 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
               {/* 消息列表（唯一滚动容器） */}
               <div
                 ref={scrollRef}
-                className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain py-6"
+                className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain"
                 style={{ paddingBottom: `${bottomPad}px` }}
               >
-                <MessageList
-                  messages={messages}
-                  onUseAsInput={handleUseAsInput}
-                  onPublish={handlePublish}
-                  onTimelineNodeClick={handleTimelineNodeClick}
-                  onRetry={(messageId) => {
-                    handleRetry(messageId);
-                  }}
-                  onCancel={(messageId) => {
-                    const ctrl = abortControllersRef.current.get(messageId);
-                    if (!ctrl) {
-                      const generating = messages.find(m => m.id === messageId && m.isGenerating);
-                      const altCtrl = generating ? abortControllersRef.current.get(generating.id) : undefined;
-                      (altCtrl || ctrl)?.abort();
-                      return;
-                    }
-                    ctrl.abort();
-                  }}
-                  onImageLoad={(loadedId) => {
-                    const el = scrollRef.current;
-                    if (!el) return;
-                    const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
-                    const lastId = messages[messages.length - 1]?.id;
-                    if (distance < bottomPad + 200 || loadedId === lastId) {
-                      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-                    }
-                  }}
-                  isHistoryOpen={isHistoryOpen && showHistory}
-                  userDisplayName={userDisplayName}
-                  userAvatarInitial={userAvatarInitial}
-                />
+                <div className="mx-auto max-w-3xl px-4 sm:px-6">
+                  <MessageList
+                    messages={messages}
+                    onUseAsInput={handleUseAsInput}
+                    onPublish={handlePublish}
+                    onTimelineNodeClick={handleTimelineNodeClick}
+                    onRetry={(messageId) => {
+                      handleRetry(messageId);
+                    }}
+                    onCancel={(messageId) => {
+                      const ctrl = abortControllersRef.current.get(messageId);
+                      if (!ctrl) {
+                        const generating = messages.find(m => m.id === messageId && m.isGenerating);
+                        const altCtrl = generating ? abortControllersRef.current.get(generating.id) : undefined;
+                        (altCtrl || ctrl)?.abort();
+                        return;
+                      }
+                      ctrl.abort();
+                    }}
+                    onImageLoad={(loadedId) => {
+                      const el = scrollRef.current;
+                      if (!el) return;
+                      const distance = el.scrollHeight - (el.scrollTop + el.clientHeight);
+                      const lastId = messages[messages.length - 1]?.id;
+                      if (distance < bottomPad + 200 || loadedId === lastId) {
+                        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+                      }
+                    }}
+                    isHistoryOpen={isHistoryOpen && showHistory}
+                    userDisplayName={userDisplayName}
+                    userAvatarInitial={userAvatarInitial}
+                  />
+                </div>
               </div>
 
               {/* 输入区域：吸附底部，保持可见 */}
@@ -1073,11 +1075,11 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
               </div>
             </div>
 
-            {/* 右侧历史画廊区域 (Responsive: Side-by-Side on Desktop, Overlay on Mobile) */}
+            {/* 右侧历史画廊区域 (Responsive: Side-by-Side on Desktop, Overlay on Mobile/Tablet) */}
             {isHistoryOpen && showHistory && (
-              <div className="fixed inset-0 z-50 flex flex-col bg-background lg:static lg:z-auto lg:w-auto lg:border-l lg:border-border/50 lg:bg-surface-1/50 lg:backdrop-blur-sm lg:flex-shrink-0 lg:shadow-xl lg:flex">
+              <div className="fixed inset-0 z-50 flex flex-col bg-background xl:static xl:z-auto xl:w-auto xl:border-l xl:border-border/50 xl:bg-surface-1/50 xl:backdrop-blur-sm xl:flex-shrink-0 xl:shadow-xl xl:flex">
                 {/* Mobile Header with Close Button */}
-                <div className="flex items-center justify-between border-b border-border p-4 lg:hidden">
+                <div className="flex items-center justify-between border-b border-border p-4 xl:hidden">
                   <span className="font-semibold">生成历史</span>
                   <button
                     onClick={() => setShowHistory(false)}
@@ -1093,8 +1095,8 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
                   items={historyItems}
                   onUseAsInput={(itemId) => {
                     handleUseAsInput(itemId);
-                    // On mobile, close history after selecting to return to chat
-                    if (window.innerWidth < 1024) {
+                    // On mobile/tablet, close history after selecting to return to chat
+                    if (window.innerWidth < 1280) {
                       setShowHistory(false);
                     }
                   }}
@@ -1105,16 +1107,9 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
               </div>
             )}
 
-            {/* Mobile Floating History Toggle (when history exists but is hidden) */}
+            {/* Mobile Floating History Toggle (Draggable) */}
             {isHistoryOpen && !showHistory && (
-              <button
-                onClick={() => setShowHistory(true)}
-                className="fixed bottom-24 right-4 z-30 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg lg:hidden"
-              >
-                <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </button>
+              <DraggableFab onClick={() => setShowHistory(true)} />
             )}
           </div>
         ) : (
@@ -1191,6 +1186,86 @@ export function ConversationView({ models, isAuthenticated, user }: Conversation
 
 
     </div>
+  );
+}
+
+function DraggableFab({ onClick }: { onClick: () => void }) {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const initialPosRef = useRef({ x: 0, y: 0 });
+  const hasMovedRef = useRef(false);
+
+  // Initialize position to bottom-right (simulated)
+  // We use fixed positioning with transform, so initial 0,0 is fine if we position via CSS class initially?
+  // Actually, let's use style for position.
+  // But to avoid hydration mismatch, we might need to wait for mount.
+  // Simpler: Use fixed bottom-24 right-4 as base, and transform for drag.
+
+  const handleStart = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    hasMovedRef.current = false;
+    dragStartRef.current = { x: clientX, y: clientY };
+    initialPosRef.current = { ...position };
+  };
+
+  const handleMove = (clientX: number, clientY: number) => {
+    if (!isDragging) return;
+    const dx = clientX - dragStartRef.current.x;
+    const dy = clientY - dragStartRef.current.y;
+
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      hasMovedRef.current = true;
+    }
+
+    setPosition({
+      x: initialPosRef.current.x + dx,
+      y: initialPosRef.current.y + dy
+    });
+  };
+
+  const handleEnd = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    const onTouchMove = (e: TouchEvent) => handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
+    const onTouchEnd = () => handleEnd();
+    const onMouseUp = () => handleEnd();
+
+    if (isDragging) {
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('touchend', onTouchEnd);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isDragging]);
+
+  return (
+    <button
+      onClick={() => {
+        if (!hasMovedRef.current) onClick();
+      }}
+      onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
+      onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
+      style={{
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        touchAction: 'none'
+      }}
+      className="fixed bottom-32 right-4 z-30 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg xl:hidden transition-shadow hover:shadow-xl active:scale-95 active:cursor-grabbing cursor-grab"
+    >
+      <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    </button>
   );
 }
 

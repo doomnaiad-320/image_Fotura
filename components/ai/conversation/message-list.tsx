@@ -55,11 +55,8 @@ function MessageList({
   const hiddenCount = messages.length - visibleMessages.length;
 
   return (
-    <div 
-      className="mx-auto max-w-3xl space-y-4 px-4 sm:px-6 transition-all duration-300"
-      style={{ 
-        width: isHistoryOpen ? 'calc(100% - 560px)' : undefined
-      }}
+    <div
+      className="mx-auto w-full space-y-4 transition-all duration-300"
     >
       {hiddenCount > 0 && !showAll && (
         <div className="sticky top-0 z-10 -mt-2 pt-2">

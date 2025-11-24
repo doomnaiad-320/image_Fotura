@@ -48,15 +48,6 @@ export function HistoryGalleryView({
         [items, selectedId]
     );
 
-    const [targetWidth, targetHeight] = useMemo(() => {
-        if (!selectedItem?.size) return [512, 512];
-        const parts = selectedItem.size.split('x').map(Number);
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-            return [parts[0] / 2, parts[1] / 2];
-        }
-        return [512, 512];
-    }, [selectedItem]);
-
     if (!selectedItem) {
         return (
             <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
@@ -67,10 +58,7 @@ export function HistoryGalleryView({
 
     return (
         <div
-            className="flex h-full flex-col bg-transparent animate-in fade-in duration-300 overflow-hidden w-full lg:w-[var(--gallery-width)]"
-            style={{
-                '--gallery-width': `${Math.max(targetWidth + 364, 400)}px`
-            } as React.CSSProperties}
+            className="flex h-full flex-col bg-transparent animate-in fade-in duration-300 overflow-hidden w-full xl:w-[400px]"
         >
             {/* Main Content Area (Vertical Layout for Side Pane) */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -78,7 +66,6 @@ export function HistoryGalleryView({
                 <div className="flex-1 bg-muted/30 flex items-center justify-center p-4 relative group min-h-0">
                     <div
                         className="relative w-full h-full flex items-center justify-center"
-                        style={{ maxWidth: targetWidth, maxHeight: targetHeight }}
                     >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
