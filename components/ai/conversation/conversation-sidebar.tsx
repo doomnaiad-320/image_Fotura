@@ -322,14 +322,6 @@ function ConversationSidebar({
                   </Link>
                   
                   <Link
-                    href="/me"
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg transition-colors"
-                  >
-                    <UserStar className="w-4 h-4" />
-                    个人主页
-                  </Link>
-                  
-                  <Link
                     href="/settings"
                     className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors"
                   >

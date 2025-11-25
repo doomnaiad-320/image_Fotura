@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import useSWR from "swr";
 import toast from "react-hot-toast";
@@ -67,10 +68,10 @@ type DraftState = {
   aspectRatio: number;
 };
 
-const VIEW_TABS: { key: ViewKey; label: string; icon: any }[] = [
-  { key: "mine", label: "我的素材", icon: LayoutGrid },
-  { key: "favorites", label: "收藏夹", icon: Star },
-  { key: "public", label: "公共素材", icon: Globe }
+const VIEW_TABS: { key: ViewKey; label: string; desc: string; icon: any }[] = [
+  { key: "mine", label: "我的素材", desc: "管理私有与公开素材", icon: LayoutGrid },
+  { key: "favorites", label: "收藏夹", desc: "快速回访收藏内容", icon: Star },
+  { key: "public", label: "公共素材", desc: "探索社区最新作品", icon: Globe }
 ];
 
 const fetcher = async (url: string) => {
@@ -329,96 +330,127 @@ export default function UserAssetLibrary({ models, user }: Props) {
   }, []);
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">素材库</h1>
-          <p className="mt-2 text-muted-foreground">
-            管理与分享你的 Prompt 素材，激发创作灵感。
-          </p>
-        </div>
-        <button
-          onClick={() => openEditor()}
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          新建素材
-        </button>
-      </div>
-
-      <div className="mb-8 border-b border-border">
-        <div className="flex gap-6">
-          {VIEW_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveView(tab.key)}
-              className={cn(
-                "flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium transition-colors",
-                activeView === tab.key
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-          加载失败：{error.message}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="space-y-3">
-              <div className="h-56 rounded-xl bg-muted animate-pulse" />
-              <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
-              <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
-            </div>
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 p-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
+        <aside className="h-full rounded-3xl border border-border bg-surface p-6 shadow-inner">
+          <div className="mb-6 space-y-2">
+            <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">素材库</p>
+            <h1 className="text-2xl font-semibold text-foreground">灵感工具箱</h1>
+            <p className="text-xs text-muted-foreground">统一管理我的素材、收藏与共享资源</p>
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-foreground">暂无素材</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-            {activeView === "favorites"
-              ? "你还没有收藏任何素材。"
-              : activeView === "public"
-              ? "社区暂时没有公开素材。"
-              : "你还没有创建任何素材，开始你的创作之旅吧。"}
-          </p>
-          {activeView === "mine" && (
+          <nav className="space-y-2">
+            {VIEW_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveView(tab.key)}
+                className={cn(
+                  "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition",
+                  activeView === tab.key
+                    ? "bg-gradient-to-r from-[#f9f4ec] to-[#f0d7b3] text-slate-900 shadow-md dark:from-[#2b1d11] dark:to-[#2d190d] dark:text-amber-300"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                )}
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/60 bg-background/70">
+                  <tab.icon className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold">{tab.label}</div>
+                  <p className="text-xs text-muted-foreground">{tab.desc}</p>
+                </div>
+              </button>
+            ))}
+          </nav>
+          <div className="mt-8 space-y-3">
+            <Link
+              href="/studio"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
+            >
+              ← 返回工作台
+            </Link>
             <button
               onClick={() => openEditor()}
-              className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#f4b968] via-[#f0842b] to-[#f05452] px-5 py-2 text-sm font-semibold text-black shadow-[0_12px_25px_rgba(240,132,43,0.35)] transition hover:brightness-110"
             >
-              开始创建
+              新建素材
             </button>
+          </div>
+        </aside>
+
+        <section className="space-y-6">
+          <header className="rounded-[32px] border border-border/70 bg-gradient-to-br from-background to-surface-2 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">{VIEW_TABS.find((tab) => tab.key === activeView)?.label}</p>
+                <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">素材库</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {VIEW_TABS.find((tab) => tab.key === activeView)?.desc ?? "管理与分享你的 Prompt 素材，激发创作灵感。"}
+                </p>
+              </div>
+              <button
+                onClick={() => openEditor()}
+                className="inline-flex items-center justify-center rounded-2xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-border/60 hover:bg-card/90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                新建素材
+              </button>
+            </div>
+          </header>
+
+          {error && (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+              加载失败：{error.message}
+            </div>
           )}
-        </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((item) => (
-            <AssetCard
-              key={item.id}
-              asset={item}
-              viewerId={user.id}
-              onEdit={() => openEditor(item)}
-              onDelete={() => handleDelete(item)}
-              onFavorite={() => handleFavoriteToggle(item)}
-              onReuse={() => handleReuse(item)}
-            />
-          ))}
-        </div>
-      )}
+
+          {isLoading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="space-y-3 rounded-2xl border border-border/60 bg-surface p-4">
+                  <div className="h-40 rounded-xl bg-muted animate-pulse" />
+                  <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <div className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/70 bg-muted/30 p-8 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60">
+                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-foreground">暂无素材</h3>
+              <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                {activeView === "favorites"
+                  ? "你还没有收藏任何素材。"
+                  : activeView === "public"
+                  ? "社区暂时没有公开素材。"
+                  : "你还没有创建任何素材，开始你的创作之旅吧。"}
+              </p>
+              {activeView === "mine" && (
+                <button
+                  onClick={() => openEditor()}
+                  className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+                >
+                  开始创建
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {items.map((item) => (
+                <AssetCard
+                  key={item.id}
+                  asset={item}
+                  viewerId={user.id}
+                  onEdit={() => openEditor(item)}
+                  onDelete={() => handleDelete(item)}
+                  onFavorite={() => handleFavoriteToggle(item)}
+                  onReuse={() => handleReuse(item)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {editorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -626,8 +658,9 @@ function AssetCard({ asset, viewerId, onEdit, onDelete, onFavorite, onReuse }: A
           loading="lazy"
         />
         {asset.isPublic && (
-          <div className="absolute top-2 left-2 rounded-md bg-black/60 backdrop-blur-sm px-2 py-1 text-xs font-medium text-white">
-            {asset.shareCost > 0 ? `${asset.shareCost} 积分` : "免费"}
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-white/50 bg-gradient-to-r from-[#fff9dc] to-[#f5c985] px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-lg dark:border-amber-200/30 dark:from-[#3b230d] dark:to-[#3d1b0b] dark:text-amber-200">
+            <Sparkles className="h-3.5 w-3.5" />
+            {asset.shareCost > 0 ? `${asset.shareCost} 积分` : "公开免费"}
           </div>
         )}
       </div>
