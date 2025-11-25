@@ -310,6 +310,16 @@ function ConversationSidebar({
                     </svg>
                     创意工作室
                   </Link>
+
+                  <Link
+                    href="/studio/assets"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h10" />
+                    </svg>
+                    素材库
+                  </Link>
                   
                   <Link
                     href="/me"

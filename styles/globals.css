@@ -196,7 +196,89 @@ p { @apply mb-4; }
 
   /* Hide scrollbars while keeping scrollability */
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+}
+
+@layer components {
+  .tg-card {
+    @apply rounded-[28px] border border-border bg-gradient-to-b from-surface to-surface-2 shadow-[0_25px_60px_rgba(0,0,0,0.18)];
+  }
+  .tg-card-body {
+    @apply flex flex-col gap-4 p-6;
+  }
+  .tg-card-title {
+    @apply text-lg font-semibold text-foreground;
+  }
+  .tg-card-actions {
+    @apply mt-2 flex flex-wrap gap-2;
+  }
+
+  .tg-btn {
+    @apply inline-flex items-center justify-center rounded-2xl border border-transparent px-5 py-2 text-sm font-semibold tracking-wide transition;
+  }
+  .tg-btn-primary {
+    @apply tg-btn bg-gradient-to-r from-[#f4b968] via-[#f0842b] to-[#f05452] text-black shadow-[0_18px_35px_rgba(240,132,43,0.35)] hover:brightness-110;
+  }
+  .tg-btn-outline {
+    @apply tg-btn border-border bg-transparent text-foreground hover:border-primary hover:text-primary;
+  }
+  .tg-btn-ghost {
+    @apply tg-btn border-transparent bg-transparent text-muted-foreground hover:text-foreground;
+  }
+  .tg-btn-danger {
+    @apply tg-btn bg-gradient-to-r from-red-500 to-red-400 text-white shadow-[0_18px_35px_rgba(248,113,113,0.35)];
+  }
+  .tg-btn-sm {
+    @apply px-3 py-1 text-xs;
+  }
+  .tg-btn:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .tg-tabs {
+    @apply grid gap-3 rounded-[24px] border border-border shadow-inner shadow-black/5 p-3 md:grid-cols-3 bg-surface;
+  }
+  .tg-tab {
+    @apply flex flex-col rounded-[18px] border border-transparent bg-transparent px-4 py-3 text-left transition;
+  }
+  .tg-tab-active {
+    @apply border-border bg-card shadow-[0_18px_30px_rgba(0,0,0,0.12)];
+  }
+  .tg-tab-title {
+    @apply text-sm font-semibold text-foreground;
+  }
+  .tg-tab-desc {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .tg-badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium;
+  }
+  .tg-badge-primary {
+    @apply tg-badge bg-emerald-500/15 text-emerald-400;
+  }
+  .tg-badge-soft {
+    @apply tg-badge bg-muted text-muted-foreground;
+  }
+  .tg-badge-warning {
+    @apply tg-badge bg-amber-500/15 text-amber-400;
+  }
+
+  .tg-input,
+  .tg-textarea,
+  .tg-select {
+    @apply w-full rounded-2xl border border-border/80 bg-surface px-4 py-2 text-sm text-foreground transition focus:border-primary focus:ring-2 focus:ring-primary;
+  }
+  .tg-textarea {
+    @apply min-h-[120px] resize-y;
+  }
+
+  .tg-modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur;
+  }
+  .tg-modal-box {
+    @apply w-full max-w-3xl rounded-[32px] border border-border bg-gradient-to-b from-surface to-surface-2 p-8 shadow-[0_40px_80px_rgba(0,0,0,0.45)];
+  }
 }
 
 a {
