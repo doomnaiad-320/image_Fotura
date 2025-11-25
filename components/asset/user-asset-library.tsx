@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import useSWR from "swr";
 import toast from "react-hot-toast";
@@ -14,7 +13,14 @@ import {
   Image as ImageIcon,
   Loader2,
   X,
-  Sparkles
+  Sparkles,
+  Search,
+  Filter,
+  List,
+  Grid3X3,
+  Copy,
+  MoreHorizontal,
+  Download
 } from "lucide-react";
 
 import type { ModelOption } from "@/components/ai/playground";
@@ -126,12 +132,33 @@ export default function UserAssetLibrary({ models, user }: Props) {
   const [draft, setDraft] = useState<DraftState>(() => emptyDraft(selectableModels[0]));
   const { previewUrl, setPreviewFile } = usePreviewUrl();
   const [saving, setSaving] = useState(false);
-
+  
+  // Toolbar states
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [modelFilter, setModelFilter] = useState<string>("all");
+  
   const { data, error, isLoading, mutate } = useSWR<{ items: AssetItem[] }>(
     `/api/me/assets?view=${activeView}`,
     fetcher
   );
   const items = data?.items ?? [];
+
+  // Filter items
+  const filteredItems = useMemo(() => {
+    let res = items;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      res = res.filter(i => 
+        i.title.toLowerCase().includes(q) || 
+        i.prompt.toLowerCase().includes(q)
+      );
+    }
+    if (modelFilter !== "all") {
+      res = res.filter(i => i.modelSlug === modelFilter);
+    }
+    return res;
+  }, [items, searchQuery, modelFilter]);
 
   const openEditor = useCallback(
     (asset?: AssetItem) => {
@@ -329,398 +356,472 @@ export default function UserAssetLibrary({ models, user }: Props) {
     window.location.href = "/studio";
   }, []);
 
+  const handleCopyPrompt = useCallback((prompt: string) => {
+    navigator.clipboard.writeText(prompt);
+    toast.success("Prompt 已复制");
+  }, []);
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-        <aside className="h-full rounded-3xl border border-border bg-surface p-6 shadow-inner">
-          <div className="mb-6 space-y-2">
-            <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">素材库</p>
-            <h1 className="text-2xl font-semibold text-foreground">灵感工具箱</h1>
-            <p className="text-xs text-muted-foreground">统一管理我的素材、收藏与共享资源</p>
-          </div>
-          <nav className="space-y-2">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-background">
+      {/* Left Sidebar - Navigation Tree */}
+      <aside className="w-64 shrink-0 border-r border-border bg-surface/50 hidden md:flex md:flex-col">
+        <div className="p-6">
+          <h2 className="px-2 text-lg font-semibold tracking-tight text-foreground mb-6">素材管理</h2>
+          <nav className="space-y-1">
             {VIEW_TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveView(tab.key)}
                 className={cn(
-                  "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   activeView === tab.key
-                    ? "bg-gradient-to-r from-[#f9f4ec] to-[#f0d7b3] text-slate-900 shadow-md dark:from-[#2b1d11] dark:to-[#2d190d] dark:text-amber-300"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/60 bg-background/70">
-                  <tab.icon className="h-4 w-4" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold">{tab.label}</div>
-                  <p className="text-xs text-muted-foreground">{tab.desc}</p>
-                </div>
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
               </button>
             ))}
           </nav>
-          <div className="mt-8 space-y-3">
-            <Link
-              href="/studio"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
-            >
-              ← 返回工作台
-            </Link>
-            <button
-              onClick={() => openEditor()}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#f4b968] via-[#f0842b] to-[#f05452] px-5 py-2 text-sm font-semibold text-black shadow-[0_12px_25px_rgba(240,132,43,0.35)] transition hover:brightness-110"
-            >
-              新建素材
-            </button>
-          </div>
-        </aside>
+        </div>
+        
+        <div className="mt-auto p-6 border-t border-border">
+           <div className="rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 p-4">
+             <h3 className="text-sm font-semibold text-foreground mb-1">当前积分</h3>
+             <p className="text-2xl font-bold text-primary">{user.credits}</p>
+             <p className="text-xs text-muted-foreground mt-2">创建或公开素材可能会获得奖励</p>
+           </div>
+        </div>
+      </aside>
 
-        <section className="space-y-6">
-          <header className="rounded-[32px] border border-border/70 bg-gradient-to-br from-background to-surface-2 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">{VIEW_TABS.find((tab) => tab.key === activeView)?.label}</p>
-                <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground">素材库</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {VIEW_TABS.find((tab) => tab.key === activeView)?.desc ?? "管理与分享你的 Prompt 素材，激发创作灵感。"}
-                </p>
-              </div>
-              <button
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 relative">
+        {/* Top Toolbar */}
+        <header className="h-16 shrink-0 border-b border-border flex items-center justify-between px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex items-center gap-4 flex-1">
+             {/* Search */}
+             <div className="relative w-full max-w-sm">
+               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+               <input
+                 className="h-9 w-full rounded-md border border-input bg-surface px-9 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                 placeholder="搜索标题或 Prompt..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+               />
+             </div>
+             
+             {/* Filters */}
+             <div className="flex items-center gap-2">
+                <div className="relative">
+                  <select 
+                    className="h-9 rounded-md border border-input bg-surface px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={modelFilter}
+                    onChange={(e) => setModelFilter(e.target.value)}
+                  >
+                    <option value="all">所有模型</option>
+                    {selectableModels.map(m => (
+                      <option key={m.slug} value={m.slug}>{m.displayName}</option>
+                    ))}
+                  </select>
+                </div>
+             </div>
+          </div>
+          
+          <div className="flex items-center gap-2 ml-4">
+             <div className="flex items-center rounded-md border border-input p-1 bg-surface">
+               <button
+                 onClick={() => setViewMode("grid")}
+                 className={cn(
+                   "rounded-sm p-1.5 transition-colors",
+                   viewMode === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                 )}
+               >
+                 <Grid3X3 className="h-4 w-4" />
+               </button>
+               <button
+                 onClick={() => setViewMode("list")}
+                 className={cn(
+                   "rounded-sm p-1.5 transition-colors",
+                   viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                 )}
+               >
+                 <List className="h-4 w-4" />
+               </button>
+             </div>
+             
+             <div className="h-6 w-px bg-border mx-2" />
+             
+             <button
                 onClick={() => openEditor()}
-                className="inline-flex items-center justify-center rounded-2xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-border/60 hover:bg-card/90"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                新建素材
+                新建
               </button>
-            </div>
-          </header>
+          </div>
+        </header>
 
+        {/* Content Scroll Area */}
+        <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+            <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive mb-6">
               加载失败：{error.message}
             </div>
           )}
 
           {isLoading ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+             <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="space-y-3 rounded-2xl border border-border/60 bg-surface p-4">
-                  <div className="h-40 rounded-xl bg-muted animate-pulse" />
-                  <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
-                  <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+                <div key={i} className="break-inside-avoid space-y-2 rounded-xl border border-border p-2">
+                  <div className="h-48 rounded-lg bg-muted animate-pulse" />
+                  <div className="h-4 w-2/3 rounded bg-muted animate-pulse" />
                 </div>
               ))}
             </div>
-          ) : items.length === 0 ? (
-            <div className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/70 bg-muted/30 p-8 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60">
-                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <h3 className="mt-4 text-lg font-semibold text-foreground">暂无素材</h3>
-              <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                {activeView === "favorites"
-                  ? "你还没有收藏任何素材。"
-                  : activeView === "public"
-                  ? "社区暂时没有公开素材。"
-                  : "你还没有创建任何素材，开始你的创作之旅吧。"}
-              </p>
-              {activeView === "mine" && (
-                <button
-                  onClick={() => openEditor()}
-                  className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
-                >
-                  开始创建
-                </button>
-              )}
+          ) : filteredItems.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center text-center">
+               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 mb-4">
+                 <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+               </div>
+               <h3 className="text-lg font-semibold text-foreground">暂无内容</h3>
+               <p className="text-muted-foreground max-w-sm mt-2 text-sm">
+                  {searchQuery 
+                    ? "没有找到匹配的素材，换个关键词试试？" 
+                    : "这里还是一片荒原，去创造一些精彩的素材吧。"}
+               </p>
+               {activeView === "mine" && !searchQuery && (
+                 <button
+                   onClick={() => openEditor()}
+                   className="mt-6 text-primary hover:underline text-sm font-medium"
+                 >
+                   创建第一个素材
+                 </button>
+               )}
             </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((item) => (
-                <AssetCard
-                  key={item.id}
-                  asset={item}
-                  viewerId={user.id}
-                  onEdit={() => openEditor(item)}
-                  onDelete={() => handleDelete(item)}
-                  onFavorite={() => handleFavoriteToggle(item)}
-                  onReuse={() => handleReuse(item)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
-      {editorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl rounded-xl border border-border bg-background shadow-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-border p-6">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  {draft.id ? "编辑素材" : "新建素材"}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {draft.id ? "更新你的素材信息" : "创建一个新的创作素材"}
-                </p>
-              </div>
-              <button
-                onClick={closeEditor}
-                className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">素材标题</label>
-                <input
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  value={draft.title}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="给素材起个好听的名字"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Prompt 提示词</label>
-                <textarea
-                  className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
-                  value={draft.prompt}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, prompt: e.target.value }))}
-                  placeholder="输入详细的画面描述..."
-                />
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">选择模型</label>
-                  <select
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={draft.modelSlug}
-                    onChange={(e) => {
-                      const slug = e.target.value;
-                      const model = selectableModels.find((m) => m.slug === slug);
-                      setDraft((prev) => ({
-                        ...prev,
-                        modelSlug: slug,
-                        modelName: model?.displayName ?? slug
-                      }));
-                    }}
-                  >
-                    <option value="" disabled>请选择模型</option>
-                    {selectableModels.map((model) => (
-                      <option key={model.slug} value={model.slug}>
-                        {model.displayName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">输出尺寸</label>
-                  <input
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={draft.size}
-                    onChange={(e) => setDraft((prev) => ({ ...prev, size: e.target.value }))}
-                    placeholder="例如: 1024x1024"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                 <div className="flex items-center justify-between">
-                   <label className="text-sm font-medium text-foreground">示例图片</label>
-                   <label className="cursor-pointer text-sm text-primary hover:underline">
-                     <span>点击上传图片</span>
-                     <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                     />
-                   </label>
+          ) : viewMode === "grid" ? (
+             // Masonry Grid Layout
+             <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6 pb-10">
+               {filteredItems.map((item) => (
+                 <div key={item.id} className="break-inside-avoid">
+                   <AssetMasonryCard
+                     asset={item}
+                     viewerId={user.id}
+                     onEdit={() => openEditor(item)}
+                     onDelete={() => handleDelete(item)}
+                     onFavorite={() => handleFavoriteToggle(item)}
+                     onReuse={() => handleReuse(item)}
+                     onCopy={() => handleCopyPrompt(item.prompt)}
+                   />
                  </div>
-                 
-                 {(previewUrl || draft.coverUrl) ? (
-                   <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-muted">
-                     <img
+               ))}
+             </div>
+          ) : (
+             // List View Layout
+             <div className="rounded-lg border border-border overflow-hidden">
+               <table className="w-full text-left text-sm">
+                 <thead className="bg-muted/50 text-muted-foreground font-medium">
+                   <tr>
+                     <th className="px-4 py-3">预览</th>
+                     <th className="px-4 py-3">标题 / Prompt</th>
+                     <th className="px-4 py-3">模型</th>
+                     <th className="px-4 py-3">尺寸</th>
+                     <th className="px-4 py-3 text-right">操作</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-border">
+                   {filteredItems.map(item => (
+                     <tr key={item.id} className="group hover:bg-muted/30 transition-colors">
+                       <td className="px-4 py-3 w-16">
+                         <div className="h-12 w-12 rounded-md overflow-hidden bg-muted">
+                           <img src={item.coverUrl} alt="" className="h-full w-full object-cover" />
+                         </div>
+                       </td>
+                       <td className="px-4 py-3 max-w-md">
+                         <div className="font-medium text-foreground truncate">{item.title}</div>
+                         <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.prompt}</div>
+                       </td>
+                       <td className="px-4 py-3 text-muted-foreground">{item.modelName}</td>
+                       <td className="px-4 py-3 text-muted-foreground">{item.size}</td>
+                       <td className="px-4 py-3 text-right">
+                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleReuse(item)} title="复用" className="p-1.5 hover:bg-muted rounded-md text-foreground">
+                              <Sparkles className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => handleCopyPrompt(item.prompt)} title="复制 Prompt" className="p-1.5 hover:bg-muted rounded-md text-foreground">
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => openEditor(item)} title="编辑" className="p-1.5 hover:bg-muted rounded-md text-foreground">
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                         </div>
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+          )}
+        </div>
+      </main>
+
+      {/* Right Drawer Editor */}
+      {editorOpen && (
+        <>
+          <div 
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm transition-opacity" 
+            onClick={closeEditor}
+          />
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg border-l border-border bg-background shadow-2xl transition-transform duration-300 sm:duration-500 animate-in slide-in-from-right">
+             <div className="flex h-full flex-col">
+               {/* Drawer Header */}
+               <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                 <div>
+                   <h2 className="text-lg font-semibold text-foreground">
+                     {draft.id ? "编辑素材" : "新建素材"}
+                   </h2>
+                   <p className="text-sm text-muted-foreground">
+                     {draft.id ? "更新你的素材信息" : "创建并配置你的 AI 创作素材"}
+                   </p>
+                 </div>
+                 <button
+                   onClick={closeEditor}
+                   className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                 >
+                   <X className="h-5 w-5" />
+                 </button>
+               </div>
+
+               {/* Drawer Content */}
+               <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  {/* Image Preview Area */}
+                  <div className="group relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-muted">
+                    {(previewUrl || draft.coverUrl) ? (
+                      <img
                         src={previewUrl || draft.coverUrl}
                         alt="Preview"
                         className="h-full w-full object-cover"
-                     />
-                     <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
-                   </div>
-                 ) : (
-                   <div className="flex aspect-video w-full flex-col items-center justify-center rounded-lg border border-dashed border-input bg-muted/50 text-muted-foreground">
-                      <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
-                      <span className="text-xs">暂无图片，请上传或输入链接</span>
-                   </div>
-                 )}
-                 
-                 <input
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={draft.coverUrl}
-                    onChange={(e) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        coverUrl: e.target.value,
-                        file: e.target.value ? null : prev.file
-                      }))
-                    }
-                    placeholder="或输入图片 URL..."
-                  />
-              </div>
-
-              <div className="rounded-lg border border-border bg-muted/30 p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-5 items-center">
-                    <input
-                      id="isPublic"
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-primary text-primary focus:ring-primary"
-                      checked={draft.isPublic}
-                      onChange={(e) => setDraft((prev) => ({ ...prev, isPublic: e.target.checked }))}
-                    />
+                      />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+                        <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+                        <span className="text-xs">暂无图片</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                      <label className="cursor-pointer rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20">
+                         更改图片
+                         <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                      </label>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <label htmlFor="isPublic" className="text-sm font-medium text-foreground">
-                      公开到社区
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      公开素材后，其他用户可以使用你的 Prompt。
-                    </p>
+                  
+                  {/* Input Fields */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">标题</label>
+                      <input
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        placeholder="给素材起个好听的名字"
+                        value={draft.title}
+                        onChange={(e) => setDraft(p => ({ ...p, title: e.target.value }))}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none">Prompt 提示词</label>
+                      <textarea
+                        className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                        placeholder="输入详细的画面描述..."
+                        value={draft.prompt}
+                        onChange={(e) => setDraft(p => ({ ...p, prompt: e.target.value }))}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium leading-none">模型</label>
+                        <select
+                          className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          value={draft.modelSlug}
+                          onChange={(e) => {
+                             const slug = e.target.value;
+                             const m = selectableModels.find(x => x.slug === slug);
+                             setDraft(p => ({ ...p, modelSlug: slug, modelName: m?.displayName ?? slug }));
+                          }}
+                        >
+                          {selectableModels.map(m => (
+                            <option key={m.slug} value={m.slug}>{m.displayName}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium leading-none">尺寸</label>
+                        <input
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          value={draft.size}
+                          onChange={(e) => setDraft(p => ({ ...p, size: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none">外部图片链接 (可选)</label>
+                      <input
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        placeholder="https://..."
+                        value={draft.coverUrl}
+                        onChange={(e) => setDraft(p => ({ ...p, coverUrl: e.target.value, file: null }))}
+                      />
+                    </div>
+                    
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <label className="text-sm font-medium text-foreground">公开到社区</label>
+                          <p className="text-xs text-muted-foreground">允许其他用户复用此 Prompt</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="h-5 w-5 rounded border-primary text-primary focus:ring-primary"
+                          checked={draft.isPublic}
+                          onChange={(e) => setDraft(p => ({ ...p, isPublic: e.target.checked }))}
+                        />
+                      </div>
+                      {draft.isPublic && (
+                         <div className="flex items-center gap-3 border-t border-border/50 pt-3">
+                           <span className="text-sm text-muted-foreground">设置复用价格</span>
+                           <input
+                             type="number"
+                             className="w-20 h-8 rounded-md border border-input px-2 text-sm text-right"
+                             value={draft.shareCost}
+                             onChange={(e) => setDraft(p => ({ ...p, shareCost: Number(e.target.value) }))}
+                           />
+                           <span className="text-sm text-muted-foreground">积分</span>
+                         </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                {draft.isPublic && (
-                  <div className="mt-3 flex items-center gap-3 pl-7">
-                    <span className="text-sm text-muted-foreground">复用价格:</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={5000}
-                      className="w-24 rounded-md border border-input bg-background px-2 py-1 text-sm"
-                      value={draft.shareCost}
-                      onChange={(e) =>
-                        setDraft((prev) => ({ ...prev, shareCost: Number(e.target.value) }))
-                      }
-                    />
-                    <span className="text-sm text-muted-foreground">积分</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={closeEditor}
-                  disabled={saving}
-                  className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50"
-                >
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {saving ? "保存中..." : "保存素材"}
-                </button>
-              </div>
-            </div>
+               </div>
+               
+               {/* Drawer Footer */}
+               <div className="border-t border-border px-6 py-4 bg-background">
+                 <div className="flex justify-end gap-3">
+                   <button
+                     onClick={closeEditor}
+                     className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
+                   >
+                     取消
+                   </button>
+                   <button
+                     onClick={handleSave}
+                     disabled={saving}
+                     className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
+                   >
+                     {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     保存
+                   </button>
+                 </div>
+               </div>
+             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
 }
 
-type AssetCardProps = {
-  asset: AssetItem;
+// Masonry Card Component with Hover Interactions
+function AssetMasonryCard({ 
+  asset, 
+  viewerId, 
+  onEdit, 
+  onDelete, 
+  onFavorite, 
+  onReuse,
+  onCopy 
+}: { 
+  asset: AssetItem; 
   viewerId: string;
   onEdit: () => void;
   onDelete: () => void;
   onFavorite: () => void;
   onReuse: () => void;
-};
-
-function AssetCard({ asset, viewerId, onEdit, onDelete, onFavorite, onReuse }: AssetCardProps) {
+  onCopy: () => void;
+}) {
   const isOwner = asset.ownerId === viewerId;
-  const createdAt = new Date(asset.createdAt);
-
+  
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
-      <div className="aspect-[4/3] overflow-hidden bg-muted relative">
-        <img
-          src={asset.coverUrl}
-          alt={asset.title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
+    <div className="group relative break-inside-avoid rounded-xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+      {/* Image & Hover Overlay */}
+      <div className="relative overflow-hidden">
+        <img 
+          src={asset.coverUrl} 
+          alt={asset.title} 
+          className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
         />
+        
+        {/* Public Badge */}
         {asset.isPublic && (
-          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-white/50 bg-gradient-to-r from-[#fff9dc] to-[#f5c985] px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-lg dark:border-amber-200/30 dark:from-[#3b230d] dark:to-[#3d1b0b] dark:text-amber-200">
-            <Sparkles className="h-3.5 w-3.5" />
-            {asset.shareCost > 0 ? `${asset.shareCost} 积分` : "公开免费"}
+          <div className="absolute top-2 left-2 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] font-medium text-white shadow-sm">
+            {asset.shareCost > 0 ? `${asset.shareCost} 积分` : "公开"}
           </div>
         )}
-      </div>
-      
-      <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2 flex items-start justify-between gap-2">
-           <h3 className="font-semibold text-foreground line-clamp-1" title={asset.title}>
-             {asset.title}
-           </h3>
-        </div>
-        
-        <div className="mb-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-            {asset.modelName}
-          </span>
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-             {asset.size}
-          </span>
-        </div>
 
-        <div className="mt-auto flex items-center justify-between gap-2">
-           <button 
-             onClick={onReuse}
-             className="flex-1 inline-flex items-center justify-center rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-           >
-             <Sparkles className="mr-1.5 h-4 w-4" />
-             复用
-           </button>
-           
-           <div className="flex gap-1">
-             <button
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
+           {/* Top Actions */}
+           <div className="flex justify-end gap-2 translate-y-[-10px] group-hover:translate-y-0 transition-transform duration-300">
+             <button 
                onClick={onFavorite}
                className={cn(
-                 "inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                 asset.isFavorited && "text-amber-400 hover:text-amber-500"
+                 "h-8 w-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors",
+                 asset.isFavorited && "text-yellow-400 bg-white/30"
                )}
-               title={asset.isFavorited ? "取消收藏" : "收藏"}
              >
                <Star className={cn("h-4 w-4", asset.isFavorited && "fill-current")} />
              </button>
-             
              {isOwner && (
-               <>
-                 <button
-                   onClick={onEdit}
-                   className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                   title="编辑"
-                 >
-                   <Edit2 className="h-4 w-4" />
-                 </button>
-                 <button
-                   onClick={onDelete}
-                   className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500"
-                   title="删除"
-                 >
-                   <Trash2 className="h-4 w-4" />
-                 </button>
-               </>
+               <button 
+                 onClick={onDelete}
+                 className="h-8 w-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-red-500/60 transition-colors"
+               >
+                 <Trash2 className="h-4 w-4" />
+               </button>
              )}
            </div>
+
+           {/* Bottom Actions & Prompt Preview */}
+           <div className="translate-y-[10px] group-hover:translate-y-0 transition-transform duration-300">
+             <div className="text-xs text-white/90 line-clamp-3 mb-3 font-light drop-shadow-md">
+               {asset.prompt}
+             </div>
+             <button 
+               onClick={onReuse}
+               className="w-full rounded-lg bg-primary/90 hover:bg-primary backdrop-blur-sm py-2 text-xs font-semibold text-primary-foreground flex items-center justify-center gap-2 transition-colors shadow-lg"
+             >
+               <Sparkles className="h-3.5 w-3.5" />
+               立即复用
+             </button>
+           </div>
+        </div>
+      </div>
+
+      {/* Card Meta Info */}
+      <div className="p-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <h3 className="font-medium text-foreground text-sm truncate pr-2" title={asset.title}>{asset.title}</h3>
+          <button 
+            onClick={onCopy}
+            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            title="复制 Prompt"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="bg-secondary px-1.5 py-0.5 rounded">{asset.modelName}</span>
+          <span>{asset.size}</span>
         </div>
       </div>
     </div>

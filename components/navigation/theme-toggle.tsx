@@ -1,31 +1,66 @@
 "use client";
 
-import { useBgTheme } from "@/components/theme/background-provider";
+import type { LucideIcon } from "lucide-react";
+import { Clock3, Moon, Sun } from "lucide-react";
 
-export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useBgTheme();
+import { useBgTheme, type BgTheme } from "@/components/theme/background-provider";
+import { cn } from "@/lib/utils";
 
-  const toggleTheme = () => {
-    // 在任何状态下都切换为手动 light/dark
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
+const OPTIONS: { key: BgTheme; label: string; icon: LucideIcon }[] = [
+  { key: "light", label: "浅色", icon: Sun },
+  { key: "auto", label: "自动", icon: Clock3 },
+  { key: "dark", label: "深色", icon: Moon }
+];
+
+type ThemeToggleProps = {
+  size?: "sm" | "md";
+};
+
+export function ThemeToggle({ size = "sm" }: ThemeToggleProps) {
+  const { theme, resolvedTheme, setTheme } = useBgTheme();
+  const showLabel = size !== "sm";
 
   return (
-    <button
-      onClick={toggleTheme}
-      className="rounded-full border border-border p-2 hover:bg-muted transition"
-      aria-label="切换主题"
-      title={resolvedTheme === "dark" ? "切换到明亮模式" : "切换到暗黑模式"}
-    >
-      {resolvedTheme === "dark" ? (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ) : (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
+    <div
+      className={cn(
+        "inline-flex items-center rounded-full border border-border bg-card/80 p-1 shadow-sm backdrop-blur",
+        size === "sm" ? "gap-1" : "gap-2"
       )}
-    </button>
+      role="group"
+      aria-label="主题切换"
+    >
+      {OPTIONS.map((opt) => {
+        const active = theme === opt.key;
+        return (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => setTheme(opt.key)}
+            className={cn(
+              "flex items-center justify-center rounded-full text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              size === "sm" ? "h-8 w-8" : "h-9 px-3",
+              active ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-muted/70"
+            )}
+            aria-pressed={active}
+            title={`${opt.label}模式`}
+          >
+            <opt.icon
+              className={cn(
+                size === "sm" ? "h-4 w-4" : "mr-1.5 h-4 w-4",
+                active ? "opacity-100" : "opacity-80"
+              )}
+            />
+            {showLabel && <span>{opt.label}</span>}
+          </button>
+        );
+      })}
+      <span className="sr-only">
+        {theme === "auto"
+          ? `自动模式，当前为${resolvedTheme === "dark" ? "夜间" : "日间"}`
+          : theme === "dark"
+          ? "深色模式"
+          : "浅色模式"}
+      </span>
+    </div>
   );
 }

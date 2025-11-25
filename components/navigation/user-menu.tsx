@@ -66,6 +66,14 @@ className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
             个人主页
           </Link>
           <Link
+            href="/studio/assets"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
+            onClick={() => setOpen(false)}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h10" /></svg>
+            我的素材
+          </Link>
+          <Link
             href="/settings"
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface-2"
             onClick={() => setOpen(false)}

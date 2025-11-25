@@ -104,8 +104,8 @@ function ConversationSidebar({
           </button>
         </div>
 
-        {/* 顶部：探索按钮 */}
-        <div className="p-4 pt-3">
+        {/* 顶部：功能导航 */}
+        <div className="p-4 pt-3 space-y-1">
           <button
             onClick={() => {
               onShowExplore?.();
@@ -113,19 +113,35 @@ function ConversationSidebar({
                 onToggle();
               }
             }}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm border ${
+            className={`w-full flex items-center justify-start gap-3 px-3 py-2 rounded-lg text-sm border transition-all ${
               exploreActive
-                ? 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/15'
-                : 'bg-muted text-foreground border-border hover:bg-accent'
-            } transition-all`}
+                ? 'bg-primary/10 text-primary border-primary/30'
+                : 'bg-transparent text-foreground border-transparent hover:bg-accent'
+            }`}
             aria-pressed={exploreActive}
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <circle cx="12" cy="12" r="10" strokeWidth={2} />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m16.24 7.76-3.77 1.01-1.01 3.77 3.77-1.01 1.01-3.77z" />
             </svg>
             <span>灵感画廊</span>
           </button>
+
+          <Link
+            href="/studio/assets"
+            className="w-full flex items-center justify-start gap-3 px-3 py-2 rounded-lg text-sm border border-transparent bg-transparent text-foreground hover:bg-accent transition-all"
+            onClick={() => {
+              if (window.innerWidth < 1024) {
+                onToggle();
+              }
+            }}
+          >
+            <svg className="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h10" />
+            </svg>
+            <span>素材库</span>
+          </Link>
+          
           <div className="my-3 border-b border-border" />
         </div>
 

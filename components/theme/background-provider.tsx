@@ -45,8 +45,8 @@ function nextAutoSwitchDelay(now = new Date()): number {
 }
 
 export function ThemeBackgroundProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<BgTheme>("dark");
-  const [resolvedTheme, setResolvedTheme] = useState<Resolved>("dark");
+  const [theme, setTheme] = useState<BgTheme>("auto");
+  const [resolvedTheme, setResolvedTheme] = useState<Resolved>(() => computeAutoTheme(new Date()));
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 初始化从 localStorage 读取

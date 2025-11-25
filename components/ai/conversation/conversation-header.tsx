@@ -2,8 +2,8 @@
 
 import React from "react";
 
-import { Sparkles, Zap, Image as ImageIcon, Box } from "lucide-react";
-import { useBgTheme } from "@/components/theme/background-provider";
+import { Sparkles, Zap, Image as ImageIcon, Box, History } from "lucide-react";
+import { ThemeToggle } from "@/components/navigation/theme-toggle";
 import { Select, SelectItem } from "@/components/ui/select";
 
 import type { ModelOption } from "../playground";
@@ -13,32 +13,23 @@ interface TopBarActionsProps {
 }
 
 export function StudioTopBarActions({ onToggleHistory }: TopBarActionsProps) {
-  const { resolvedTheme, setTheme } = useBgTheme();
-  const toggle = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
-
   return (
     <div className="ml-auto flex items-center gap-2 sm:gap-3">
-
-
-      <span className="hidden h-5 w-px bg-border sm:block" />
-
-      <button
-        onClick={toggle}
-        className="inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted"
-        aria-label="切换主题"
-        title="切换主题"
-        type="button"
-      >
-        {resolvedTheme === "dark" ? (
-          <svg xmlns="http://www.w3.org/2000/svg" className="size-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.293 13.293a8 8 0 11-6.586-6.586 6 6 0 106.586 6.586z" />
-          </svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="size-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 4a1 1 0 011 1v1a1 1 0 11-2 0V5a1 1 0 011-1zm0 13a5 5 0 100-10 5 5 0 000 10zm7-6a1 1 0 110-2h1a1 1 0 110 2h-1zM4 12a1 1 0 110-2H3a1 1 0 110 2h1zm11.657 6.657a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM6.464 6.464A1 1 0 105.05 7.879l.707.707A1 1 0 107.172 7.172l-.707-.707zm9.9-1.414a1 1 0 011.415 1.415l-.707.707a1 1 0 01-1.415-1.415l.707-.707zM7.879 18.95a1 1 0 10-1.415-1.415l-.707.707a1 1 0 101.415 1.415l.707-.707z" />
-          </svg>
-        )}
-      </button>
+      {onToggleHistory && (
+        <>
+          <button
+            type="button"
+            onClick={onToggleHistory}
+            className="inline-flex size-8 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:bg-muted"
+            title="查看历史记录"
+            aria-label="查看历史记录"
+          >
+            <History className="size-4" />
+          </button>
+          <span className="hidden h-5 w-px bg-border sm:block" />
+        </>
+      )}
+      <ThemeToggle size="sm" />
     </div>
   );
 }
